@@ -18,7 +18,6 @@
     private_in_public,
     safe_extern_statics,
     unconditional_recursion,
-    unions_with_drop_fields,
     unused,
     unused_allocation,
     unused_lifetimes,
@@ -26,7 +25,6 @@
     unused_parens,
     while_true
 )]
-
 // TODO: deny
 #![warn(
     missing_debug_implementations,
@@ -41,7 +39,6 @@
     unused_results,
     rust_2018_idioms
 )]
-
 #![doc(test(attr(deny(rust_2018_idioms, warnings))))]
 #![doc(html_logo_url = "")] // TODO!
 
