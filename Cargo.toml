@@ -31,7 +31,7 @@ maintenance = { status = "actively-developed" }
 lc3-baseline-sim = { path = "../baseline-sim", version = "0.1.0" }
 lc3-isa = { path = "../isa", version = "0.1.0" }
 lc3-macros = { path = "../macros", version = "0.1.0" }
-lc3-peripheral-shims = { path = "../peripheral-shims", version = "0.1.0" }
+lc3-shims = { path = "../shims", version = "0.1.0" }
 lc3-traits = { path = "../traits", version = "0.1.0" }
 tui = "0.6.2"
 
