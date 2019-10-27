@@ -1,0 +1,37 @@
+[package]
+name = "lc3-tui"
+version = "0.1.0"
+authors = ["UT UTP <ut.utp.group@gmail.com>"]
+edition = "2018"
+
+workspace = ".."
+
+description = "A command line simulator for the LC-3 with additional peripherals."
+homepage = "https://ut-utp.github.io"
+repository = "http://github.com/ut-utp/prototype"
+
+readme = "README.md"
+
+keywords = ["lc-3", "cli", "tui", "peripherals", "utp"]
+categories = ["simulation", "command-line-utilities"]
+
+license = "MPL-2.0"
+
+
+[badges]
+github-actions = { repository = "ut-utp/prototype", workflow = "tui" }
+codecov = { repository = "ut-utp/prototype", branch = "master", service = "github" }
+
+is-it-maintained-issue-resolution = { repository = "ut-utp/prototype" }
+is-it-maintained-open-issues = { repository = "ut-utp/prototype" }
+maintenance = { status = "actively-developed" }
+
+
+[dependencies]
+lc3-baseline-sim = { path = "../baseline-sim", version = "0.1.0" }
+lc3-isa = { path = "../isa", version = "0.1.0" }
+lc3-macros = { path = "../macros", version = "0.1.0" }
+lc3-peripheral-shims = { path = "../peripheral-shims", version = "0.1.0" }
+lc3-traits = { path = "../traits", version = "0.1.0" }
+tui = "0.6.2"
+
