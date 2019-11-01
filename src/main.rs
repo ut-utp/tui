@@ -142,15 +142,16 @@ fn main() -> Result<(), failure::Error> {
                 .constraints(
                     [
                         Constraint::Min(10),
-                        Constraint::Length(4),
+                        Constraint::Length(5),
                     ].as_ref()
                 )
                 .split(f.size());
 
-            Block::default()
-                 .title("Footer")
-                 .borders(Borders::ALL)
-                 .render(&mut f, chunks[1]);
+            let buttons = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(1)
+                .constraints([Constraint::Min(20), Constraint::Length(8), Constraint::Length(8), Constraint::Length(8)].as_ref())
+                .split(chunks[1]);
 
             let body = chunks[0];
 
@@ -167,16 +168,6 @@ fn main() -> Result<(), failure::Error> {
                 .margin(1)
                 .constraints([Constraint::Min(6), Constraint::Length(10)].as_ref())
                 .split(panes[0]);
-
-            Block::default()
-                 .title("Memory")
-                 .borders(Borders::ALL)
-                 .render(&mut f, left_pane[0]);
-
-            Block::default()
-                 .title("Registers + PC + PSR")
-                 .borders(Borders::ALL)
-                 .render(&mut f, left_pane[1]);
 
             //Creates console output + IO
             let right_pane = Layout::default()
@@ -214,36 +205,11 @@ fn main() -> Result<(), failure::Error> {
                 .split(right_pane[1]);
 
             
-            Block::default()
-                 .title("GPIO")
-                 .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
-                 .render(&mut f, io_panel[0]);
-
-            Block::default()
-                 .title("ADC")
-                 .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
-                 .render(&mut f, io_panel[1]);
-
-            Block::default()
-                 .title("PWM")
-                 .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
-                 .render(&mut f, io_panel[2]);
-
             let timers_n_clock = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
                 .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
                 .split(io_panel[3]);
-
-            Block::default()
-                 .title("Timers")
-                 .borders(Borders::ALL & !(Borders::RIGHT))
-                 .render(&mut f, timers_n_clock[0]);
-
-            Block::default()
-                 .title("Clock")
-                 .borders(Borders::ALL)
-                 .render(&mut f, timers_n_clock[1]);
 
             //TEXT BELOW HERE
 
@@ -251,6 +217,7 @@ fn main() -> Result<(), failure::Error> {
             let text = [
                 Text::styled("To control the TUI, you can use S to Step through instructions, P to Pause, and R to Run, or click the appropriate button", Style::default().modifier(Modifier::BOLD))
             ];
+
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
@@ -260,7 +227,38 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, chunks[1]);
-    
+            
+            //Footer Buttons
+            let text = [
+                Text::styled("Step", Style::default().fg(Color::Blue).modifier(Modifier::BOLD))
+            ];
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                )
+                .render(&mut f, buttons[1]);
+
+            let text = [
+                Text::styled("Pause", Style::default().fg(Color::Red).modifier(Modifier::BOLD))
+            ];
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                )
+                .render(&mut f, buttons[2]);
+
+            let text = [
+                Text::styled("Run", Style::default().fg(Color::Green).modifier(Modifier::BOLD))
+            ];
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                )
+                .render(&mut f, buttons[3]);
+
             //Register Status Text
             //let regs = Control::get_registers_and_pc();
             let regsPC: ([Word; 9], Word) = ([1,2,3,4,5,6,7,8,9], 10);
@@ -353,7 +351,7 @@ fn main() -> Result<(), failure::Error> {
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
-                            .borders(Borders::ALL)
+                            .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
                             .title("GPIO")
                             .title_style(Style::default().fg(Color::Green).modifier(Modifier::BOLD)),
                 )
@@ -378,8 +376,8 @@ fn main() -> Result<(), failure::Error> {
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
-                            .borders(Borders::ALL)
-                            .title("GPIO")
+                            .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
+                            .title("ADC")
                             .title_style(Style::default().fg(Color::Green).modifier(Modifier::BOLD)),
                 )
                 .wrap(true)
@@ -389,8 +387,8 @@ fn main() -> Result<(), failure::Error> {
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
-                            .borders(Borders::ALL)
-                            .title("GPIO")
+                            .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
+                            .title("PWM")
                             .title_style(Style::default().fg(Color::Green).modifier(Modifier::BOLD)),
                 )
                 .wrap(true)
@@ -400,8 +398,8 @@ fn main() -> Result<(), failure::Error> {
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
-                            .borders(Borders::ALL)
-                            .title("GPIO")
+                            .borders(Borders::ALL & !(Borders::RIGHT))
+                            .title("Timers")
                             .title_style(Style::default().fg(Color::Green).modifier(Modifier::BOLD)),
                 )
                 .wrap(true)
@@ -412,7 +410,7 @@ fn main() -> Result<(), failure::Error> {
                 .block(
                         Block::default()
                             .borders(Borders::ALL)
-                            .title("GPIO")
+                            .title("Clock")
                             .title_style(Style::default().fg(Color::Green).modifier(Modifier::BOLD)),
                 )
                 .wrap(true)
