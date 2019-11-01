@@ -360,14 +360,14 @@ fn main() -> Result<(), failure::Error> {
 
             let right_GPIO = Layout::default()
                 .direction(Direction::Horizontal)
-                .margin(1)
+                .margin(0)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(io_panel[0]);
 
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
-                            .borders(Borders::NONE)
+                            .borders(Borders::TOP | Borders::RIGHT)
                 )
                 .wrap(true)
                 .render(&mut f, right_GPIO[1]);
