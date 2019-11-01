@@ -56,29 +56,91 @@ use tui::backend::{Backend};
 
 use std::io::stdout;
 
+use lc3_isa::{Addr, Word};
+use lc3_traits::control::Control;
+/*use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
+
+enum Event<I> {
+    Input(I),
+    Tick,
+}
+
+struct Cli {
+    tick_rate: u64,
+    log: bool,
+}*/
+
+
 fn main() -> Result<(), failure::Error> {
     let screen = AlternateScreen::to_alternate(true)?;
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
+    /*let cli = Cli{
+        tick_rate: 250,
+        log: true,
+    };
+
+    //stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
+    let (tx, rx) = mpsc::channel();
+    {
+        let tx = tx.clone();
+        thread::spawn(move || {
+            let input = input();
+            let reader = input.read_sync();
+            for event in reader {
+                match event {
+                    InputEvent::Keyboard(key) => {
+                        if let Err(_) = tx.send(Event::Input(key.clone())) {
+                            return;
+                        }
+                        if key == KeyEvent::Char('q') {
+                            return;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        });
+    }
+
+    {
+        let tx = tx.clone();
+        thread::spawn(move || {
+            let tx = tx.clone();
+            loop {
+                tx.send(Event::Tick).unwrap();
+                thread::sleep(Duration::from_millis(cli.tick_rate));
+            }
+        });
+    }*/
+
     /*let cursor_screen = AlternateScreen::to_alternate(true)?;
     let mut cursor_backend = CrosstermBackend::with_alternate_screen(cursor_screen)?;
 */
     let mut z = 0;
+    let mut p = 'n';
     loop {
+        //println!("Console out: {}", z);
         z = z + 1;
+
+        let x = terminal.get_cursor();
+        let x = match x {
+            Ok(data) => data,
+            Err(error) => (0,0),
+        };
+
+
         terminal.draw(|mut f| {
+            //Creates vertical device for footer
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
                 .constraints(
                     [
-                        // Constraint::Percentage(50),
-                        // Constraint::Percentage(20),
-                        // Constraint::Percentage(20),
-                        // Constraint::Percentage(20),
-                        // Constraint::Percentage(10),
                         Constraint::Min(10),
                         Constraint::Length(4),
                     ].as_ref()
@@ -92,16 +154,18 @@ fn main() -> Result<(), failure::Error> {
 
             let body = chunks[0];
 
+            //Divides top half into left and right
             let panes = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(body);
 
+            //Creates space for Memory and register status windows
             let left_pane = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Min(3), Constraint::Length(10)].as_ref())
+                .constraints([Constraint::Min(6), Constraint::Length(10)].as_ref())
                 .split(panes[0]);
 
             Block::default()
@@ -114,6 +178,7 @@ fn main() -> Result<(), failure::Error> {
                  .borders(Borders::ALL)
                  .render(&mut f, left_pane[1]);
 
+            //Creates console output + IO
             let right_pane = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
@@ -141,6 +206,7 @@ fn main() -> Result<(), failure::Error> {
                  .borders(Borders::ALL)
                  .render(&mut f, right_pane[1]);
 
+            //Further breakdown of IO
             let io_panel = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
@@ -179,7 +245,9 @@ fn main() -> Result<(), failure::Error> {
                  .borders(Borders::ALL)
                  .render(&mut f, timers_n_clock[1]);
 
+            //TEXT BELOW HERE
 
+            //Footer Text
             let text = [
                 Text::styled("To control the TUI, you can use S to Step through instructions, P to Pause, and R to Run, or click the appropriate button", Style::default().modifier(Modifier::BOLD))
             ];
@@ -193,16 +261,80 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, chunks[1]);
     
-            /*let x = cursor_backend.get_cursor();
-            let x = match x {
-                Ok(data) => data,
-                Err(error) => (0,0),
-            };*/
+            //Register Status Text
+            //let regs = Control::get_registers_and_pc();
+            let regsPC: ([Word; 9], Word) = ([1,2,3,4,5,6,7,8,9], 10);
+            let (regs, pc) = regsPC;
+
             let text = [
-                //Text::styled(format!("X position: {}\n", x.0), Style::default().modifier(Modifier::BOLD)),
-                //Text::styled(format!("Y position: {}\n", x.1), Style::default().modifier(Modifier::BOLD)),
-                Text::styled(format!("{}", z), Style::default().modifier(Modifier::BOLD))
+                Text::raw(format!("R0:  {:#018b} {:#06x} {:#05}\n", regs[0], regs[0], regs[0])),
+                Text::raw(format!("R1:  {:#018b} {:#06x} {:#05}\n", regs[1], regs[1], regs[1])),
+                Text::raw(format!("R2:  {:#018b} {:#06x} {:#05}\n", regs[2], regs[2], regs[2])),
+                Text::raw(format!("R3:  {:#018b} {:#06x} {:#05}\n", regs[3], regs[3], regs[3])),
+                Text::raw(format!("R4:  {:#018b} {:#06x} {:#05}\n", regs[4], regs[4], regs[4]))
             ];
+
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title("Registers + PC + PSR")
+                            .title_style(Style::default().fg(Color::Blue).modifier(Modifier::BOLD)),
+                )
+                .wrap(true)
+                .render(&mut f, left_pane[1]);
+
+            let right_regs = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(1)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .split(left_pane[1]);
+
+            let text = [
+                Text::raw(format!("R5:  {:#018b} {:#06x} {:#05}\n", regs[5], regs[5], regs[5])),
+                Text::raw(format!("R6:  {:#018b} {:#06x} {:#05}\n", regs[6], regs[6], regs[6])),
+                Text::raw(format!("R7:  {:#018b} {:#06x} {:#05}\n", regs[7], regs[7], regs[7])),
+                Text::raw(format!("PSR: {:#018b} {:#06x} {:#05}\n", regs[8], regs[8], regs[8])),
+                Text::raw(format!("PC:  {:#018b} {:#06x} {:#05}\n", pc, pc, pc))
+            ];
+
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::NONE)
+                )
+                .wrap(true)
+                .render(&mut f, right_regs[1]);
+
+
+            //Memory
+            let mut mem: [Word; 50] = [0; 50];
+            let mut x: u16 = 0;
+            while x != 50 {
+                //mem[x as usize] = read_word(pc-2+x);
+                mem[x as usize] = (x+1) * 2;
+                x = x + 1;
+            }
+
+            
+            let mut s =  String::from("");
+            x = 0;
+            while x != 50 {
+                //mem[x as usize] = read_word(pc-2+x);
+                s.push_str(&format!("{:#06x} {:#018b} {:#06x} {:#05}\n", pc-2+x, mem[x as usize], mem[x as usize], mem[x as usize]));
+                x = x + 1;
+            }
+
+            let text = [
+                Text::raw(s)
+            ];
+
+            /*let text = [
+                Text::styled(format!("X position: {}\n", x.0), Style::default().modifier(Modifier::BOLD)),
+                Text::styled(format!("Y position: {}\n", x.1), Style::default().modifier(Modifier::BOLD)),
+                Text::styled(format!("Prev char: {}\n", p), Style::default().modifier(Modifier::BOLD)), 
+                Text::styled(format!("{}\n", z), Style::default().modifier(Modifier::BOLD))
+            ];*/
 
             Paragraph::new(text.iter())
                 .block(
@@ -214,13 +346,96 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, left_pane[0]);
             
+            //IO
+
+            //GPIO
+
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title("GPIO")
+                            .title_style(Style::default().fg(Color::Green).modifier(Modifier::BOLD)),
+                )
+                .wrap(true)
+                .render(&mut f, io_panel[0]);
+
+            let right_GPIO = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(1)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .split(io_panel[0]);
+
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::NONE)
+                )
+                .wrap(true)
+                .render(&mut f, right_GPIO[1]);
+
+            //ADC
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title("GPIO")
+                            .title_style(Style::default().fg(Color::Green).modifier(Modifier::BOLD)),
+                )
+                .wrap(true)
+                .render(&mut f, io_panel[1]);
+
+            //PWM
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title("GPIO")
+                            .title_style(Style::default().fg(Color::Green).modifier(Modifier::BOLD)),
+                )
+                .wrap(true)
+                .render(&mut f, io_panel[2]);
+
+            //Timers
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title("GPIO")
+                            .title_style(Style::default().fg(Color::Green).modifier(Modifier::BOLD)),
+                )
+                .wrap(true)
+                .render(&mut f, timers_n_clock[0]);
+
+            //Clock
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title("GPIO")
+                            .title_style(Style::default().fg(Color::Green).modifier(Modifier::BOLD)),
+                )
+                .wrap(true)
+                .render(&mut f, timers_n_clock[1]);
             
         })?;
+        
+        /*match rx.recv()? {
+            Event::Input(event) => match event {
+                KeyEvent::Char(c) => p = c,/*app.on_key(c),
+                KeyEvent::Left => app.on_left(),
+                KeyEvent::Up => app.on_up(),
+                KeyEvent::Right => app.on_right(),
+                KeyEvent::Down => app.on_down(),*/
+                _ => {p = 'f';
+                println!("Hello");}
+            },
+            Event::Tick => {
+                //println!("Hello");
+                //app.on_tick();
+            }
+        }*/
     }
-    
-
-    
-    std::thread::sleep(std::time::Duration::from_secs(10));
 
     Ok(())
 }
