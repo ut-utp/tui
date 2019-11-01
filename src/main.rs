@@ -57,7 +57,7 @@ use tui::backend::{Backend};
 use std::io::stdout;
 
 use lc3_isa::{Addr, Word, Instruction,  Reg};
-use lc3_traits::control::Control;
+use lc3_traits::control::{Control,State};
 
 use std::convert::TryInto;
 
@@ -326,7 +326,7 @@ fn main() -> Result<(), failure::Error> {
             let mut x: u16 = 0;
             while x != 50 {
                 //mem[x as usize] = Control::read_word(pc-2+x);
-                mem[x as usize] = 0xA000 + (x+1) * 2;
+                mem[x as usize] = (0x1000*((x+z)%16)) + ((x+z)+1) * 2;
                 x = x + 1;
             }
 
@@ -359,6 +359,7 @@ fn main() -> Result<(), failure::Error> {
             //IO
 
             //GPIO
+            //let GPIO: [Word; 4] = Control::get_gpio_reading();
             let GPIO: [Word; 4] = [100; 4];
 
             let text = [
@@ -396,7 +397,7 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, right_GPIO[1]);
 
             //ADC
-
+            //let ADC: [Word, 2] = Control::get_adc_reading();
             let ADC: [Word; 2] = [200, 300];
 
             let text = [
@@ -432,6 +433,7 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, right_ADC[1]);
 
             //PWM
+            //let PWM: [Word; 2] = Control::get_pwm_config();
             let PWM: [Word; 2] = [5000, 3000];
             let text = [
                 Text::raw(format!("PWM 0:   {:#018b} {:#06x} {:#05}\n", PWM[0], PWM[0], PWM[0]))
@@ -466,11 +468,16 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, right_PWM[1]);
 
             //Timers
+            //let timer_state = get_timer_states();
+            //let timer = Control::get_timer_config();
+            let timer_state = State::Paused;
             let timer = 30000;
 
-            let text = [
-                Text::raw(format!("_        {:#018b} {:#06x} {:#05}\n", timer, timer, timer))
-            ];
+            let text = match timer_state {
+                State::Paused => [Text::raw(format!("Timer Disabled"))],
+                State::RunningUntilEvent => [Text::raw(format!("_        {:#018b} {:#06x} {:#05}\n", timer, timer, timer))],
+            };
+            
 
             Paragraph::new(text.iter())
                 .block(
@@ -483,7 +490,7 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, timers_n_clock[0]);
 
             //Clock
-
+            //let clock = Control::get_clock();
             let clock = 20000;
             
             let text = [
