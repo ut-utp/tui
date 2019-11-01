@@ -56,9 +56,12 @@ use tui::backend::{Backend};
 
 use std::io::stdout;
 
-use lc3_isa::{Addr, Word};
+use lc3_isa::{Addr, Word, Instruction,  Reg};
 use lc3_traits::control::Control;
-/*use std::sync::mpsc;
+
+use std::convert::TryInto;
+
+use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
@@ -70,7 +73,7 @@ enum Event<I> {
 struct Cli {
     tick_rate: u64,
     log: bool,
-}*/
+}
 
 
 fn main() -> Result<(), failure::Error> {
@@ -79,7 +82,7 @@ fn main() -> Result<(), failure::Error> {
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    /*let cli = Cli{
+    let cli = Cli{
         tick_rate: 250,
         log: true,
     };
@@ -116,13 +119,9 @@ fn main() -> Result<(), failure::Error> {
                 thread::sleep(Duration::from_millis(cli.tick_rate));
             }
         });
-    }*/
+    }
 
-    /*let cursor_screen = AlternateScreen::to_alternate(true)?;
-    let mut cursor_backend = CrosstermBackend::with_alternate_screen(cursor_screen)?;
-*/
     let mut z = 0;
-    let mut p = 'n';
     loop {
         //println!("Console out: {}", z);
         z = z + 1;
@@ -132,6 +131,23 @@ fn main() -> Result<(), failure::Error> {
             Ok(data) => data,
             Err(error) => (0,0),
         };
+
+        /*match rx.recv()? {
+            Event::Input(event) => match event {
+                KeyEvent::Char(c) => {
+                    match c{
+                        's' => Control::step(),
+                        'p' => Control::pause(),
+                        'r' => Control::run_until_event(),
+                        _ => {}
+                    }
+                }
+                _ => {}
+            },
+            Event::Tick => {
+                println!("z");
+            }
+        }*/
 
 
         terminal.draw(|mut f| {
@@ -309,8 +325,8 @@ fn main() -> Result<(), failure::Error> {
             let mut mem: [Word; 50] = [0; 50];
             let mut x: u16 = 0;
             while x != 50 {
-                //mem[x as usize] = read_word(pc-2+x);
-                mem[x as usize] = (x+1) * 2;
+                //mem[x as usize] = Control::read_word(pc-2+x);
+                mem[x as usize] = 0xA000 + (x+1) * 2;
                 x = x + 1;
             }
 
@@ -318,21 +334,17 @@ fn main() -> Result<(), failure::Error> {
             let mut s =  String::from("");
             x = 0;
             while x != 50 {
-                //mem[x as usize] = read_word(pc-2+x);
-                s.push_str(&format!("{:#06x} {:#018b} {:#06x} {:#05}\n", pc-2+x, mem[x as usize], mem[x as usize], mem[x as usize]));
+                let inst: Instruction = match mem[x as usize].try_into(){
+                    Ok(data) => data,
+                    Err(error) => Instruction::AddReg{dr: Reg::R0, sr1: Reg::R0, sr2: Reg::R0,},
+                };
+                s.push_str(&format!("{:#06x} {:#018b} {:#06x} {:#05}    {}\n", pc-2+x, mem[x as usize], mem[x as usize], mem[x as usize], inst));
                 x = x + 1;
             }
 
             let text = [
                 Text::raw(s)
             ];
-
-            /*let text = [
-                Text::styled(format!("X position: {}\n", x.0), Style::default().modifier(Modifier::BOLD)),
-                Text::styled(format!("Y position: {}\n", x.1), Style::default().modifier(Modifier::BOLD)),
-                Text::styled(format!("Prev char: {}\n", p), Style::default().modifier(Modifier::BOLD)), 
-                Text::styled(format!("{}\n", z), Style::default().modifier(Modifier::BOLD))
-            ];*/
 
             Paragraph::new(text.iter())
                 .block(
@@ -489,27 +501,7 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, timers_n_clock[1]);
             
         })?;
-        
-        /*match rx.recv()? {
-            Event::Input(event) => match event {
-                KeyEvent::Char(c) => p = c,/*app.on_key(c),
-                KeyEvent::Left => app.on_left(),
-                KeyEvent::Up => app.on_up(),
-                KeyEvent::Right => app.on_right(),
-                KeyEvent::Down => app.on_down(),*/
-                _ => {p = 'f';
-                println!("Hello");}
-            },
-            Event::Tick => {
-                //println!("Hello");
-                //app.on_tick();
-            }
-        }*/
     }
 
     Ok(())
 }
-
-// fn main() {
-//     println!("Hello, world!");
-// }
