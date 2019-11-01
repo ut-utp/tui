@@ -277,7 +277,7 @@ fn main() -> Result<(), failure::Error> {
 
             //Register Status Text
             //let regs = Control::get_registers_and_pc();
-            let regsPC: ([Word; 9], Word) = ([1,2,3,4,5,6,7,8,9], 10);
+            let regsPC: ([Word; 9], Word) = ([1,2,3,4,5,6,7,8,9], 2000+z);
             let (regs, pc) = regsPC;
 
             let text = [
@@ -359,13 +359,21 @@ fn main() -> Result<(), failure::Error> {
             //IO
 
             //GPIO
+            //let GPIO_states: [States; 4] = Control::get_gpio_states();
             //let GPIO: [Word; 4] = Control::get_gpio_reading();
+            let GPIO_states: [State; 4] = [State::Paused, State::RunningUntilEvent, State::RunningUntilEvent, State::Paused];
             let GPIO: [Word; 4] = [100; 4];
 
-            let text = [
-                Text::raw(format!("GPIO 0:  {:#018b} {:#06x} {:#05}\n", GPIO[0], GPIO[0], GPIO[0])),
-                Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1]))
-            ];
+            let t1 = match GPIO_states[0] {
+                State::Paused => Text::raw(format!("GPIO 0:  Disabled\n")),
+                State::RunningUntilEvent => Text::raw(format!("GPIO 0:  {:#018b} {:#06x} {:#05}\n", GPIO[0], GPIO[0], GPIO[0])),
+            };
+            let t2 = match GPIO_states[1] {
+                State::Paused => Text::raw(format!("GPIO 1:  Disabled")),
+                State::RunningUntilEvent => Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1])),
+            };
+
+            let text = [t1,t2]; 
 
             Paragraph::new(text.iter())
                 .block(
@@ -377,10 +385,16 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, io_panel[0]);
 
-            let text = [
-                Text::raw(format!("GPIO 2:  {:#018b} {:#06x} {:#05}\n", GPIO[2], GPIO[2], GPIO[2])),
-                Text::raw(format!("GPIO 3:  {:#018b} {:#06x} {:#05}\n", GPIO[3], GPIO[3], GPIO[3]))
-            ];
+            let t1 = match GPIO_states[2] {
+                State::Paused => Text::raw(format!("GPIO 2:  Disabled\n")),
+                State::RunningUntilEvent => Text::raw(format!("GPIO 2:  {:#018b} {:#06x} {:#05}\n", GPIO[2], GPIO[2], GPIO[2])),
+            };
+            let t2 = match GPIO_states[3] {
+                State::Paused => Text::raw(format!("GPIO 3:  Disabled")),
+                State::RunningUntilEvent => Text::raw(format!("GPIO 3:  {:#018b} {:#06x} {:#05}\n", GPIO[3], GPIO[3], GPIO[3])),
+            };
+
+            let text = [t1,t2];
 
             let right_GPIO = Layout::default()
                 .direction(Direction::Horizontal)
@@ -397,12 +411,15 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, right_GPIO[1]);
 
             //ADC
+            //let ADC_states: [States; 2] = Control::get_adc_states();
             //let ADC: [Word, 2] = Control::get_adc_reading();
+            let ADC_states: [State; 2] = [State::RunningUntilEvent, State::Paused];
             let ADC: [Word; 2] = [200, 300];
 
-            let text = [
-                Text::raw(format!("ADC 0:   {:#018b} {:#06x} {:#05}\n", ADC[0], ADC[0], ADC[0]))
-            ];
+            let text = match ADC_states[0] {
+                State::Paused => [Text::raw(format!("ADC 0:   Disabled"))],
+                State::RunningUntilEvent => [Text::raw(format!("ADC 0:   {:#018b} {:#06x} {:#05}\n", ADC[0], ADC[0], ADC[0]))],
+            };
 
             Paragraph::new(text.iter())
                 .block(
@@ -420,9 +437,10 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(io_panel[1]);
 
-            let text = [
-                Text::raw(format!("ADC 1:   {:#018b} {:#06x} {:#05}\n", ADC[1], ADC[1], ADC[1]))
-            ];
+            let text = match ADC_states[1] {
+                State::Paused => [Text::raw(format!("ADC 1:   Disabled"))],
+                State::RunningUntilEvent => [Text::raw(format!("ADC 1:   {:#018b} {:#06x} {:#05}\n", ADC[1], ADC[1], ADC[1]))],
+            };
 
             Paragraph::new(text.iter())
                 .block(
@@ -433,11 +451,15 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, right_ADC[1]);
 
             //PWM
-            //let PWM: [Word; 2] = Control::get_pwm_config();
+            //let PWM_state: [State; 2] = Control::get_pwm_states();
+            //let PWM: [Word; 2] = Control::get_pwm_config()
+            let PWM_states: [State; 2] = [State::Paused, State::RunningUntilEvent];
             let PWM: [Word; 2] = [5000, 3000];
-            let text = [
-                Text::raw(format!("PWM 0:   {:#018b} {:#06x} {:#05}\n", PWM[0], PWM[0], PWM[0]))
-            ];
+
+            let text = match PWM_states[0] {
+                State::Paused => [Text::raw(format!("PWM 0:   Disabled"))],
+                State::RunningUntilEvent => [Text::raw(format!("PWM 0:   {:#018b} {:#06x} {:#05}\n", PWM[0], PWM[0], PWM[0]))],
+            };
 
             Paragraph::new(text.iter())
                 .block(
@@ -455,9 +477,10 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(io_panel[2]);
 
-            let text = [
-                Text::raw(format!("PWM 1:   {:#018b} {:#06x} {:#05}\n", PWM[1], PWM[1], PWM[1]))
-            ];
+            let text = match PWM_states[1] {
+                State::Paused => [Text::raw(format!("PWM 1:   Disabled"))],
+                State::RunningUntilEvent => [Text::raw(format!("PWM 1:   {:#018b} {:#06x} {:#05}\n", PWM[1], PWM[1], PWM[1]))],
+            };
 
             Paragraph::new(text.iter())
                 .block(
@@ -470,11 +493,11 @@ fn main() -> Result<(), failure::Error> {
             //Timers
             //let timer_state = get_timer_states();
             //let timer = Control::get_timer_config();
-            let timer_state = State::Paused;
+            let timer_state = if (z%40 > 20) {State::Paused} else {State::RunningUntilEvent};
             let timer = 30000;
 
             let text = match timer_state {
-                State::Paused => [Text::raw(format!("Timer Disabled"))],
+                State::Paused => [Text::raw(format!("Timer:   Disabled"))],
                 State::RunningUntilEvent => [Text::raw(format!("_        {:#018b} {:#06x} {:#05}\n", timer, timer, timer))],
             };
             
@@ -491,7 +514,7 @@ fn main() -> Result<(), failure::Error> {
 
             //Clock
             //let clock = Control::get_clock();
-            let clock = 20000;
+            let clock = z;
             
             let text = [
                 Text::raw(format!("{:#018b} {:#06x} {:#05}\n", clock, clock, clock))
