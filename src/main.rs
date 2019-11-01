@@ -166,14 +166,14 @@ fn main() -> Result<(), failure::Error> {
             let left_pane = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Min(6), Constraint::Length(10)].as_ref())
+                .constraints([Constraint::Min(6), Constraint::Length(7)].as_ref())
                 .split(panes[0]);
 
             //Creates console output + IO
             let right_pane = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Min(13), Constraint::Length(15)].as_ref())
+                .constraints([Constraint::Min(13), Constraint::Length(12)].as_ref())
                 .split(panes[1]);
 
             let console = Layout::default()
@@ -201,7 +201,7 @@ fn main() -> Result<(), failure::Error> {
             let io_panel = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Length(4), Constraint::Length(3), Constraint::Length(3), Constraint::Length(3)].as_ref())
+                .constraints([Constraint::Length(3), Constraint::Length(2), Constraint::Length(2), Constraint::Length(2)].as_ref())
                 .split(right_pane[1]);
 
             
@@ -347,6 +347,12 @@ fn main() -> Result<(), failure::Error> {
             //IO
 
             //GPIO
+            let GPIO: [Word; 4] = [100; 4];
+
+            let text = [
+                Text::raw(format!("GPIO 0:  {:#018b} {:#06x} {:#05}\n", GPIO[0], GPIO[0], GPIO[0])),
+                Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1]))
+            ];
 
             Paragraph::new(text.iter())
                 .block(
@@ -357,6 +363,11 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, io_panel[0]);
+
+            let text = [
+                Text::raw(format!("GPIO 2:  {:#018b} {:#06x} {:#05}\n", GPIO[2], GPIO[2], GPIO[2])),
+                Text::raw(format!("GPIO 3:  {:#018b} {:#06x} {:#05}\n", GPIO[3], GPIO[3], GPIO[3]))
+            ];
 
             let right_GPIO = Layout::default()
                 .direction(Direction::Horizontal)
@@ -373,6 +384,13 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, right_GPIO[1]);
 
             //ADC
+
+            let ADC: [Word; 2] = [200, 300];
+
+            let text = [
+                Text::raw(format!("ADC 0:   {:#018b} {:#06x} {:#05}\n", ADC[0], ADC[0], ADC[0]))
+            ];
+
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
@@ -383,7 +401,30 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, io_panel[1]);
 
+            let right_ADC = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(0)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .split(io_panel[1]);
+
+            let text = [
+                Text::raw(format!("ADC 1:   {:#018b} {:#06x} {:#05}\n", ADC[1], ADC[1], ADC[1]))
+            ];
+
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::TOP | Borders::RIGHT)
+                )
+                .wrap(true)
+                .render(&mut f, right_ADC[1]);
+
             //PWM
+            let PWM: [Word; 2] = [5000, 3000];
+            let text = [
+                Text::raw(format!("PWM 0:   {:#018b} {:#06x} {:#05}\n", PWM[0], PWM[0], PWM[0]))
+            ];
+
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
@@ -394,7 +435,31 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, io_panel[2]);
 
+            let right_PWM = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(0)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .split(io_panel[2]);
+
+            let text = [
+                Text::raw(format!("PWM 1:   {:#018b} {:#06x} {:#05}\n", PWM[1], PWM[1], PWM[1]))
+            ];
+
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::TOP | Borders::RIGHT)
+                )
+                .wrap(true)
+                .render(&mut f, right_PWM[1]);
+
             //Timers
+            let timer = 30000;
+
+            let text = [
+                Text::raw(format!("_        {:#018b} {:#06x} {:#05}\n", timer, timer, timer))
+            ];
+
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
@@ -406,6 +471,13 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, timers_n_clock[0]);
 
             //Clock
+
+            let clock = 20000;
+            
+            let text = [
+                Text::raw(format!("{:#018b} {:#06x} {:#05}\n", clock, clock, clock))
+            ];
+
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
