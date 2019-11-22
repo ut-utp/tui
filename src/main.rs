@@ -398,10 +398,12 @@ fn main() -> Result<(), failure::Error> {
             let t1 = match GPIO_states[0] {
                 State::Paused => Text::raw(format!("GPIO 0:  Disabled\n")),
                 State::RunningUntilEvent => Text::raw(format!("GPIO 0:  {:#018b} {:#06x} {:#05}\n", GPIO[0], GPIO[0], GPIO[0])),
+                _=> {Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1]))},
             };
             let t2 = match GPIO_states[1] {
                 State::Paused => Text::raw(format!("GPIO 1:  Disabled")),
                 State::RunningUntilEvent => Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1])),
+                _=> {Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1]))},
             };
 
             let text = [t1,t2]; 
@@ -419,10 +421,12 @@ fn main() -> Result<(), failure::Error> {
             let t1 = match GPIO_states[2] {
                 State::Paused => Text::raw(format!("GPIO 2:  Disabled\n")),
                 State::RunningUntilEvent => Text::raw(format!("GPIO 2:  {:#018b} {:#06x} {:#05}\n", GPIO[2], GPIO[2], GPIO[2])),
+                _=> {Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1]))},
             };
             let t2 = match GPIO_states[3] {
                 State::Paused => Text::raw(format!("GPIO 3:  Disabled")),
                 State::RunningUntilEvent => Text::raw(format!("GPIO 3:  {:#018b} {:#06x} {:#05}\n", GPIO[3], GPIO[3], GPIO[3])),
+                _=> {Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1]))},
             };
 
             let text = [t1,t2];
@@ -450,6 +454,7 @@ fn main() -> Result<(), failure::Error> {
             let text = match ADC_states[0] {
                 State::Paused => [Text::raw(format!("ADC 0:   Disabled"))],
                 State::RunningUntilEvent => [Text::raw(format!("ADC 0:   {:#018b} {:#06x} {:#05}\n", ADC[0], ADC[0], ADC[0]))],
+                _=> {[Text::raw(format!("ADC 0:   {:#018b} {:#06x} {:#05}\n", ADC[0], ADC[0], ADC[0]))]},
             };
 
             Paragraph::new(text.iter())
@@ -471,6 +476,7 @@ fn main() -> Result<(), failure::Error> {
             let text = match ADC_states[1] {
                 State::Paused => [Text::raw(format!("ADC 1:   Disabled"))],
                 State::RunningUntilEvent => [Text::raw(format!("ADC 1:   {:#018b} {:#06x} {:#05}\n", ADC[1], ADC[1], ADC[1]))],
+                _=> {[Text::raw(format!("ADC 1:   {:#018b} {:#06x} {:#05}\n", ADC[1], ADC[1], ADC[1]))]}
             };
 
             Paragraph::new(text.iter())
@@ -490,6 +496,7 @@ fn main() -> Result<(), failure::Error> {
             let text = match PWM_states[0] {
                 State::Paused => [Text::raw(format!("PWM 0:   Disabled"))],
                 State::RunningUntilEvent => [Text::raw(format!("PWM 0:   {:#018b} {:#06x} {:#05}\n", PWM[0], PWM[0], PWM[0]))],
+                _=> { [Text::raw(format!("PWM 0:   {:#018b} {:#06x} {:#05}\n", PWM[0], PWM[0], PWM[0]))]}
             };
 
             Paragraph::new(text.iter())
@@ -511,6 +518,7 @@ fn main() -> Result<(), failure::Error> {
             let text = match PWM_states[1] {
                 State::Paused => [Text::raw(format!("PWM 1:   Disabled"))],
                 State::RunningUntilEvent => [Text::raw(format!("PWM 1:   {:#018b} {:#06x} {:#05}\n", PWM[1], PWM[1], PWM[1]))],
+                _=> {[Text::raw(format!("PWM 1:   {:#018b} {:#06x} {:#05}\n", PWM[1], PWM[1], PWM[1]))]}
             };
 
             Paragraph::new(text.iter())
@@ -530,6 +538,7 @@ fn main() -> Result<(), failure::Error> {
             let text = match timer_state {
                 State::Paused => [Text::raw(format!("Timer:   Disabled"))],
                 State::RunningUntilEvent => [Text::raw(format!("_        {:#018b} {:#06x} {:#05}\n", timer, timer, timer))],
+                _=> {[Text::raw(format!("_        {:#018b} {:#06x} {:#05}\n", timer, timer, timer))]}
             };
             
 
