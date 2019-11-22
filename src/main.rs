@@ -87,6 +87,26 @@ struct Cli {
 }*/
 
 fn main() -> Result<(), failure::Error> {
+    let file: String = format!("lc3.mem");
+
+    let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
+    // let mut memory = FileBackedMemoryShim::new(&file);
+    let memory = MemoryShim::default();
+
+    let mut interp: Interpreter<'_, _, PeripheralsShim<'_>> = InterpreterBuilder::new()//.build();
+        .with_defaults()
+        .with_memory(memory)
+        .with_interrupt_flags_by_ref(&_flags)
+        .build();
+
+    interp.reset();
+
+    let mut sim = Simulator::new(interp);
+
+    sim.set_pc(0xFE00);
+
+    // sim.reset();
+
     let screen = AlternateScreen::to_alternate(true)?;
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
     let mut terminal = Terminal::new(backend)?;
@@ -141,7 +161,7 @@ fn main() -> Result<(), failure::Error> {
 
     //let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
     //let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
-    
+
     /*let mut interpBuild = InterpreterBuilder::new()
         .with_defaults();*/
     //let mut interp: Interpreter<MemoryShim, PeripheralsShim> = interpBuild.build();
@@ -150,10 +170,12 @@ fn main() -> Result<(), failure::Error> {
         //.build();
 
     //let mut sim = Simulator::new(interp);
-    
+
     loop {
         //println!("Console out: {}", z);
         z = z + 1;
+
+        sim.step();
 
         if z == 10 {
             console_out.push_str("Startup Complete \n");
@@ -236,7 +258,7 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Min(10), Constraint::Length(3)].as_ref())
                 .split(right_pane[0]);
 
-            
+
 
             Block::default()
                  .title("> ")
@@ -255,7 +277,7 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Length(5), Constraint::Length(3), Constraint::Length(2), Constraint::Length(3)].as_ref())
                 .split(right_pane[1]);
 
-            
+
             let timers_n_clock = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
@@ -278,7 +300,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, chunks[1]);
-            
+
             //Footer Buttons
             let text = [
                 Text::styled("Step", Style::default().fg(Color::Blue).modifier(Modifier::BOLD))
@@ -359,11 +381,11 @@ fn main() -> Result<(), failure::Error> {
             let mut mem: [Word; 50] = [0; 50];
             let mut x: u16 = 0;
             while x != 50 {
-                mem[x as usize] = sim.read_word(pc-2+x);
+                mem[x as usize] = sim.read_word(pc.wrapping_sub(2).wrapping_add(x));
                 x = x + 1;
             }
 
-            
+
             let mut s =  String::from("");
             x = 0;
             while x != 50 {
@@ -376,7 +398,7 @@ fn main() -> Result<(), failure::Error> {
                 }else{
                     s.push_str("|    ");
                 }
-                s.push_str(&format!("{:#06x} {:#018b} {:#06x} {:#05}    {}\n", pc-2+x, mem[x as usize], mem[x as usize], mem[x as usize], inst));
+                s.push_str(&format!("{:#06x} {:#018b} {:#06x} {:#05}    {}\n", pc.wrapping_sub(2).wrapping_add(x), mem[x as usize], mem[x as usize], mem[x as usize], inst));
                 x = x + 1;
             }
 
@@ -393,9 +415,9 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, left_pane[0]);
-            
+
             //Console
-            
+
 
             let text = [
                 Text::raw(console_out.clone())
@@ -457,7 +479,7 @@ fn main() -> Result<(), failure::Error> {
                 _ => Text::raw(gpio),
             };
 
-            let text = [t0, t1, t2, t3]; 
+            let text = [t0, t1, t2, t3];
 
             Paragraph::new(text.iter())
                 .block(
@@ -509,7 +531,7 @@ fn main() -> Result<(), failure::Error> {
                 _ => Text::raw(gpio),
             };
 
-            let text = [t0, t1, t2, t3]; 
+            let text = [t0, t1, t2, t3];
 
             let right_GPIO = Layout::default()
                 .direction(Direction::Horizontal)
@@ -650,7 +672,7 @@ fn main() -> Result<(), failure::Error> {
                 TimerState::Repeated => Text::raw(format!("Repeat:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T1], timer[TimerId::T1], timer[TimerId::T1])),
                 TimerState::SingleShot => Text::raw(format!("Single:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T1], timer[TimerId::T1], timer[TimerId::T1])),
             };
-            
+
             let text = [t0,t1];
 
             Paragraph::new(text.iter())
@@ -666,7 +688,7 @@ fn main() -> Result<(), failure::Error> {
             //Clock
             let clock = sim.get_clock();
             //let clock = z;
-            
+
             let text = [
                 Text::raw(format!("{:#018b} {:#06x} {:#05}\n", clock, clock, clock))
             ];
@@ -680,7 +702,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, timers_n_clock[1]);
-            
+
         })?;
     }
 
