@@ -122,9 +122,21 @@ fn main() -> Result<(), failure::Error> {
     }
 
     let mut z = 0;
+    let mut console_out = String::from("");
+
     loop {
         //println!("Console out: {}", z);
         z = z + 1;
+
+        if z == 10 {
+            console_out.push_str("Startup Complete \n");
+        } else if z == 30 {
+            console_out.push_str("Hello\n");
+        } else if z == 50 {
+            console_out.push_str("New Line \n");
+        } else if z % 30 == 0 {
+            console_out.push_str("Mod 30 \n");
+        }
 
         let x = terminal.get_cursor();
         let x = match x {
@@ -198,10 +210,7 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Min(10), Constraint::Length(3)].as_ref())
                 .split(right_pane[0]);
 
-            Block::default()
-                 .title("Output")
-                 .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
-                 .render(&mut f, console[0]);
+            
 
             Block::default()
                  .title("> ")
@@ -338,6 +347,11 @@ fn main() -> Result<(), failure::Error> {
                     Ok(data) => data,
                     Err(error) => Instruction::AddReg{dr: Reg::R0, sr1: Reg::R0, sr2: Reg::R0,},
                 };
+                if x == 2{
+                    s.push_str("|--> ");
+                }else{
+                    s.push_str("|    ");
+                }
                 s.push_str(&format!("{:#06x} {:#018b} {:#06x} {:#05}    {}\n", pc-2+x, mem[x as usize], mem[x as usize], mem[x as usize], inst));
                 x = x + 1;
             }
@@ -356,6 +370,23 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, left_pane[0]);
             
+            //Console
+            
+
+            let text = [
+                Text::raw(console_out.clone())
+            ];
+
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
+                            .title("Output")
+                            .title_style(Style::default().fg(Color::Green)),
+                )
+                .wrap(true)
+                .render(&mut f, console[0]);
+
             //IO
 
             //GPIO
