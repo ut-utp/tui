@@ -43,32 +43,33 @@
 #![doc(test(attr(deny(rust_2018_idioms, warnings))))]
 #![doc(html_logo_url = "")] // TODO!
 
-
 use crossterm::{input, AlternateScreen, InputEvent, KeyEvent, RawScreen};
 
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
-use tui::widgets::{Widget, Block, Borders, Text, Paragraph};
-use tui::layout::{Layout, Constraint, Direction};
+use tui::backend::Backend;
+use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
-use tui::backend::{Backend};
+use tui::widgets::{Block, Borders, Paragraph, Text, Widget};
 
 use std::io::stdout;
 
-use lc3_isa::{Addr, Word, Instruction,  Reg};
-use lc3_traits::control::{Control,State};
-use lc3_traits::peripherals::adc::{AdcPinArr, AdcReadError, AdcState, AdcPin};
-use lc3_traits::peripherals::gpio::{GpioPinArr, GpioReadError, GpioState, GpioPin};
-use lc3_traits::peripherals::timers::{TimerArr, TimerState, TimerId};
-use lc3_traits::peripherals::pwm::{PwmPinArr, PwmState, PwmPin};
+use lc3_isa::{Addr, Instruction, Reg, Word};
+use lc3_traits::control::{Control, State};
+use lc3_traits::peripherals::adc::{AdcPin, AdcPinArr, AdcReadError, AdcState};
+use lc3_traits::peripherals::gpio::{GpioPin, GpioPinArr, GpioReadError, GpioState};
+use lc3_traits::peripherals::pwm::{PwmPin, PwmPinArr, PwmState};
+use lc3_traits::peripherals::timers::{TimerArr, TimerId, TimerState};
 
-
-use lc3_baseline_sim::interp::{InstructionInterpreter, InstructionInterpreterPeripheralAccess, MachineState, InterpreterBuilder, Interpreter, PeripheralInterruptFlags};
+use lc3_baseline_sim::interp::{
+    InstructionInterpreter, InstructionInterpreterPeripheralAccess, Interpreter,
+    InterpreterBuilder, MachineState, PeripheralInterruptFlags,
+};
 use lc3_baseline_sim::sim::Simulator;
 
 use lc3_shims::memory::{FileBackedMemoryShim, MemoryShim};
-use lc3_shims::peripherals::{PeripheralsShim};
+use lc3_shims::peripherals::PeripheralsShim;
 
 use std::convert::TryInto;
 
@@ -93,7 +94,7 @@ fn main() -> Result<(), failure::Error> {
     // let mut memory = FileBackedMemoryShim::new(&file);
     let memory = MemoryShim::default();
 
-    let mut interp: Interpreter<'_, _, PeripheralsShim<'_>> = InterpreterBuilder::new()//.build();
+    let mut interp: Interpreter<'_, _, PeripheralsShim<'_>> = InterpreterBuilder::new() //.build();
         .with_defaults()
         .with_memory(memory)
         .with_interrupt_flags_by_ref(&_flags)
@@ -118,41 +119,40 @@ fn main() -> Result<(), failure::Error> {
     };*/
 
     /*
-    //stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
-    let (tx, rx) = mpsc::channel();
-    {
-        let tx = tx.clone();
-        thread::spawn(move || {
-            let input = input();
-            let reader = input.read_sync();
-            for event in reader {
-                match event {
-                    InputEvent::Keyboard(key) => {
-                        if let Err(_) = tx.send(Event::Input(key.clone())) {
-                            return;
-                        }
-                        if key == KeyEvent::Char('q') {
-                            return;
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        });
-    }
-
-    {
-        let tx = tx.clone();
-        thread::spawn(move || {
+        //stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
+        let (tx, rx) = mpsc::channel();
+        {
             let tx = tx.clone();
-            loop {
-                tx.send(Event::Tick).unwrap();
-                thread::sleep(Duration::from_millis(cli.tick_rate));
-            }
-        });
-    }
-*/
+            thread::spawn(move || {
+                let input = input();
+                let reader = input.read_sync();
+                for event in reader {
+                    match event {
+                        InputEvent::Keyboard(key) => {
+                            if let Err(_) = tx.send(Event::Input(key.clone())) {
+                                return;
+                            }
+                            if key == KeyEvent::Char('q') {
+                                return;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            });
+        }
 
+        {
+            let tx = tx.clone();
+            thread::spawn(move || {
+                let tx = tx.clone();
+                loop {
+                    tx.send(Event::Tick).unwrap();
+                    thread::sleep(Duration::from_millis(cli.tick_rate));
+                }
+            });
+        }
+    */
 
     let mut z = 0;
     let mut console_out = String::from("");
@@ -163,11 +163,11 @@ fn main() -> Result<(), failure::Error> {
     //let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
 
     /*let mut interpBuild = InterpreterBuilder::new()
-        .with_defaults();*/
+    .with_defaults();*/
     //let mut interp: Interpreter<MemoryShim, PeripheralsShim> = interpBuild.build();
-        /*.with_memory(memory)*/
-        //.with_interrupt_flags_by_ref(&_flags)
-        //.build();
+    /*.with_memory(memory)*/
+    //.with_interrupt_flags_by_ref(&_flags)
+    //.build();
 
     //let mut sim = Simulator::new(interp);
 
