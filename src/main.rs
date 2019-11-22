@@ -43,21 +43,20 @@
 #![doc(test(attr(deny(rust_2018_idioms, warnings))))]
 #![doc(html_logo_url = "")] // TODO!
 
-
 use crossterm::{input, AlternateScreen, InputEvent, KeyEvent, RawScreen};
 
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
-use tui::widgets::{Widget, Block, Borders, Text, Paragraph};
-use tui::layout::{Layout, Constraint, Direction};
+use tui::backend::Backend;
+use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
-use tui::backend::{Backend};
+use tui::widgets::{Block, Borders, Paragraph, Text, Widget};
 
 use std::io::stdout;
 
-use lc3_isa::{Addr, Word, Instruction,  Reg};
-use lc3_traits::control::{Control,State};
+use lc3_isa::{Addr, Instruction, Reg, Word};
+use lc3_traits::control::{Control, State};
 
 use std::convert::TryInto;
 
@@ -75,14 +74,13 @@ struct Cli {
     log: bool,
 }
 
-
 fn main() -> Result<(), failure::Error> {
     let screen = AlternateScreen::to_alternate(true)?;
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    let cli = Cli{
+    let cli = Cli {
         tick_rate: 250,
         log: true,
     };
@@ -141,7 +139,7 @@ fn main() -> Result<(), failure::Error> {
         let x = terminal.get_cursor();
         let x = match x {
             Ok(data) => data,
-            Err(error) => (0,0),
+            Err(error) => (0, 0),
         };
 
         /*match rx.recv()? {
@@ -160,7 +158,6 @@ fn main() -> Result<(), failure::Error> {
                 println!("z");
             }
         }*/
-
 
         terminal.draw(|mut f| {
             //Creates vertical device for footer
@@ -210,7 +207,7 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Min(10), Constraint::Length(3)].as_ref())
                 .split(right_pane[0]);
 
-            
+
 
             Block::default()
                  .title("> ")
@@ -229,7 +226,7 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Length(3), Constraint::Length(2), Constraint::Length(2), Constraint::Length(2)].as_ref())
                 .split(right_pane[1]);
 
-            
+
             let timers_n_clock = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
@@ -252,7 +249,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, chunks[1]);
-            
+
             //Footer Buttons
             let text = [
                 Text::styled("Step", Style::default().fg(Color::Blue).modifier(Modifier::BOLD))
@@ -339,7 +336,7 @@ fn main() -> Result<(), failure::Error> {
                 x = x + 1;
             }
 
-            
+
             let mut s =  String::from("");
             x = 0;
             while x != 50 {
@@ -369,9 +366,9 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, left_pane[0]);
-            
+
             //Console
-            
+
 
             let text = [
                 Text::raw(console_out.clone())
@@ -404,7 +401,7 @@ fn main() -> Result<(), failure::Error> {
                 State::RunningUntilEvent => Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1])),
             };
 
-            let text = [t1,t2]; 
+            let text = [t1,t2];
 
             Paragraph::new(text.iter())
                 .block(
@@ -531,7 +528,7 @@ fn main() -> Result<(), failure::Error> {
                 State::Paused => [Text::raw(format!("Timer:   Disabled"))],
                 State::RunningUntilEvent => [Text::raw(format!("_        {:#018b} {:#06x} {:#05}\n", timer, timer, timer))],
             };
-            
+
 
             Paragraph::new(text.iter())
                 .block(
@@ -546,7 +543,7 @@ fn main() -> Result<(), failure::Error> {
             //Clock
             //let clock = Control::get_clock();
             let clock = z;
-            
+
             let text = [
                 Text::raw(format!("{:#018b} {:#06x} {:#05}\n", clock, clock, clock))
             ];
@@ -560,7 +557,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, timers_n_clock[1]);
-            
+
         })?;
     }
 
