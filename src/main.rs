@@ -77,7 +77,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-/*enum Event<I> {
+enum Event<I> {
     Input(I),
     Tick,
 }
@@ -85,14 +85,15 @@ use std::time::Duration;
 struct Cli {
     tick_rate: u64,
     log: bool,
-}*/
+}
 
 fn main() -> Result<(), failure::Error> {
-    let file: String = format!("lc3.mem");
+    let file: String = format!("test_prog.mem");
 
     let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
-    // let mut memory = FileBackedMemoryShim::new(&file);
-    let memory = MemoryShim::default();
+    //let mut memory = FileBackedMemoryShim::from(&file);
+    //let memory = MemoryShim::default();
+    let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
 
     let mut interp: Interpreter<'_, _, PeripheralsShim<'_>> = InterpreterBuilder::new() //.build();
         .with_defaults()
@@ -104,7 +105,7 @@ fn main() -> Result<(), failure::Error> {
 
     let mut sim = Simulator::new(interp);
 
-    sim.set_pc(0xFE00);
+    sim.set_pc(0x200);
 
     // sim.reset();
 
@@ -112,13 +113,17 @@ fn main() -> Result<(), failure::Error> {
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
-    /*
+    
     let cli = Cli{
         tick_rate: 250,
         log: true,
-    };*/
+    };
 
-    /*
+    let mut input_mode: bool = false;
+    let mut input_out = String::from("");
+    let mut console_out = String::from("");
+
+    let mut active: bool = true;
         //stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
         let (tx, rx) = mpsc::channel();
         {
@@ -133,6 +138,7 @@ fn main() -> Result<(), failure::Error> {
                                 return;
                             }
                             if key == KeyEvent::Char('q') {
+                                active = false;
                                 return;
                             }
                         }
@@ -152,39 +158,19 @@ fn main() -> Result<(), failure::Error> {
                 }
             });
         }
-    */
+    
 
-    let mut z = 0;
-    let mut console_out = String::from("");
 
-    //let file: String = format!("foo.mem");
+    console_out.push_str("Startup Complete \n");
 
-    //let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
-    //let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
+    let mut step = 0;
 
-    /*let mut interpBuild = InterpreterBuilder::new()
-    .with_defaults();*/
-    //let mut interp: Interpreter<MemoryShim, PeripheralsShim> = interpBuild.build();
-    /*.with_memory(memory)*/
-    //.with_interrupt_flags_by_ref(&_flags)
-    //.build();
+    let mut i = 0;
 
-    //let mut sim = Simulator::new(interp);
+    while active {
 
-    loop {
-        //println!("Console out: {}", z);
-        z = z + 1;
-
-        sim.step();
-
-        if z == 10 {
-            console_out.push_str("Startup Complete \n");
-        } else if z == 30 {
-            console_out.push_str("Hello\n");
-        } else if z == 50 {
-            console_out.push_str("New Line \n");
-        } else if z % 30 == 0 {
-            console_out.push_str("Mod 30 \n");
+        if step == 1 {
+            sim.step();
         }
 
         /*let x = terminal.get_cursor();
@@ -192,23 +178,42 @@ fn main() -> Result<(), failure::Error> {
             Ok(data) => data,
             Err(error) => (0,0),
         };
+        let x = format!("Cursor: {} {}\n", x.0, x.1);
+        console_out.push_str(&x);*/
+        
+        
 
         match rx.recv()? {
             Event::Input(event) => match event {
                 KeyEvent::Char(c) => {
-                    match c{
-                        's' => Control::step(),
-                        'p' => Control::pause(),
-                        'r' => Control::run_until_event(),
-                        _ => {}
+                    if input_mode == false{
+                        match c{
+                            's' => if step != 1 { sim.step(); },
+                            'p' => step = 0,
+                            'r' => step = 1,
+                            _ => {}
+                        }
+                    } else {
+                        let x = format!("{}", c);
+                        input_out.push_str(&x);
+                    }
+                }
+                KeyEvent::Insert => {
+                    if input_mode == false {
+                        input_mode == true;
+                    } else {
+                        input_mode == false;
+                        console_out.push_str("Input: ");
+                        console_out.push_str(&input_out.clone());
+                        console_out.push_str("\n");
+                        input_out = String::from("");
                     }
                 }
                 _ => {}
             },
             Event::Tick => {
-                println!("z");
             }
-        }*/
+        }
 
         terminal.draw(|mut f| {
             //Creates vertical device for footer
@@ -433,6 +438,20 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, console[0]);
 
+            let text = [
+                Text::raw(input_out.clone())
+            ];
+
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
+                            .title(">")
+                            .title_style(Style::default().fg(Color::Green)),
+                )
+                .wrap(true)
+                .render(&mut f, console[1]);
+
             //IO
 
             //GPIO
@@ -557,7 +576,7 @@ fn main() -> Result<(), failure::Error> {
             };
 
             let t0 = match ADC_states[AdcPin::A0] {
-                AdcState::Disabled => Text::raw(format!("ADC 0:   Disabled")),
+                AdcState::Disabled => Text::raw(format!("ADC 0:   Disabled\n")),
                 AdcState::Enabled => Text::raw(adc),
             };
 
@@ -567,7 +586,7 @@ fn main() -> Result<(), failure::Error> {
             };
 
             let t1 = match ADC_states[AdcPin::A1] {
-                AdcState::Disabled => Text::raw(format!("ADC 1:   Disabled")),
+                AdcState::Disabled => Text::raw(format!("ADC 1:   Disabled\n")),
                 AdcState::Enabled => Text::raw(adc),
             };
 
@@ -595,7 +614,7 @@ fn main() -> Result<(), failure::Error> {
             };
 
             let t0 = match ADC_states[AdcPin::A2] {
-                AdcState::Disabled => Text::raw(format!("ADC 2:   Disabled")),
+                AdcState::Disabled => Text::raw(format!("ADC 2:   Disabled\n")),
                 AdcState::Enabled => Text::raw(adc),
             };
 
@@ -605,7 +624,7 @@ fn main() -> Result<(), failure::Error> {
             };
 
             let t1 = match ADC_states[AdcPin::A3] {
-                AdcState::Disabled => Text::raw(format!("ADC 3:   Disabled")),
+                AdcState::Disabled => Text::raw(format!("ADC 3:   Disabled\n")),
                 AdcState::Enabled => Text::raw(adc),
             };
 
@@ -662,13 +681,13 @@ fn main() -> Result<(), failure::Error> {
             let timer = sim.get_timer_config();
 
             let t0 = match timer_state[TimerId::T0] {
-                TimerState::Disabled => Text::raw(format!("Timer:   Disabled")),
+                TimerState::Disabled => Text::raw(format!("Timer 1: Disabled\n")),
                 TimerState::Repeated => Text::raw(format!("Repeat:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T0], timer[TimerId::T0], timer[TimerId::T0])),
                 TimerState::SingleShot => Text::raw(format!("Single:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T0], timer[TimerId::T0], timer[TimerId::T0])),
             };
 
             let t1 = match timer_state[TimerId::T1] {
-                TimerState::Disabled => Text::raw(format!("Timer:   Disabled")),
+                TimerState::Disabled => Text::raw(format!("Timer 2: Disabled\n")),
                 TimerState::Repeated => Text::raw(format!("Repeat:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T1], timer[TimerId::T1], timer[TimerId::T1])),
                 TimerState::SingleShot => Text::raw(format!("Single:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T1], timer[TimerId::T1], timer[TimerId::T1])),
             };
@@ -687,7 +706,6 @@ fn main() -> Result<(), failure::Error> {
 
             //Clock
             let clock = sim.get_clock();
-            //let clock = z;
 
             let text = [
                 Text::raw(format!("{:#018b} {:#06x} {:#05}\n", clock, clock, clock))
