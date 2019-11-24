@@ -43,21 +43,33 @@
 #![doc(test(attr(deny(rust_2018_idioms, warnings))))]
 #![doc(html_logo_url = "")] // TODO!
 
-
 use crossterm::{input, AlternateScreen, InputEvent, KeyEvent, RawScreen};
 
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
-use tui::widgets::{Widget, Block, Borders, Text, Paragraph};
-use tui::layout::{Layout, Constraint, Direction};
+use tui::backend::Backend;
+use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
-use tui::backend::{Backend};
+use tui::widgets::{Block, Borders, Paragraph, Text, Widget};
 
 use std::io::stdout;
 
-use lc3_isa::{Addr, Word, Instruction,  Reg};
-use lc3_traits::control::{Control,State};
+use lc3_isa::{Addr, Instruction, Reg, Word};
+use lc3_traits::control::{Control, State};
+use lc3_traits::peripherals::adc::{AdcPin, AdcPinArr, AdcReadError, AdcState};
+use lc3_traits::peripherals::gpio::{GpioPin, GpioPinArr, GpioReadError, GpioState};
+use lc3_traits::peripherals::pwm::{PwmPin, PwmPinArr, PwmState};
+use lc3_traits::peripherals::timers::{TimerArr, TimerId, TimerState};
+
+use lc3_baseline_sim::interp::{
+    InstructionInterpreter, InstructionInterpreterPeripheralAccess, Interpreter,
+    InterpreterBuilder, MachineState, PeripheralInterruptFlags,
+};
+use lc3_baseline_sim::sim::Simulator;
+
+use lc3_shims::memory::{FileBackedMemoryShim, MemoryShim};
+use lc3_shims::peripherals::PeripheralsShim;
 
 use std::convert::TryInto;
 
@@ -75,92 +87,132 @@ struct Cli {
     log: bool,
 }
 
-
 fn main() -> Result<(), failure::Error> {
+    let file: String = format!("test_prog.mem");
+
+    let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
+    //let mut memory = FileBackedMemoryShim::from(&file);
+    //let memory = MemoryShim::default();
+    let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
+
+    let mut interp: Interpreter<'_, _, PeripheralsShim<'_>> = InterpreterBuilder::new() //.build();
+        .with_defaults()
+        .with_memory(memory)
+        .with_interrupt_flags_by_ref(&_flags)
+        .build();
+
+    interp.reset();
+
+    let mut sim = Simulator::new(interp);
+
+    sim.set_pc(0x3000);
+
+    // sim.reset();
+
     let screen = AlternateScreen::to_alternate(true)?;
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
-
+    
     let cli = Cli{
         tick_rate: 250,
         log: true,
     };
 
-    //stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
-    let (tx, rx) = mpsc::channel();
-    {
-        let tx = tx.clone();
-        thread::spawn(move || {
-            let input = input();
-            let reader = input.read_sync();
-            for event in reader {
-                match event {
-                    InputEvent::Keyboard(key) => {
-                        if let Err(_) = tx.send(Event::Input(key.clone())) {
-                            return;
-                        }
-                        if key == KeyEvent::Char('q') {
-                            return;
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        });
-    }
-
-    {
-        let tx = tx.clone();
-        thread::spawn(move || {
-            let tx = tx.clone();
-            loop {
-                tx.send(Event::Tick).unwrap();
-                thread::sleep(Duration::from_millis(cli.tick_rate));
-            }
-        });
-    }
-
-    let mut z = 0;
+    let mut input_mode: bool = false;
+    let mut input_out = String::from("");
     let mut console_out = String::from("");
 
-    loop {
-        //println!("Console out: {}", z);
-        z = z + 1;
-
-        if z == 10 {
-            console_out.push_str("Startup Complete \n");
-        } else if z == 30 {
-            console_out.push_str("Hello\n");
-        } else if z == 50 {
-            console_out.push_str("New Line \n");
-        } else if z % 30 == 0 {
-            console_out.push_str("Mod 30 \n");
+    let mut active: bool = true;
+        //stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
+        let (tx, rx) = mpsc::channel();
+        {
+            let tx = tx.clone();
+            thread::spawn(move || {
+                let input = input();
+                let reader = input.read_sync();
+                for event in reader {
+                    match event {
+                        InputEvent::Keyboard(key) => {
+                            if let Err(_) = tx.send(Event::Input(key.clone())) {
+                                return;
+                            }
+                            if key == KeyEvent::Char('q') {
+                                active = false;
+                                return;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            });
         }
 
-        let x = terminal.get_cursor();
+        {
+            let tx = tx.clone();
+            thread::spawn(move || {
+                let tx = tx.clone();
+                loop {
+                    tx.send(Event::Tick).unwrap();
+                    thread::sleep(Duration::from_millis(cli.tick_rate));
+                }
+            });
+        }
+    
+
+
+    console_out.push_str("Startup Complete \n");
+
+    let mut step = 0;
+
+    let mut i = 0;
+
+    while active {
+
+        if step == 1 {
+            sim.step();
+        }
+
+        /*let x = terminal.get_cursor();
         let x = match x {
             Ok(data) => data,
             Err(error) => (0,0),
         };
+        let x = format!("Cursor: {} {}\n", x.0, x.1);
+        console_out.push_str(&x);*/
+        
 
-        /*match rx.recv()? {
+        match rx.recv()? {
             Event::Input(event) => match event {
                 KeyEvent::Char(c) => {
-                    match c{
-                        's' => Control::step(),
-                        'p' => Control::pause(),
-                        'r' => Control::run_until_event(),
-                        _ => {}
+                    if input_mode == false{
+                        match c{
+                            's' => if step != 1 { sim.step(); },
+                            'p' => step = 0,
+                            'r' => step = 1,
+                            _ => {}
+                        }
+                    } else {
+                        let x = format!("{}", c);
+                        input_out.push_str(&x);
+                    }
+                }
+                KeyEvent::Insert => {
+                    if input_mode == false {
+                        input_mode = true;
+                    } else {
+                        input_mode = false;
+                        console_out.push_str("Input: ");
+                        console_out.push_str(&input_out.clone());
+                        console_out.push_str("\n");
+                        input_out = String::from("");
                     }
                 }
                 _ => {}
             },
             Event::Tick => {
-                println!("z");
             }
-        }*/
-
+        }
 
         terminal.draw(|mut f| {
             //Creates vertical device for footer
@@ -201,7 +253,7 @@ fn main() -> Result<(), failure::Error> {
             let right_pane = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Min(13), Constraint::Length(12)].as_ref())
+                .constraints([Constraint::Min(13), Constraint::Length(16)].as_ref())
                 .split(panes[1]);
 
             let console = Layout::default()
@@ -210,7 +262,7 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Min(10), Constraint::Length(3)].as_ref())
                 .split(right_pane[0]);
 
-            
+
 
             Block::default()
                  .title("> ")
@@ -226,10 +278,10 @@ fn main() -> Result<(), failure::Error> {
             let io_panel = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Length(3), Constraint::Length(2), Constraint::Length(2), Constraint::Length(2)].as_ref())
+                .constraints([Constraint::Length(5), Constraint::Length(3), Constraint::Length(2), Constraint::Length(3)].as_ref())
                 .split(right_pane[1]);
 
-            
+
             let timers_n_clock = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
@@ -252,7 +304,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, chunks[1]);
-            
+
             //Footer Buttons
             let text = [
                 Text::styled("Step", Style::default().fg(Color::Blue).modifier(Modifier::BOLD))
@@ -285,9 +337,8 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, buttons[3]);
 
             //Register Status Text
-            //let regs = Control::get_registers_and_pc();
-            let regsPC: ([Word; 9], Word) = ([1,2,3,4,5,6,7,8,9], 2000+z);
-            let (regs, pc) = regsPC;
+            let regs_psr_pc = sim.get_registers_psr_and_pc();
+            let (regs, psr, pc) = regs_psr_pc;
 
             let text = [
                 Text::raw(format!("R0:  {:#018b} {:#06x} {:#05}\n", regs[0], regs[0], regs[0])),
@@ -317,7 +368,7 @@ fn main() -> Result<(), failure::Error> {
                 Text::raw(format!("R5:  {:#018b} {:#06x} {:#05}\n", regs[5], regs[5], regs[5])),
                 Text::raw(format!("R6:  {:#018b} {:#06x} {:#05}\n", regs[6], regs[6], regs[6])),
                 Text::raw(format!("R7:  {:#018b} {:#06x} {:#05}\n", regs[7], regs[7], regs[7])),
-                Text::raw(format!("PSR: {:#018b} {:#06x} {:#05}\n", regs[8], regs[8], regs[8])),
+                Text::raw(format!("PSR: {:#018b} {:#06x} {:#05}\n", psr, psr, psr)),
                 Text::raw(format!("PC:  {:#018b} {:#06x} {:#05}\n", pc, pc, pc))
             ];
 
@@ -334,12 +385,11 @@ fn main() -> Result<(), failure::Error> {
             let mut mem: [Word; 50] = [0; 50];
             let mut x: u16 = 0;
             while x != 50 {
-                //mem[x as usize] = Control::read_word(pc-2+x);
-                mem[x as usize] = (0x1000*((x+z)%16)) + ((x+z)+1) * 2;
+                mem[x as usize] = sim.read_word(pc.wrapping_sub(2).wrapping_add(x));
                 x = x + 1;
             }
 
-            
+
             let mut s =  String::from("");
             x = 0;
             while x != 50 {
@@ -352,7 +402,7 @@ fn main() -> Result<(), failure::Error> {
                 }else{
                     s.push_str("|    ");
                 }
-                s.push_str(&format!("{:#06x} {:#018b} {:#06x} {:#05}    {}\n", pc-2+x, mem[x as usize], mem[x as usize], mem[x as usize], inst));
+                s.push_str(&format!("{:#06x} {:#018b} {:#06x} {:#05}    {}\n", pc.wrapping_sub(2).wrapping_add(x), mem[x as usize], mem[x as usize], mem[x as usize], inst));
                 x = x + 1;
             }
 
@@ -369,9 +419,9 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, left_pane[0]);
-            
+
             //Console
-            
+
 
             let text = [
                 Text::raw(console_out.clone())
@@ -387,26 +437,67 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, console[0]);
 
+            let text = [
+                Text::raw(input_out.clone())
+            ];
+
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
+                            .title(">")
+                            .title_style(Style::default().fg(Color::Green)),
+                )
+                .wrap(true)
+                .render(&mut f, console[1]);
+
             //IO
 
             //GPIO
-            //let GPIO_states: [States; 4] = Control::get_gpio_states();
-            //let GPIO: [Word; 4] = Control::get_gpio_reading();
-            let GPIO_states: [State; 4] = [State::Paused, State::RunningUntilEvent, State::RunningUntilEvent, State::Paused];
-            let GPIO: [Word; 4] = [100; 4];
+            let GPIO_states = sim.get_gpio_states();
+            let gpioin = sim.get_gpio_reading();
 
-            let t1 = match GPIO_states[0] {
-                State::Paused => Text::raw(format!("GPIO 0:  Disabled\n")),
-                State::RunningUntilEvent => Text::raw(format!("GPIO 0:  {:#018b} {:#06x} {:#05}\n", GPIO[0], GPIO[0], GPIO[0])),
-                _=> {Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1]))},
-            };
-            let t2 = match GPIO_states[1] {
-                State::Paused => Text::raw(format!("GPIO 1:  Disabled")),
-                State::RunningUntilEvent => Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1])),
-                _=> {Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1]))},
+            let gpio = match gpioin[GpioPin::G0]{
+                Ok(val) => format!("GPIO 0:  {}\n", val),
+                Err(e) => format!("GPIO 0:  -\n"),
             };
 
-            let text = [t1,t2]; 
+            let t0 = match GPIO_states[GpioPin::G0] {
+                GpioState::Disabled => Text::raw(format!("GPIO 0:  Disabled\n")),
+                _ => Text::raw(gpio),
+            };
+
+            let gpio = match gpioin[GpioPin::G1]{
+                Ok(val) => format!("GPIO 1:  {}\n", val),
+                Err(e) => format!("GPIO 1:  -\n"),
+            };
+
+            let t1 = match GPIO_states[GpioPin::G1] {
+                GpioState::Disabled => Text::raw(format!("GPIO 1:  Disabled\n")),
+                _ => Text::raw(gpio),
+            };
+
+            let gpio = match gpioin[GpioPin::G2]{
+                Ok(val) => format!("GPIO 2:  {}\n", val),
+                Err(e) => format!("GPIO 2:  -\n"),
+            };
+
+            let t2 = match GPIO_states[GpioPin::G2] {
+                GpioState::Disabled => Text::raw(format!("GPIO 2:  Disabled\n")),
+                _ => Text::raw(gpio),
+            };
+
+            let gpio = match gpioin[GpioPin::G3]{
+                Ok(val) => format!("GPIO 3:  {}\n", val),
+                Err(e) => format!("GPIO 3:  -\n"),
+            };
+
+            let t3 = match GPIO_states[GpioPin::G3] {
+                GpioState::Disabled => Text::raw(format!("GPIO 3:  Disabled\n")),
+                _ => Text::raw(gpio),
+            };
+
+            let text = [t0, t1, t2, t3];
 
             Paragraph::new(text.iter())
                 .block(
@@ -418,18 +509,47 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, io_panel[0]);
 
-            let t1 = match GPIO_states[2] {
-                State::Paused => Text::raw(format!("GPIO 2:  Disabled\n")),
-                State::RunningUntilEvent => Text::raw(format!("GPIO 2:  {:#018b} {:#06x} {:#05}\n", GPIO[2], GPIO[2], GPIO[2])),
-                _=> {Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1]))},
-            };
-            let t2 = match GPIO_states[3] {
-                State::Paused => Text::raw(format!("GPIO 3:  Disabled")),
-                State::RunningUntilEvent => Text::raw(format!("GPIO 3:  {:#018b} {:#06x} {:#05}\n", GPIO[3], GPIO[3], GPIO[3])),
-                _=> {Text::raw(format!("GPIO 1:  {:#018b} {:#06x} {:#05}\n", GPIO[1], GPIO[1], GPIO[1]))},
+            let gpio = match gpioin[GpioPin::G4]{
+                Ok(val) => format!("GPIO 4:  {}\n", val),
+                Err(e) => format!("GPIO 4:  -\n"),
             };
 
-            let text = [t1,t2];
+            let t0 = match GPIO_states[GpioPin::G4] {
+                GpioState::Disabled => Text::raw(format!("GPIO 4:  Disabled\n")),
+                _ => Text::raw(gpio),
+            };
+
+            let gpio = match gpioin[GpioPin::G5]{
+                Ok(val) => format!("GPIO 5:  {}\n", val),
+                Err(e) => format!("GPIO 5:  -\n"),
+            };
+
+            let t1 = match GPIO_states[GpioPin::G5] {
+                GpioState::Disabled => Text::raw(format!("GPIO 5:  Disabled\n")),
+                _ => Text::raw(gpio),
+            };
+
+            let gpio = match gpioin[GpioPin::G6]{
+                Ok(val) => format!("GPIO 6:  {}\n", val),
+                Err(e) => format!("GPIO 6:  -\n"),
+            };
+
+            let t2 = match GPIO_states[GpioPin::G6] {
+                GpioState::Disabled => Text::raw(format!("GPIO 6:  Disabled\n")),
+                _ => Text::raw(gpio),
+            };
+
+            let gpio = match gpioin[GpioPin::G7]{
+                Ok(val) => format!("GPIO 7:  {}\n", val),
+                Err(e) => format!("GPIO 7:  -\n"),
+            };
+
+            let t3 = match GPIO_states[GpioPin::G7] {
+                GpioState::Disabled => Text::raw(format!("GPIO 7:  Disabled\n")),
+                _ => Text::raw(gpio),
+            };
+
+            let text = [t0, t1, t2, t3];
 
             let right_GPIO = Layout::default()
                 .direction(Direction::Horizontal)
@@ -446,16 +566,30 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, right_GPIO[1]);
 
             //ADC
-            //let ADC_states: [States; 2] = Control::get_adc_states();
-            //let ADC: [Word, 2] = Control::get_adc_reading();
-            let ADC_states: [State; 2] = [State::RunningUntilEvent, State::Paused];
-            let ADC: [Word; 2] = [200, 300];
+            let ADC_states = sim.get_adc_states();
+            let adcin = sim.get_adc_reading();
 
-            let text = match ADC_states[0] {
-                State::Paused => [Text::raw(format!("ADC 0:   Disabled"))],
-                State::RunningUntilEvent => [Text::raw(format!("ADC 0:   {:#018b} {:#06x} {:#05}\n", ADC[0], ADC[0], ADC[0]))],
-                _=> {[Text::raw(format!("ADC 0:   {:#018b} {:#06x} {:#05}\n", ADC[0], ADC[0], ADC[0]))]},
+            let adc = match adcin[AdcPin::A0] {
+                Ok(number) => format!("ADC 0:   {:#018b} {:#06x} {:#05}\n", number, number, number),
+                Err(e) => format!("ADC 0:   -                  -      -\n"),
             };
+
+            let t0 = match ADC_states[AdcPin::A0] {
+                AdcState::Disabled => Text::raw(format!("ADC 0:   Disabled\n")),
+                AdcState::Enabled => Text::raw(adc),
+            };
+
+            let adc = match adcin[AdcPin::A1] {
+                Ok(number) => format!("ADC 1:   {:#018b} {:#06x} {:#05}\n", number, number, number),
+                Err(e) => format!("ADC 1:   -                  -      -\n"),
+            };
+
+            let t1 = match ADC_states[AdcPin::A1] {
+                AdcState::Disabled => Text::raw(format!("ADC 1:   Disabled\n")),
+                AdcState::Enabled => Text::raw(adc),
+            };
+
+            let text = [t0, t1];
 
             Paragraph::new(text.iter())
                 .block(
@@ -473,11 +607,27 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(io_panel[1]);
 
-            let text = match ADC_states[1] {
-                State::Paused => [Text::raw(format!("ADC 1:   Disabled"))],
-                State::RunningUntilEvent => [Text::raw(format!("ADC 1:   {:#018b} {:#06x} {:#05}\n", ADC[1], ADC[1], ADC[1]))],
-                _=> {[Text::raw(format!("ADC 1:   {:#018b} {:#06x} {:#05}\n", ADC[1], ADC[1], ADC[1]))]}
+            let adc = match adcin[AdcPin::A2] {
+                Ok(number) => format!("ADC 2:   {:#018b} {:#06x} {:#05}\n", number, number, number),
+                Err(e) => format!("ADC 2:   -                  -      -\n"),
             };
+
+            let t0 = match ADC_states[AdcPin::A2] {
+                AdcState::Disabled => Text::raw(format!("ADC 2:   Disabled\n")),
+                AdcState::Enabled => Text::raw(adc),
+            };
+
+            let adc = match adcin[AdcPin::A3] {
+                Ok(number) => format!("ADC 3:   {:#018b} {:#06x} {:#05}\n", number, number, number),
+                Err(e) => format!("ADC 3:   -                  -      -\n"),
+            };
+
+            let t1 = match ADC_states[AdcPin::A3] {
+                AdcState::Disabled => Text::raw(format!("ADC 3:   Disabled\n")),
+                AdcState::Enabled => Text::raw(adc),
+            };
+
+            let text = [t0,t1];
 
             Paragraph::new(text.iter())
                 .block(
@@ -488,15 +638,12 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, right_ADC[1]);
 
             //PWM
-            //let PWM_state: [State; 2] = Control::get_pwm_states();
-            //let PWM: [Word; 2] = Control::get_pwm_config()
-            let PWM_states: [State; 2] = [State::Paused, State::RunningUntilEvent];
-            let PWM: [Word; 2] = [5000, 3000];
+            let PWM_states = sim.get_pwm_states();
+            let PWM = sim.get_pwm_config();
 
-            let text = match PWM_states[0] {
-                State::Paused => [Text::raw(format!("PWM 0:   Disabled"))],
-                State::RunningUntilEvent => [Text::raw(format!("PWM 0:   {:#018b} {:#06x} {:#05}\n", PWM[0], PWM[0], PWM[0]))],
-                _=> { [Text::raw(format!("PWM 0:   {:#018b} {:#06x} {:#05}\n", PWM[0], PWM[0], PWM[0]))]}
+            let text = match PWM_states[PwmPin::P0] {
+                PwmState::Disabled => [Text::raw(format!("PWM 0:   Disabled"))],
+                PwmState::Enabled(_) => [Text::raw(format!("PWM 0:   {:#018b} {:#06x} {:#05}\n", PWM[PwmPin::P0], PWM[PwmPin::P0], PWM[PwmPin::P0]))],
             };
 
             Paragraph::new(text.iter())
@@ -515,10 +662,9 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(io_panel[2]);
 
-            let text = match PWM_states[1] {
-                State::Paused => [Text::raw(format!("PWM 1:   Disabled"))],
-                State::RunningUntilEvent => [Text::raw(format!("PWM 1:   {:#018b} {:#06x} {:#05}\n", PWM[1], PWM[1], PWM[1]))],
-                _=> {[Text::raw(format!("PWM 1:   {:#018b} {:#06x} {:#05}\n", PWM[1], PWM[1], PWM[1]))]}
+            let text = match PWM_states[PwmPin::P1] {
+                PwmState::Disabled => [Text::raw(format!("PWM 1:   Disabled"))],
+                PwmState::Enabled(_) => [Text::raw(format!("PWM 1:   {:#018b} {:#06x} {:#05}\n", PWM[PwmPin::P1], PWM[PwmPin::P1], PWM[PwmPin::P1]))],
             };
 
             Paragraph::new(text.iter())
@@ -530,17 +676,22 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, right_PWM[1]);
 
             //Timers
-            //let timer_state = get_timer_states();
-            //let timer = Control::get_timer_config();
-            let timer_state = if (z%40 > 20) {State::Paused} else {State::RunningUntilEvent};
-            let timer = 30000;
+            let timer_state = sim.get_timer_states();
+            let timer = sim.get_timer_config();
 
-            let text = match timer_state {
-                State::Paused => [Text::raw(format!("Timer:   Disabled"))],
-                State::RunningUntilEvent => [Text::raw(format!("_        {:#018b} {:#06x} {:#05}\n", timer, timer, timer))],
-                _=> {[Text::raw(format!("_        {:#018b} {:#06x} {:#05}\n", timer, timer, timer))]}
+            let t0 = match timer_state[TimerId::T0] {
+                TimerState::Disabled => Text::raw(format!("Timer 1: Disabled\n")),
+                TimerState::Repeated => Text::raw(format!("Repeat:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T0], timer[TimerId::T0], timer[TimerId::T0])),
+                TimerState::SingleShot => Text::raw(format!("Single:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T0], timer[TimerId::T0], timer[TimerId::T0])),
             };
-            
+
+            let t1 = match timer_state[TimerId::T1] {
+                TimerState::Disabled => Text::raw(format!("Timer 2: Disabled\n")),
+                TimerState::Repeated => Text::raw(format!("Repeat:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T1], timer[TimerId::T1], timer[TimerId::T1])),
+                TimerState::SingleShot => Text::raw(format!("Single:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T1], timer[TimerId::T1], timer[TimerId::T1])),
+            };
+
+            let text = [t0,t1];
 
             Paragraph::new(text.iter())
                 .block(
@@ -553,9 +704,8 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, timers_n_clock[0]);
 
             //Clock
-            //let clock = Control::get_clock();
-            let clock = z;
-            
+            let clock = sim.get_clock();
+
             let text = [
                 Text::raw(format!("{:#018b} {:#06x} {:#05}\n", clock, clock, clock))
             ];
@@ -569,7 +719,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, timers_n_clock[1]);
-            
+
         })?;
     }
 
