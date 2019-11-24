@@ -105,7 +105,7 @@ fn main() -> Result<(), failure::Error> {
 
     let mut sim = Simulator::new(interp);
 
-    sim.set_pc(0x200);
+    sim.set_pc(0x3000);
 
     // sim.reset();
 
@@ -181,7 +181,6 @@ fn main() -> Result<(), failure::Error> {
         let x = format!("Cursor: {} {}\n", x.0, x.1);
         console_out.push_str(&x);*/
         
-        
 
         match rx.recv()? {
             Event::Input(event) => match event {
@@ -200,9 +199,9 @@ fn main() -> Result<(), failure::Error> {
                 }
                 KeyEvent::Insert => {
                     if input_mode == false {
-                        input_mode == true;
+                        input_mode = true;
                     } else {
-                        input_mode == false;
+                        input_mode = false;
                         console_out.push_str("Input: ");
                         console_out.push_str(&input_out.clone());
                         console_out.push_str("\n");
