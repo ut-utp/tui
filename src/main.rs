@@ -81,7 +81,12 @@ use std::time::Duration;
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
+use log::{info, warn};
+extern crate flexi_logger;
 
+use flexi_logger::{Logger, opt_format};
+
+use std::fs::File;
 
 enum Event<I> {
     Input(I),
@@ -104,14 +109,17 @@ impl TransportLayer for MpscTransport {
         let point = message;
         let serialized = serde_json::to_string(&point).unwrap();
 
+        info!(target: "transmitted", "Sent: {:?}", serialized);
         self.tx.send(serialized).unwrap();
         //println!("came here6");
+        
 
         Ok(())
     }
 
     fn get(&self) -> Option<Message> {
         let deserialized: Message = serde_json::from_str(&self.rx.recv().unwrap()).unwrap();
+        info!(target: "received", "Got: {:?}", deserialized);
        // println!("came here7");
         //println!("deserialized = {:?}", deserialized);
         Some(deserialized)
@@ -128,9 +136,16 @@ pub fn mpsc_transport_pair() -> (MpscTransport, MpscTransport) {
     (host_channel, device_channel)
 }
 
-// //fn run_channel()
-
 fn main() -> Result<(), failure::Error> {
+
+    Logger::with_env_or_str("myprog=debug, mylib=warn")
+                .log_to_file()
+                .directory("log_files")
+                .format(opt_format)
+                .start()
+                .unwrap();
+
+    info!("This only appears in the log file");
 
  let (host_channel, device_channel) = mpsc_transport_pair();
 
@@ -142,17 +157,11 @@ fn main() -> Result<(), failure::Error> {
         transport: device_channel,
     };
 
-   // println!("came here2");
     let cl = Arc::new(Mutex::new(client));
     let counter = Arc::clone(&cl);
-    //let sim_th = Arc::new(Mutex::new(sim));
-    //let clone_sim = Arc::clone(&sim_th);
-   // println!("came here3");
-       
-   // println!("came here 7");
+
+
     thread::spawn(move || {
-   // println!("came here");
-    //    // let mut dev_cpy = DummyDevice {};
      let file: String = format!("test_prog.mem");
 
     let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
@@ -169,63 +178,15 @@ fn main() -> Result<(), failure::Error> {
 
     let mut sim = Simulator::new(interp);
 
-
-
-    
-    //let mut sim_th_share = (*clone_sim).lock().unwrap();
          loop {
-          //   println!("inside device loop");
-            //(*counter).lock().unwrap().step(&mut (*clone_sim.lock().unwrap()));
              (*counter).lock().unwrap().step(&mut sim);
-             //let one_sec = time::Duration::from_millis(1000);
-             //thread::sleep(one_sec);
+             thread::sleep(Duration::new(10));
          }
      });
-
-
-    //  let file: String = format!("test_prog.mem");
-
-    // let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
-
-    // let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
-
-    // let mut interp: Interpreter<'_, _, PeripheralsShim<'_>> = InterpreterBuilder::new() //.build();
-    //     .with_defaults()
-    //     .with_memory(memory)
-    //     .with_interrupt_flags_by_ref(&_flags)
-    //     .build();
-
-    // interp.reset();
-
-    // let mut sim = Simulator::new(interp);
-
     
-    sim.set_pc(0x200);
-    // sim.reset();
-
-       //  sim.set_pc(0x3000);
-         // sim.get_pc();
-         // sim.step();
-         // sim.read_word(40);
-         // sim.write_word(0, 4);
-         // sim.set_register(Reg::R4, 4);
-         // sim.get_register(Reg::R4);
-         // //sim.pause();
-         // sim.set_breakpoint(14);
-         // sim.unset_breakpoint(14);
-         // sim.set_memory_watch(15, 14);
-         //  sim.unset_memory_watch(8);
-         //  sim.get_breakpoints();
-         //  sim.commit_memory();
-         //  sim.get_state();
-         //  sim.get_gpio_states();
-         //  sim.get_gpio_reading();
-         //  sim.get_adc_states();
-         //  sim.get_adc_reading();
-
+    sim.set_pc(0x200)
 
     let screen = AlternateScreen::to_alternate(true)?;
-   // println!("load screen");
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
