@@ -180,11 +180,11 @@ fn main() -> Result<(), failure::Error> {
 
          loop {
              (*counter).lock().unwrap().step(&mut sim);
-             thread::sleep(Duration::new(10));
+             thread::sleep(time::Duration::from_millis(10));
          }
      });
     
-    sim.set_pc(0x200)
+    sim.set_pc(0x200);
 
     let screen = AlternateScreen::to_alternate(true)?;
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
