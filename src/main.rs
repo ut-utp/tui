@@ -63,7 +63,7 @@ use lc3_traits::peripherals::pwm::{PwmPin, PwmPinArr, PwmState};
 use lc3_traits::peripherals::timers::{TimerArr, TimerId, TimerState};
 use lc3_traits::peripherals::{PeripheralSet};
 
-use lc3_shims::peripherals::{GpioShim, AdcShim, PwmShim, TimersShim, ClockShim, InputShim, OutputShim};
+use lc3_shims::peripherals::{GpioShim, AdcShim, PwmShim, TimersShim, ClockShim, InputShim, OutputShim, SourceShim};
 
 use lc3_baseline_sim::interp::{
     InstructionInterpreter, InstructionInterpreterPeripheralAccess, Interpreter,
@@ -76,7 +76,7 @@ use lc3_shims::peripherals::PeripheralsShim;
 
 use std::convert::TryInto;
 
-use std::sync::{Arc, RwLock, mpsc};
+use std::sync::{Arc, RwLock, mpsc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -89,6 +89,7 @@ struct Cli {
     tick_rate: u64,
     log: bool,
 }
+
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TuiState { CONT, IN, GPIO, ADC, PWM, TMR, CLK}
@@ -107,8 +108,12 @@ fn main() -> Result<(), failure::Error> {
     let mut pwm_shim = Arc::new(RwLock::new(PwmShim::default()));
     let mut timer_shim = Arc::new(RwLock::new(TimersShim::default()));
     let mut clock_shim = Arc::new(RwLock::new(ClockShim::default()));
-    let mut input_shim = Arc::new(RwLock::new(InputShim::default()));
-    let mut output_shim = Arc::new(RwLock::new(OutputShim::default()));
+
+    let mut source_shim = SourceShim::new();
+    let mut input_shim = InputShim::sourced_from(source_shim);
+
+    //let mut output_ref = Arc::new(Mutex::new(String));
+    let mut output_shim = OutputShim::with_ref(output_ref);
 
     let mut peripherals = PeripheralSet::new(gpio_shim, adc_shim, pwm_shim, timer_shim, clock_shim, input_shim, output_shim);
 
@@ -224,7 +229,7 @@ fn main() -> Result<(), failure::Error> {
                             }
                             _ => {
                                 let x = format!("{}", c);
-                                //TODO: PUSH TO BUFFER
+                                source_shim.push(c);
                                 input_out.push_str(&x);
                             }
                         }
