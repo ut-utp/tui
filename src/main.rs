@@ -152,8 +152,8 @@ fn main() -> Result<(), failure::Error> {
     //let sim_th = Arc::new(Mutex::new(sim));
     //let clone_sim = Arc::clone(&sim_th);
     println!("came here3");
-    sim.set_pc(0x3000);   
-    
+       
+   // println!("came here 7");
     thread::spawn(move || {
     println!("came here");
     //    // let mut dev_cpy = DummyDevice {};
@@ -184,13 +184,15 @@ fn main() -> Result<(), failure::Error> {
     
     //let mut sim_th_share = (*clone_sim).lock().unwrap();
          loop {
-
+             println!("inside device loop");
             //(*counter).lock().unwrap().step(&mut (*clone_sim.lock().unwrap()));
              (*counter).lock().unwrap().step(&mut sim);
-             let one_sec = time::Duration::from_millis(1000);
-             thread::sleep(one_sec);
+             //let one_sec = time::Duration::from_millis(1000);
+             //thread::sleep(one_sec);
          }
      });
+
+    sim.set_pc(0x3000);
 
 
     // client.step(&mut sim);
@@ -203,9 +205,13 @@ fn main() -> Result<(), failure::Error> {
 
     // sim.reset();
 
+    println!("came here 8");
+
     let screen = AlternateScreen::to_alternate(true)?;
+   // loop{}
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
     let mut terminal = Terminal::new(backend)?;
+
     terminal.hide_cursor()?;
     
     let cli = Cli{
