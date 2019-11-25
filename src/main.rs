@@ -114,12 +114,8 @@ pub enum TuiState {
 
 fn main() -> Result<(), failure::Error> {
     let file: String = format!("test_prog.mem");
-    let mut console_out = String::from("");
-    let mut console_count = 1;
 
     let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
-    //let mut memory = FileBackedMemoryShim::from(&file);
-    //let memory = MemoryShim::default();
     let memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
     let gpio_shim = Arc::new(RwLock::new(GpioShim::default()));
     let adc_shim = Arc::new(RwLock::new(AdcShim::default()));
@@ -136,7 +132,7 @@ fn main() -> Result<(), failure::Error> {
     let console_output = Mutex::new(Vec::new());
     let output_shim = OutputShim::with_ref(&console_output);
 
-    let iteratively_collect_into_console_output = || {
+    let mut iteratively_collect_into_console_output = || {
         let vec = console_output.lock().unwrap();
 
         if vec.len() > last_idx {
@@ -146,6 +142,7 @@ fn main() -> Result<(), failure::Error> {
 
             last_idx = vec.len();
         }
+        console_output_string.clone()
     };
 
     let peripherals = PeripheralSet::new(
@@ -162,12 +159,14 @@ fn main() -> Result<(), failure::Error> {
         .with_defaults()
         .with_peripherals(peripherals)
         .with_memory(memory)
-        .with_interrupt_flags_by_ref(&_flags)
+        //.with_interrupt_flags_by_ref(&_flags)
         .build();
 
     interp.reset();
+    interp.init(&_flags);
 
     let mut sim = Simulator::new(interp);
+    // sim.get_interpreter().init(&_flags);
 
     sim.reset();
 
@@ -223,8 +222,6 @@ fn main() -> Result<(), failure::Error> {
             }
         });
     }
-
-    console_out.push_str("Startup Complete \n");
 
     let mut offset: u16 = 2;
     let mut running = false;
@@ -1016,18 +1013,29 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, mem_partitions[3]);
 
             //Console
-            let text = [
-                Text::raw(console_out.clone())
-            ];
 
-            Paragraph::new(text.iter())
+            let console_height = console[0].height;
+            let output_string = iteratively_collect_into_console_output();
+            let num_lines = output_string.split('\n').count();
+
+            // output_string.split('\n').map(|s| Text::raw(s))
+
+            // //Console
+            // let text = [
+            //     Text::raw(iteratively_collect_into_console_output())
+            // ];
+
+            // let text: Vec<_> = output_string.split('\n').map(|s| Text::raw(s)).collect();
+
+            Paragraph::new([Text::styled(output_string, Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))].iter())
                 .block(
                         Block::default()
                             .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
                             .title("Console")
                             .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
-                .wrap(true)
+                .wrap(false)    
+                .scroll((num_lines.saturating_sub(console_height as usize)) as u16)
                 .render(&mut f, console[0]);
 
             let text = [
