@@ -1010,20 +1010,29 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, mem_partitions[3]);
 
+            let console_height = console[0].height;
+            let output_string = iteratively_collect_into_console_output();
+            let num_lines = output_string.split('\n').count();
 
-            //Console
-            let text = [
-                Text::raw(iteratively_collect_into_console_output())
-            ];
+            // output_string.split('\n').map(|s| Text::raw(s))
 
-            Paragraph::new(text.iter())
+            // //Console
+            // let text = [
+            //     Text::raw(iteratively_collect_into_console_output())
+            // ];
+
+            // let text: Vec<_> = output_string.split('\n').map(|s| Text::raw(s)).collect();
+
+            // Paragraph::new(text.iter())
+            Paragraph::new([Text::raw(output_string)].iter())
                 .block(
                         Block::default()
                             .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
                             .title("Console")
                             .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
-                .wrap(true)
+                .wrap(false)
+                .scroll((num_lines.saturating_sub(console_height as usize)) as u16)
                 .render(&mut f, console[0]);
 
             let text = [
