@@ -129,7 +129,7 @@ fn main() -> Result<(), failure::Error> {
 
     let mut sim = Simulator::new(interp);
 
-    sim.set_pc(0x3000);
+    sim.set_pc(0x0200);
 
     // sim.reset();
 
