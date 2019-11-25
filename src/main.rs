@@ -196,22 +196,35 @@ fn main() -> Result<(), failure::Error> {
 
     console_out.push_str("Startup Complete \n");
 
-    let mut step = 0;
-
-    let mut i = 0;
+    let mut offset = 2;
 
     while active {
 
         if step == 1 {
+            offset = 2;
             sim.step();
         }
 
         match rx.recv()? {
             Event::Input(event) => match event {
+                KeyEvent::Insert => {
+                    set_val_out = String::from("");
+                    if input_mode == TuiState::IN {
+                        input_mode = TuiState::CONT;
+                    } else {
+                        input_mode = TuiState::IN;
+                    }
+                }
+                KeyEvent::Up => offset = offset + 1,
+                KeyEvent::Down => offset = offset - 1,
+                KeyEvent::ShiftUp => offset = offset + 10,
+                KeyEvent::ShiftDown => offset = offset - 10,
+                KeyEvent::CtrlUp => offset = offset + 100,
+                KeyEvent::CtrlDown => offset = offset - 100,
                 KeyEvent::Char(c) => {
                     if input_mode == TuiState::CONT{
                         match c{
-                            's' => if step != 1 { sim.step(); },
+                            's' => if step != 1 { sim.step(); offset = 2; },
                             'p' => step = 0,
                             'r' => step = 1,
                             _ => {}
@@ -412,14 +425,6 @@ fn main() -> Result<(), failure::Error> {
                                 set_val_out.push_str(&x);
                             }
                         }
-                    }
-                }
-                KeyEvent::Insert => {
-                    set_val_out = String::from("");
-                    if input_mode == TuiState::IN {
-                        input_mode = TuiState::CONT;
-                    } else {
-                        input_mode = TuiState::IN;
                     }
                 }
                 KeyEvent::Ctrl(c) => {
@@ -704,7 +709,7 @@ fn main() -> Result<(), failure::Error> {
             let mut mem: [Word; 50] = [0; 50];
             let mut x: u16 = 0;
             while x != 50 {
-                mem[x as usize] = sim.read_word(pc.wrapping_sub(2).wrapping_add(x));
+                mem[x as usize] = sim.read_word(pc.wrapping_sub(offset).wrapping_add(x));
                 x = x + 1;
             }
 
@@ -716,12 +721,12 @@ fn main() -> Result<(), failure::Error> {
                     Ok(data) => data,
                     Err(error) => Instruction::AddReg{dr: Reg::R0, sr1: Reg::R0, sr2: Reg::R0,},
                 };
-                if x == 2{
+                if x == offset{
                     s.push_str("|--> ");
                 }else{
                     s.push_str("|    ");
                 }
-                s.push_str(&format!("{:#06x} {:#018b} {:#06x} {:#05}    {}\n", pc.wrapping_sub(2).wrapping_add(x), mem[x as usize], mem[x as usize], mem[x as usize], inst));
+                s.push_str(&format!("{:#06x} {:#018b} {:#06x} {:#05}    {}\n", pc.wrapping_sub(offset).wrapping_add(x), mem[x as usize], mem[x as usize], mem[x as usize], inst));
                 x = x + 1;
             }
 
