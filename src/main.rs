@@ -61,9 +61,11 @@ use lc3_traits::peripherals::adc::{AdcPin, AdcPinArr, AdcReadError, AdcState};
 use lc3_traits::peripherals::gpio::{GpioPin, GpioPinArr, GpioReadError, GpioState};
 use lc3_traits::peripherals::pwm::{PwmPin, PwmPinArr, PwmState};
 use lc3_traits::peripherals::timers::{TimerArr, TimerId, TimerState};
-use lc3_traits::peripherals::{PeripheralSet};
+use lc3_traits::peripherals::PeripheralSet;
 
-use lc3_shims::peripherals::{GpioShim, AdcShim, PwmShim, TimersShim, ClockShim, InputShim, OutputShim, SourceShim};
+use lc3_shims::peripherals::{
+    AdcShim, ClockShim, GpioShim, InputShim, OutputShim, PwmShim, SourceShim, TimersShim,
+};
 
 use lc3_baseline_sim::interp::{
     InstructionInterpreter, InstructionInterpreterPeripheralAccess, Interpreter,
@@ -76,7 +78,7 @@ use lc3_shims::peripherals::PeripheralsShim;
 
 use std::convert::TryInto;
 
-use std::sync::{Arc, RwLock, mpsc, Mutex};
+use std::sync::{mpsc, Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 
@@ -94,9 +96,19 @@ struct Cli {
     log: bool,
 }
 
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum TuiState { CONT, IN, GPIO, ADC, PWM, TMR, CLK, REG, PC, MEM}
+pub enum TuiState {
+    CONT,
+    IN,
+    GPIO,
+    ADC,
+    PWM,
+    TMR,
+    CLK,
+    REG,
+    PC,
+    MEM,
+}
 
 fn main() -> Result<(), failure::Error> {
     let file: String = format!("test_prog.mem");
@@ -106,20 +118,43 @@ fn main() -> Result<(), failure::Error> {
     let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
     //let mut memory = FileBackedMemoryShim::from(&file);
     //let memory = MemoryShim::default();
-    let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
-    let mut gpio_shim = Arc::new(RwLock::new(GpioShim::default()));
-    let mut adc_shim = Arc::new(RwLock::new(AdcShim::default()));
-    let mut pwm_shim = Arc::new(RwLock::new(PwmShim::default()));
-    let mut timer_shim = Arc::new(RwLock::new(TimersShim::default()));
-    let mut clock_shim = Arc::new(RwLock::new(ClockShim::default()));
+    let memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
+    let gpio_shim = Arc::new(RwLock::new(GpioShim::default()));
+    let adc_shim = Arc::new(RwLock::new(AdcShim::default()));
+    let pwm_shim = Arc::new(RwLock::new(PwmShim::default()));
+    let timer_shim = Arc::new(RwLock::new(TimersShim::default()));
+    let clock_shim = Arc::new(RwLock::new(ClockShim::default()));
 
-    let mut source_shim = SourceShim::new();
-    let mut input_shim = InputShim::sourced_from(source_shim);
+    let source_shim = SourceShim::new();
+    let input_shim = InputShim::with_ref(&source_shim);
 
-    //let mut output_ref = Arc::new(Mutex::new(String));
-    let mut output_shim = OutputShim::with_ref(output_ref);
+    let mut console_output_string: String = String::new();
+    let mut last_idx = 0;
 
-    let mut peripherals = PeripheralSet::new(gpio_shim, adc_shim, pwm_shim, timer_shim, clock_shim, input_shim, output_shim);
+    let console_output = Mutex::new(Vec::new());
+    let output_shim = OutputShim::with_ref(&console_output);
+
+    let iteratively_collect_into_console_output = || {
+        let vec = console_output.lock().unwrap();
+
+        if vec.len() > last_idx {
+            vec[last_idx..].iter().for_each(|c| {
+                console_output_string.push(*c as char);
+            });
+
+            last_idx = vec.len();
+        }
+    };
+
+    let peripherals = PeripheralSet::new(
+        gpio_shim.clone(),
+        adc_shim.clone(),
+        pwm_shim.clone(),
+        timer_shim,
+        clock_shim,
+        input_shim,
+        output_shim,
+    );
 
     let mut interp: Interpreter<'_, _, _> = InterpreterBuilder::new() //.build();
         .with_defaults()
@@ -130,7 +165,6 @@ fn main() -> Result<(), failure::Error> {
 
     interp.reset();
 
-
     let mut sim = Simulator::new(interp);
 
     sim.reset();
@@ -139,8 +173,8 @@ fn main() -> Result<(), failure::Error> {
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
-    
-    let cli = Cli{
+
+    let cli = Cli {
         tick_rate: 250,
         log: true,
     };
@@ -158,48 +192,46 @@ fn main() -> Result<(), failure::Error> {
     let mut set_val_out = String::from("");
 
     let mut active: bool = true;
-        let (tx, rx) = mpsc::channel();
-        {
-            let tx = tx.clone();
-            thread::spawn(move || {
-                let input = input();
-                let reader = input.read_sync();
-                for event in reader {
-                    match event {
-                        InputEvent::Keyboard(key) => {
-                            if let Err(_) = tx.send(Event::Input(key.clone())) {
-                                return;
-                            }
-                            if key == KeyEvent::Char('q') {
-                                active = false;
-                                return;
-                            }
+    let (tx, rx) = mpsc::channel();
+    {
+        let tx = tx.clone();
+        thread::spawn(move || {
+            let input = input();
+            let reader = input.read_sync();
+            for event in reader {
+                match event {
+                    InputEvent::Keyboard(key) => {
+                        if let Err(_) = tx.send(Event::Input(key.clone())) {
+                            return;
                         }
-                        _ => {}
+                        if key == KeyEvent::Char('q') {
+                            active = false;
+                            return;
+                        }
                     }
+                    _ => {}
                 }
-            });
-        }
+            }
+        });
+    }
 
-        {
+    {
+        let tx = tx.clone();
+        thread::spawn(move || {
             let tx = tx.clone();
-            thread::spawn(move || {
-                let tx = tx.clone();
-                loop {
-                    tx.send(Event::Tick).unwrap();
-                    thread::sleep(Duration::from_millis(cli.tick_rate));
-                }
-            });
-        }
-    
-
+            loop {
+                tx.send(Event::Tick).unwrap();
+                thread::sleep(Duration::from_millis(cli.tick_rate));
+            }
+        });
+    }
 
     console_out.push_str("Startup Complete \n");
 
     let mut offset = 2;
+    let mut step = 0;
 
     while active {
-
         if step == 1 {
             offset = 2;
             sim.step();
@@ -222,15 +254,20 @@ fn main() -> Result<(), failure::Error> {
                 KeyEvent::CtrlUp => offset = offset + 100,
                 KeyEvent::CtrlDown => offset = offset - 100,
                 KeyEvent::Char(c) => {
-                    if input_mode == TuiState::CONT{
-                        match c{
-                            's' => if step != 1 { sim.step(); offset = 2; },
+                    if input_mode == TuiState::CONT {
+                        match c {
+                            's' => {
+                                if step != 1 {
+                                    sim.step();
+                                    offset = 2;
+                                }
+                            }
                             'p' => step = 0,
                             'r' => step = 1,
                             _ => {}
                         }
                     } else if input_mode == TuiState::IN {
-                        match c{
+                        match c {
                             '\n' => {
                                 input_out = String::from("");
                             }
@@ -243,7 +280,7 @@ fn main() -> Result<(), failure::Error> {
                     } else if input_mode == TuiState::GPIO {
                         if pin_flag == 0 {
                             pin_flag = 1;
-                            match c{
+                            match c {
                                 '0' => gpio_pin = GpioPin::G0,
                                 '1' => gpio_pin = GpioPin::G1,
                                 '2' => gpio_pin = GpioPin::G2,
@@ -252,14 +289,17 @@ fn main() -> Result<(), failure::Error> {
                                 '5' => gpio_pin = GpioPin::G5,
                                 '6' => gpio_pin = GpioPin::G6,
                                 '7' => gpio_pin = GpioPin::G7,
-                                _ => pin_flag = 0
+                                _ => pin_flag = 0,
                             }
                         } else {
-                            match c{
+                            match c {
                                 '\n' => {
                                     match set_val_out.parse::<bool>() {
-                                        Ok(b) => RwLock::write(&gpio_shim).unwrap().set_pin(gpio_pin, b).unwrap(),
-                                        Err(e) => {},
+                                        Ok(b) => RwLock::write(&gpio_shim)
+                                            .unwrap()
+                                            .set_pin(gpio_pin, b)
+                                            .unwrap(),
+                                        Err(e) => {}
                                     }
                                     set_val_out = String::from("");
                                 }
@@ -269,22 +309,25 @@ fn main() -> Result<(), failure::Error> {
                                 }
                             }
                         }
-                    }  else if input_mode == TuiState::ADC {
+                    } else if input_mode == TuiState::ADC {
                         if pin_flag == 0 {
                             pin_flag = 1;
-                            match c{
+                            match c {
                                 '0' => adc_pin = AdcPin::A0,
                                 '1' => adc_pin = AdcPin::A1,
                                 '2' => adc_pin = AdcPin::A2,
                                 '3' => adc_pin = AdcPin::A3,
-                                _ => pin_flag = 0
+                                _ => pin_flag = 0,
                             }
                         } else {
-                            match c{
+                            match c {
                                 '\n' => {
                                     match set_val_out.parse::<u8>() {
-                                        Ok(n) => RwLock::write(&adc_shim).unwrap().set_value(adc_pin, n).unwrap(),
-                                        Err(e) => {},
+                                        Ok(n) => RwLock::write(&adc_shim)
+                                            .unwrap()
+                                            .set_value(adc_pin, n)
+                                            .unwrap(),
+                                        Err(e) => {}
                                     }
                                     set_val_out = String::from("");
                                 }
@@ -297,17 +340,19 @@ fn main() -> Result<(), failure::Error> {
                     } else if input_mode == TuiState::PWM {
                         if pin_flag == 0 {
                             pin_flag = 1;
-                            match c{
+                            match c {
                                 '0' => pwm_pin = PwmPin::P0,
                                 '1' => pwm_pin = PwmPin::P1,
-                                _ => pin_flag = 0
+                                _ => pin_flag = 0,
                             }
                         } else {
-                            match c{
+                            match c {
                                 '\n' => {
                                     match set_val_out.parse::<NonZeroU8>() {
-                                        Ok(n) => RwLock::write(&pwm_shim).unwrap().set_duty_cycle_helper(pwm_pin, n),
-                                        Err(e) => {},
+                                        Ok(n) => RwLock::write(&pwm_shim)
+                                            .unwrap()
+                                            .set_duty_cycle_helper(pwm_pin, n),
+                                        Err(e) => {}
                                     }
                                     set_val_out = String::from("");
                                 }
@@ -320,13 +365,13 @@ fn main() -> Result<(), failure::Error> {
                     } else if input_mode == TuiState::TMR {
                         if pin_flag == 0 {
                             pin_flag = 1;
-                            match c{
+                            match c {
                                 '0' => timer_id = TimerId::T0,
                                 '1' => timer_id = TimerId::T1,
-                                _ => pin_flag = 0
+                                _ => pin_flag = 0,
                             }
                         } else {
-                            match c{
+                            match c {
                                 '\n' => {
                                     set_val_out = String::from("");
                                 }
@@ -339,7 +384,7 @@ fn main() -> Result<(), failure::Error> {
                     } else if input_mode == TuiState::REG {
                         if pin_flag == 0 {
                             pin_flag = 1;
-                            match c{
+                            match c {
                                 '0' => reg_id = Reg::R0,
                                 '1' => reg_id = Reg::R1,
                                 '2' => reg_id = Reg::R2,
@@ -348,14 +393,14 @@ fn main() -> Result<(), failure::Error> {
                                 '5' => reg_id = Reg::R5,
                                 '6' => reg_id = Reg::R6,
                                 '7' => reg_id = Reg::R7,
-                                _ => pin_flag = 0
+                                _ => pin_flag = 0,
                             }
                         } else {
-                            match c{
+                            match c {
                                 '\n' => {
                                     match set_val_out.parse::<Word>() {
                                         Ok(w) => sim.set_register(reg_id, w),
-                                        Err(e) => {},
+                                        Err(e) => {}
                                     }
                                     set_val_out = String::from("");
                                 }
@@ -367,14 +412,14 @@ fn main() -> Result<(), failure::Error> {
                         }
                     } else if input_mode == TuiState::MEM {
                         if pin_flag == 0 {
-                            match c{
+                            match c {
                                 '\n' => {
                                     match set_val_out.parse::<Addr>() {
                                         Ok(a) => {
                                             pin_flag = 1;
-                                            mem_addr = a,
+                                            mem_addr = a;
                                         }
-                                        Err(e) => {},
+                                        Err(e) => {}
                                     }
                                     set_val_out = String::from("");
                                 }
@@ -384,14 +429,14 @@ fn main() -> Result<(), failure::Error> {
                                 }
                             }
                         } else {
-                            match c{
+                            match c {
                                 '\n' => {
                                     match set_val_out.parse::<Word>() {
                                         Ok(w) => {
                                             sim.write_word(mem_addr, w);
                                             pin_flag = 0;
                                         }
-                                        Err(e) => {},
+                                        Err(e) => {}
                                     }
                                     set_val_out = String::from("");
                                 }
@@ -402,7 +447,7 @@ fn main() -> Result<(), failure::Error> {
                             }
                         }
                     } else if input_mode == TuiState::CLK {
-                        match c{
+                        match c {
                             '\n' => {
                                 set_val_out = String::from("");
                             }
@@ -412,11 +457,11 @@ fn main() -> Result<(), failure::Error> {
                             }
                         }
                     } else if input_mode == TuiState::PC {
-                        match c{
+                        match c {
                             '\n' => {
                                 match set_val_out.parse::<Addr>() {
                                     Ok(a) => sim.set_pc(a),
-                                    Err(e) => {},
+                                    Err(e) => {}
                                 }
                                 set_val_out = String::from("");
                             }
@@ -429,7 +474,7 @@ fn main() -> Result<(), failure::Error> {
                 }
                 KeyEvent::Ctrl(c) => {
                     set_val_out = String::from("");
-                    match c{
+                    match c {
                         'g' => {
                             if input_mode == TuiState::GPIO {
                                 input_mode = TuiState::CONT;
@@ -500,8 +545,7 @@ fn main() -> Result<(), failure::Error> {
 
                 _ => {}
             },
-            Event::Tick => {
-            }
+            Event::Tick => {}
         }
 
         terminal.draw(|mut f| {
@@ -1055,66 +1099,61 @@ fn main() -> Result<(), failure::Error> {
 
 }*/
 
-fn input_mode_string(s: TuiState) -> String{
+fn input_mode_string(s: TuiState) -> String {
+    use TuiState::*;
+
     match s {
-        TuiState::CONT => return format!("Control"),
-        TuiState::IN => return format!("Input"),
-        TuiState::GPIO => return format!("GPIO"),
-        TuiState::ADC => return format!("ADC"),
-        TuiState::PWM => return format!("PWM"),
-        TuiState::TMR => return format!("Timer"),
-        TuiState::CLK => return format!("Clock")
+        CONT => format!("Control"),
+        IN => format!("Input"),
+        GPIO => format!("GPIO"),
+        ADC => format!("ADC"),
+        PWM => format!("PWM"),
+        TMR => format!("Timer"),
+        CLK => format!("Clock"),
+        REG => format!("Registers"),
+        PC => format!("Program Counter (PC)"),
+        MEM => format!("Memory"),
     }
 }
 
 fn get_pin_string(s: TuiState, g: GpioPin, a: AdcPin, p: PwmPin, t: TimerId, r: Reg) -> String {
     match s {
-        TuiState::GPIO => {
-            match g {
-                GpioPin::G0 => return format!("G0"),
-                GpioPin::G1 => return format!("G1"),
-                GpioPin::G2 => return format!("G2"),
-                GpioPin::G3 => return format!("G3"),
-                GpioPin::G4 => return format!("G4"),
-                GpioPin::G5 => return format!("G5"),
-                GpioPin::G6 => return format!("G6"),
-                GpioPin::G7 => return format!("G7")
-            }
-        }
-        TuiState::ADC => {
-            match a {
-                AdcPin::A0 => return format!("A0"),
-                AdcPin::A1 => return format!("A1"),
-                AdcPin::A2 => return format!("A2"),
-                AdcPin::A3 => return format!("A3")
-            }
-        }
-        TuiState::PWM => {
-            match p {
-                PwmPin::P0 => return format!("P0"),
-                PwmPin::P1 => return format!("P1")
-            }
-        }
-        TuiState::TMR => {
-            match t {
-                TimerId::T0 => return format!("T0"),
-                TimerId::T1 => return format!("T1")
-            }
-        }
-        TuiState::REG => {
-            match r {
-                Reg::R0 => return format!("R0"),
-                Reg::R1 => return format!("R1"),
-                Reg::R2 => return format!("R2"),
-                Reg::R3 => return format!("R3"),
-                Reg::R4 => return format!("R4"),
-                Reg::R5 => return format!("R5"),
-                Reg::R6 => return format!("R6"),
-                Reg::R7 => return format!("R7")
-            }
-        }
+        TuiState::GPIO => match g {
+            GpioPin::G0 => return format!("G0"),
+            GpioPin::G1 => return format!("G1"),
+            GpioPin::G2 => return format!("G2"),
+            GpioPin::G3 => return format!("G3"),
+            GpioPin::G4 => return format!("G4"),
+            GpioPin::G5 => return format!("G5"),
+            GpioPin::G6 => return format!("G6"),
+            GpioPin::G7 => return format!("G7"),
+        },
+        TuiState::ADC => match a {
+            AdcPin::A0 => return format!("A0"),
+            AdcPin::A1 => return format!("A1"),
+            AdcPin::A2 => return format!("A2"),
+            AdcPin::A3 => return format!("A3"),
+        },
+        TuiState::PWM => match p {
+            PwmPin::P0 => return format!("P0"),
+            PwmPin::P1 => return format!("P1"),
+        },
+        TuiState::TMR => match t {
+            TimerId::T0 => return format!("T0"),
+            TimerId::T1 => return format!("T1"),
+        },
+        TuiState::REG => match r {
+            Reg::R0 => return format!("R0"),
+            Reg::R1 => return format!("R1"),
+            Reg::R2 => return format!("R2"),
+            Reg::R3 => return format!("R3"),
+            Reg::R4 => return format!("R4"),
+            Reg::R5 => return format!("R5"),
+            Reg::R6 => return format!("R6"),
+            Reg::R7 => return format!("R7"),
+        },
         TuiState::CLK => return format!("CLK"),
         TuiState::PC => return format!("PC"),
-        _ => return format!("")
+        _ => return format!(""),
     }
 }
