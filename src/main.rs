@@ -133,8 +133,7 @@ fn main() -> Result<(), failure::Error> {
 
     let mut sim = Simulator::new(interp);
 
-    sim.set_pc(0x2000);
-    // sim.reset();
+    sim.reset();
 
     let screen = AlternateScreen::to_alternate(true)?;
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
