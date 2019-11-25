@@ -62,6 +62,7 @@ use lc3_traits::peripherals::gpio::{GpioPin, GpioPinArr, GpioReadError, GpioStat
 use lc3_traits::peripherals::pwm::{PwmPin, PwmPinArr, PwmState};
 use lc3_traits::peripherals::timers::{TimerArr, TimerId, TimerState};
 use lc3_traits::peripherals::PeripheralSet;
+use lc3_traits::control::{MAX_BREAKPOINTS, MAX_MEMORY_WATCHES};
 
 use lc3_shims::peripherals::{
     AdcShim, ClockShim, GpioShim, InputShim, OutputShim, PwmShim, SourceShim, TimersShim,
@@ -71,7 +72,7 @@ use lc3_baseline_sim::interp::{
     InstructionInterpreter, InstructionInterpreterPeripheralAccess, Interpreter,
     InterpreterBuilder, MachineState, PeripheralInterruptFlags,
 };
-use lc3_baseline_sim::sim::Simulator;
+use lc3_baseline_sim::sim::{Simulator};
 
 use lc3_shims::memory::{FileBackedMemoryShim, MemoryShim};
 use lc3_shims::peripherals::PeripheralsShim;
@@ -227,9 +228,10 @@ fn main() -> Result<(), failure::Error> {
     let mut running = false;
 
     while active {
+        let bp = sim.get_breakpoints();
+
         if running {
             offset = 2;
-
             for _ in 0..10000 {
                 match sim.step() {
                     State::Halted => running = false,
@@ -507,29 +509,33 @@ fn main() -> Result<(), failure::Error> {
                         } else {
                             match c {
                                 '\n' => {
-                                    match set_val_out.parse::<Word>() {
-                                        Ok(w) => {
-                                            sim.write_word(mem_addr, w);
-                                            pin_flag = 0;
-                                        }
-                                        Err(e) => {}
-                                    }
-                                    let val = set_val_out.split_off(2);
-                                    if set_val_out == "0x" {
-                                        match Word::from_str_radix(&val, 16) {
+                                    if set_val_out == "b"{
+                                        sim.set_breakpoint(mem_addr);
+                                    } else {
+                                        match set_val_out.parse::<Word>() {
                                             Ok(w) => {
                                                 sim.write_word(mem_addr, w);
                                                 pin_flag = 0;
                                             }
                                             Err(e) => {}
                                         }
-                                    } else if set_val_out == "0b" {
-                                        match Word::from_str_radix(&val, 2) {
-                                            Ok(w) => {
-                                                sim.write_word(mem_addr, w);
-                                                pin_flag = 0;
+                                        let val = set_val_out.split_off(2);
+                                        if set_val_out == "0x" {
+                                            match Word::from_str_radix(&val, 16) {
+                                                Ok(w) => {
+                                                    sim.write_word(mem_addr, w);
+                                                    pin_flag = 0;
+                                                }
+                                                Err(e) => {}
                                             }
-                                            Err(e) => {}
+                                        } else if set_val_out == "0b" {
+                                            match Word::from_str_radix(&val, 2) {
+                                                Ok(w) => {
+                                                    sim.write_word(mem_addr, w);
+                                                    pin_flag = 0;
+                                                }
+                                                Err(e) => {}
+                                            }
                                         }
                                     }
                                     set_val_out = String::from("");
@@ -776,7 +782,7 @@ fn main() -> Result<(), failure::Error> {
                 Text::styled("To control memory, use ", Style::default().fg(Color::LightGreen)),
                 Text::styled("UP and DOWN ", Style::default().fg(Color::Gray)),
                 Text::styled("arrow keys. ", Style::default().fg(Color::LightGreen)),
-                Text::styled("Shift + arrow", Style::default().fg(Color::Gray)),
+                Text::styled("Shift + arrow ", Style::default().fg(Color::Gray)),
                 Text::styled("jumps 10, ", Style::default().fg(Color::LightGreen)),
                 Text::styled("Control + arrow ", Style::default().fg(Color::Gray)),
                 Text::styled("jumps 100. ", Style::default().fg(Color::LightGreen)),
