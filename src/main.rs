@@ -67,9 +67,6 @@ use lc3_shims::peripherals::{
     AdcShim, ClockShim, GpioShim, InputShim, OutputShim, PwmShim, SourceShim, TimersShim,
 };
 
-use lc3_traits::control_rpc::*;
-
-
 use lc3_baseline_sim::interp::{
     InstructionInterpreter, InstructionInterpreterPeripheralAccess, Interpreter,
     InterpreterBuilder, MachineState, PeripheralInterruptFlags,
@@ -83,21 +80,7 @@ use std::convert::TryInto;
 
 use std::sync::{mpsc, Arc, Mutex, RwLock};
 use std::thread;
-
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
-use std::{thread,time};
-
 use std::time::Duration;
-use std::sync::{Arc, Mutex};
-
-use serde::{Deserialize, Serialize};
-use log::{info, warn};
-extern crate flexi_logger;
-
-use flexi_logger::{Logger, opt_format};
-
-use std::fs::File;
 
 use core::num::NonZeroU8;
 
@@ -108,7 +91,10 @@ enum Event<I> {
     Tick,
 }
 
-
+struct Cli {
+    tick_rate: u64,
+    log: bool,
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TuiState {
@@ -144,77 +130,6 @@ fn main() -> Result<(), failure::Error> {
 
     let mut console_output_string: String = String::new();
     let mut last_idx = 0;
-
-pub struct MpscTransport {
-    tx: Sender<std::string::String>,
-    rx: Receiver<std::string::String>,
-}
-
-impl TransportLayer for MpscTransport {
-    fn send(&self, message: Message) -> Result<(), ()> {
-       // println!("came here5");
-        let point = message;
-        let serialized = serde_json::to_string(&point).unwrap();
-
-        info!(target: "transmitted", "Sent: {:?}", serialized);
-        self.tx.send(serialized).unwrap();
-        //println!("came here6");
-        
-
-        Ok(())
-    }
-
-    fn get(&self) -> Option<Message> {
-        let deserialized: Message = serde_json::from_str(&self.rx.recv().unwrap()).unwrap();
-        info!(target: "received", "Got: {:?}", deserialized);
-       // println!("came here7");
-        //println!("deserialized = {:?}", deserialized);
-        Some(deserialized)
-    }
-}
-
-pub fn mpsc_transport_pair() -> (MpscTransport, MpscTransport) {
-    let (tx_h, rx_h) = std::sync::mpsc::channel();
-    let (tx_d, rx_d) = std::sync::mpsc::channel();
-
-    let host_channel = MpscTransport { tx: tx_h, rx: rx_d };
-    let device_channel = MpscTransport { tx: tx_d, rx: rx_h };
-
-    (host_channel, device_channel)
-}
-
-fn main() -> Result<(), failure::Error> {
-
-    Logger::with_env_or_str("myprog=debug, mylib=warn")
-                .log_to_file()
-                .directory("log_files")
-                .format(opt_format)
-                .start()
-                .unwrap();
-
-    info!("This only appears in the log file");
-
- let (host_channel, device_channel) = mpsc_transport_pair();
-
-    let mut sim = Server::<MpscTransport> {
-        transport: host_channel,
-    };
-
-    let mut client = Client::<MpscTransport> {
-        transport: device_channel,
-    };
-
-    let cl = Arc::new(Mutex::new(client));
-    let counter = Arc::clone(&cl);
-
-
-    thread::spawn(move || {
-     let file: String = format!("test_prog.mem");
-
-    let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
-
-    let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
-
 
     let console_output = Mutex::new(Vec::new());
     let output_shim = OutputShim::with_ref(&console_output);
@@ -252,20 +167,17 @@ fn main() -> Result<(), failure::Error> {
 
     let mut sim = Simulator::new(interp);
 
-
     sim.reset();
 
-         loop {
-             (*counter).lock().unwrap().step(&mut sim);
-             thread::sleep(time::Duration::from_millis(10));
-         }
-     });
-    
     let screen = AlternateScreen::to_alternate(true)?;
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
+    let cli = Cli {
+        tick_rate: 250,
+        log: true,
+    };
 
     let mut input_mode = TuiState::CONT;
     let mut pin_flag = 0;
@@ -275,8 +187,6 @@ fn main() -> Result<(), failure::Error> {
     let mut timer_id = TimerId::T0;
     let mut reg_id = Reg::R0;
     let mut mem_addr: Addr = 1;
-
-
 
     let mut input_out = String::from("");
     let mut set_val_out = String::from("");
@@ -1184,12 +1094,10 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, timers_n_clock[1]);
 
         })?;
-      //  loop{}
     }
 
     //process::exit(1);
     Ok(())
-<<<<<<< HEAD
 }
 
 /*fn output_to_console(String s){
@@ -1260,6 +1168,3 @@ fn get_pin_string(s: TuiState, g: GpioPin, a: AdcPin, p: PwmPin, t: TimerId, r: 
         _ => return format!(""),
     }
 }
-=======
-}
->>>>>>> feat-control-mvp
