@@ -61,6 +61,7 @@ use lc3_traits::peripherals::adc::{AdcPin, AdcPinArr, AdcReadError, AdcState};
 use lc3_traits::peripherals::gpio::{GpioPin, GpioPinArr, GpioReadError, GpioState};
 use lc3_traits::peripherals::pwm::{PwmPin, PwmPinArr, PwmState};
 use lc3_traits::peripherals::timers::{TimerArr, TimerId, TimerState};
+use lc3_traits::control_rpc::*;
 
 use lc3_baseline_sim::interp::{
     InstructionInterpreter, InstructionInterpreterPeripheralAccess, Interpreter,
@@ -74,8 +75,13 @@ use lc3_shims::peripherals::PeripheralsShim;
 use std::convert::TryInto;
 
 use std::sync::mpsc;
-use std::thread;
+use std::sync::mpsc::{Receiver, Sender};
+use std::{thread,time};
 use std::time::Duration;
+use std::sync::{Arc, Mutex};
+
+use serde::{Deserialize, Serialize};
+
 
 enum Event<I> {
     Input(I),
@@ -87,12 +93,75 @@ struct Cli {
     log: bool,
 }
 
+pub struct MpscTransport {
+    tx: Sender<std::string::String>,
+    rx: Receiver<std::string::String>,
+}
+
+impl TransportLayer for MpscTransport {
+    fn send(&self, message: Message) -> Result<(), ()> {
+        let point = message;
+        let serialized = serde_json::to_string(&point).unwrap();
+
+        self.tx.send(serialized).unwrap();
+
+        Ok(())
+    }
+
+    fn get(&self) -> Option<Message> {
+        let deserialized: Message = serde_json::from_str(&self.rx.recv().unwrap()).unwrap();
+
+        println!("deserialized = {:?}", deserialized);
+        Some(deserialized)
+    }
+}
+
+pub fn mpsc_transport_pair() -> (MpscTransport, MpscTransport) {
+    let (tx_h, rx_h) = std::sync::mpsc::channel();
+    let (tx_d, rx_d) = std::sync::mpsc::channel();
+
+    let host_channel = MpscTransport { tx: tx_h, rx: rx_d };
+    let device_channel = MpscTransport { tx: tx_d, rx: rx_h };
+
+    (host_channel, device_channel)
+}
+
+// //fn run_channel()
+
 fn main() -> Result<(), failure::Error> {
-    let file: String = format!("test_prog.mem");
+
+
+
+
+    //MPSC Transport layer initialization
+     let (host_channel, device_channel) = mpsc_transport_pair();
+
+    let mut sim = Server::<MpscTransport> {
+        transport: host_channel,
+    };
+
+    let mut client = Client::<MpscTransport> {
+        transport: device_channel,
+    };
+
+
+    let cl = Arc::new(Mutex::new(client));
+    let counter = Arc::clone(&cl);
+    //let sim_th = Arc::new(Mutex::new(sim));
+    //let clone_sim = Arc::clone(&sim_th);
+    sim.set_pc(0x3000);   
+    thread::spawn(move || {
+    //    // let mut dev_cpy = DummyDevice {};
+     let file: String = format!("test_prog.mem");
 
     let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
     //let mut memory = FileBackedMemoryShim::from(&file);
     //let memory = MemoryShim::default();
+
+
+
+
+
     let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
 
     let mut interp: Interpreter<'_, _, PeripheralsShim<'_>> = InterpreterBuilder::new() //.build();
@@ -105,7 +174,27 @@ fn main() -> Result<(), failure::Error> {
 
     let mut sim = Simulator::new(interp);
 
-    sim.set_pc(0x3000);
+
+
+    
+    //let mut sim_th_share = (*clone_sim).lock().unwrap();
+         loop {
+
+            //(*counter).lock().unwrap().step(&mut (*clone_sim.lock().unwrap()));
+             (*counter).lock().unwrap().step(&mut sim);
+             let one_sec = time::Duration::from_millis(1000);
+             thread::sleep(one_sec);
+         }
+     });
+
+
+    // client.step(&mut sim);
+    //MPSC Transport layer initialization end
+   // client.step(&mut sim);
+
+
+
+
 
     // sim.reset();
 
