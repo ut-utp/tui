@@ -61,6 +61,9 @@ use lc3_traits::peripherals::adc::{AdcPin, AdcPinArr, AdcReadError, AdcState};
 use lc3_traits::peripherals::gpio::{GpioPin, GpioPinArr, GpioReadError, GpioState};
 use lc3_traits::peripherals::pwm::{PwmPin, PwmPinArr, PwmState};
 use lc3_traits::peripherals::timers::{TimerArr, TimerId, TimerState};
+use lc3_traits::peripherals::{PeripheralSet};
+
+use lc3_shims::peripherals::{GpioShim, AdcShim, PwmShim, TimersShim, ClockShim, InputShim, OutputShim};
 
 use lc3_baseline_sim::interp::{
     InstructionInterpreter, InstructionInterpreterPeripheralAccess, Interpreter,
@@ -73,7 +76,7 @@ use lc3_shims::peripherals::PeripheralsShim;
 
 use std::convert::TryInto;
 
-use std::sync::mpsc;
+use std::sync::{Arc, RwLock, mpsc};
 use std::thread;
 use std::time::Duration;
 
@@ -87,21 +90,37 @@ struct Cli {
     log: bool,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum TuiState { CONT, IN, GPIO, ADC, PWM, TMR, CLK}
+
 fn main() -> Result<(), failure::Error> {
     let file: String = format!("test_prog.mem");
+    let mut console_out = String::from("");
+    let mut console_count = 1;
 
     let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
     //let mut memory = FileBackedMemoryShim::from(&file);
     //let memory = MemoryShim::default();
     let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
+    let mut gpio_shim = Arc::new(RwLock::new(GpioShim::default()));
+    let mut adc_shim = Arc::new(RwLock::new(AdcShim::default()));
+    let mut pwm_shim = Arc::new(RwLock::new(PwmShim::default()));
+    let mut timer_shim = Arc::new(RwLock::new(TimersShim::default()));
+    let mut clock_shim = Arc::new(RwLock::new(ClockShim::default()));
+    let mut input_shim = Arc::new(RwLock::new(InputShim::default()));
+    let mut output_shim = Arc::new(RwLock::new(OutputShim::default()));
 
-    let mut interp: Interpreter<'_, _, PeripheralsShim<'_>> = InterpreterBuilder::new() //.build();
+    let mut peripherals = PeripheralSet::new(gpio_shim, adc_shim, pwm_shim, timer_shim, clock_shim, input_shim, output_shim);
+
+    let mut interp: Interpreter<'_, _, _> = InterpreterBuilder::new() //.build();
         .with_defaults()
+        .with_peripherals(peripherals)
         .with_memory(memory)
         .with_interrupt_flags_by_ref(&_flags)
         .build();
 
     interp.reset();
+
 
     let mut sim = Simulator::new(interp);
 
@@ -119,9 +138,15 @@ fn main() -> Result<(), failure::Error> {
         log: true,
     };
 
-    let mut input_mode: bool = false;
+    let mut input_mode = TuiState::CONT;
+    let mut pin_flag = 0;
+    let mut gpio_pin = GpioPin::G0;
+    let mut adc_pin = AdcPin::A0;
+    let mut pwm_pin = PwmPin::P0;
+    let mut timer_id = TimerId::T0;
+
     let mut input_out = String::from("");
-    let mut console_out = String::from("");
+    let mut set_val_out = String::from("");
 
     let mut active: bool = true;
         //stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
@@ -185,29 +210,175 @@ fn main() -> Result<(), failure::Error> {
         match rx.recv()? {
             Event::Input(event) => match event {
                 KeyEvent::Char(c) => {
-                    if input_mode == false{
+                    if input_mode == TuiState::CONT{
                         match c{
                             's' => if step != 1 { sim.step(); },
                             'p' => step = 0,
                             'r' => step = 1,
                             _ => {}
                         }
-                    } else {
-                        let x = format!("{}", c);
-                        input_out.push_str(&x);
+                    } else if input_mode == TuiState::IN {
+                        match c{
+                            '\n' => {
+                                input_out = String::from("");
+                            }
+                            _ => {
+                                let x = format!("{}", c);
+                                //TODO: PUSH TO BUFFER
+                                input_out.push_str(&x);
+                            }
+                        }
+                    } else if input_mode == TuiState::GPIO {
+                        if pin_flag == 0 {
+                            pin_flag = 1;
+                            match c{
+                                '0' => gpio_pin = GpioPin::G0,
+                                '1' => gpio_pin = GpioPin::G1,
+                                '2' => gpio_pin = GpioPin::G2,
+                                '3' => gpio_pin = GpioPin::G3,
+                                '4' => gpio_pin = GpioPin::G4,
+                                '5' => gpio_pin = GpioPin::G5,
+                                '6' => gpio_pin = GpioPin::G6,
+                                '7' => gpio_pin = GpioPin::G7,
+                                _ => pin_flag = 0
+                            }
+                        } else {
+                            match c{
+                                '\n' => {
+                                    set_val_out = String::from("");
+                                }
+                                _ => {
+                                    let x = format!("{}", c);
+                                    set_val_out.push_str(&x);
+                                }
+                            }
+                        }
+                    }  else if input_mode == TuiState::ADC {
+                        if pin_flag == 0 {
+                            pin_flag = 1;
+                            match c{
+                                '0' => adc_pin = AdcPin::A0,
+                                '1' => adc_pin = AdcPin::A1,
+                                '2' => adc_pin = AdcPin::A2,
+                                '3' => adc_pin = AdcPin::A3,
+                                _ => pin_flag = 0
+                            }
+                        } else {
+                            match c{
+                                '\n' => {
+                                    set_val_out = String::from("");
+                                }
+                                _ => {
+                                    let x = format!("{}", c);
+                                    set_val_out.push_str(&x);
+                                }
+                            }
+                        }
+                    } else if input_mode == TuiState::PWM {
+                        if pin_flag == 0 {
+                            pin_flag = 1;
+                            match c{
+                                '0' => pwm_pin = PwmPin::P0,
+                                '1' => pwm_pin = PwmPin::P1,
+                                _ => pin_flag = 0
+                            }
+                        } else {
+                            match c{
+                                '\n' => {
+                                    set_val_out = String::from("");
+                                }
+                                _ => {
+                                    let x = format!("{}", c);
+                                    set_val_out.push_str(&x);
+                                }
+                            }
+                        }
+                    } else if input_mode == TuiState::TMR {
+                        if pin_flag == 0 {
+                            pin_flag = 1;
+                            match c{
+                                '0' => timer_id = TimerId::T0,
+                                '1' => timer_id = TimerId::T1,
+                                _ => pin_flag = 0
+                            }
+                        } else {
+                            match c{
+                                '\n' => {
+                                    set_val_out = String::from("");
+                                }
+                                _ => {
+                                    let x = format!("{}", c);
+                                    set_val_out.push_str(&x);
+                                }
+                            }
+                        }
+                    } else if input_mode == TuiState::CLK {
+                        match c{
+                            '\n' => {
+                                set_val_out = String::from("");
+                            }
+                            _ => {
+                                let x = format!("{}", c);
+                                set_val_out.push_str(&x);
+                            }
+                        }
                     }
                 }
                 KeyEvent::Insert => {
-                    if input_mode == false {
-                        input_mode = true;
+                    set_val_out = String::from("");
+                    if input_mode == TuiState::IN {
+                        input_mode = TuiState::CONT;
                     } else {
-                        input_mode = false;
-                        console_out.push_str("Input: ");
-                        console_out.push_str(&input_out.clone());
-                        console_out.push_str("\n");
-                        input_out = String::from("");
+                        input_mode = TuiState::IN;
                     }
                 }
+                KeyEvent::Ctrl(c) => {
+                    set_val_out = String::from("");
+                    match c{
+                        'g' => {
+                            if input_mode == TuiState::GPIO {
+                                input_mode = TuiState::CONT;
+                            } else {
+                                pin_flag = 0;
+                                input_mode = TuiState::GPIO;
+                            }
+                        }
+                        'a' => {
+                            if input_mode == TuiState::ADC {
+                                input_mode = TuiState::CONT;
+                            } else {
+                                pin_flag = 0;
+                                input_mode = TuiState::ADC;
+                            }
+                        }
+                        'p' => {
+                            if input_mode == TuiState::PWM {
+                                input_mode = TuiState::CONT;
+                            } else {
+                                pin_flag = 0;
+                                input_mode = TuiState::PWM;
+                            }
+                        }
+                        't' => {
+                            if input_mode == TuiState::TMR {
+                                input_mode = TuiState::CONT;
+                            } else {
+                                pin_flag = 0;
+                                input_mode = TuiState::TMR;
+                            }
+                        }
+                        'c' => {
+                            if input_mode == TuiState::CLK {
+                                input_mode = TuiState::CONT;
+                            } else {
+                                pin_flag = 1;
+                                input_mode = TuiState::CLK;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
                 _ => {}
             },
             Event::Tick => {
@@ -230,7 +401,7 @@ fn main() -> Result<(), failure::Error> {
             let buttons = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(1)
-                .constraints([Constraint::Min(20), Constraint::Length(8), Constraint::Length(8), Constraint::Length(8)].as_ref())
+                .constraints([Constraint::Min(20), Constraint::Length(50), Constraint::Length(8), Constraint::Length(8), Constraint::Length(8)].as_ref())
                 .split(chunks[1]);
 
             let body = chunks[0];
@@ -274,6 +445,12 @@ fn main() -> Result<(), failure::Error> {
                  .borders(Borders::ALL)
                  .render(&mut f, right_pane[1]);
 
+            Block::default()
+                 .title("Footer")
+                 .title_style(Style::default().fg(Color::Red).modifier(Modifier::BOLD))
+                 .borders(Borders::ALL)
+                 .render(&mut f, chunks[1]);
+
             //Further breakdown of IO
             let io_panel = Layout::default()
                 .direction(Direction::Vertical)
@@ -298,12 +475,34 @@ fn main() -> Result<(), failure::Error> {
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
-                            .borders(Borders::ALL)
-                            .title("Footer")
-                            .title_style(Style::default().fg(Color::Red).modifier(Modifier::BOLD)),
+                            .borders(Borders::NONE)
                 )
                 .wrap(true)
-                .render(&mut f, chunks[1]);
+                .render(&mut f, buttons[0]);
+
+            
+                let mut cur_pin = Text::styled("\n", Style::default());
+                if input_mode != TuiState::CONT && input_mode != TuiState::IN {
+                    if pin_flag == 0 {
+                       cur_pin = Text::styled("SELECT SHIM\n", Style::default().fg(Color::Red).modifier(Modifier::BOLD));
+                    } else {
+                       cur_pin = Text::styled(format!("Current Shim: {}\n", get_pin_string(input_mode, gpio_pin, adc_pin, pwm_pin, timer_id)), Style::default());
+                    }
+                };
+
+            //Shim Input
+            let text = [
+                Text::raw(format!("Input Mode: {}\n", input_mode_string(input_mode))),
+                cur_pin,
+                Text::raw(set_val_out.clone())
+            ];
+
+            Paragraph::new(text.iter())
+                .block(
+                        Block::default()
+                            .borders(Borders::LEFT)
+                )
+                .render(&mut f, buttons[1]);
 
             //Footer Buttons
             let text = [
@@ -314,7 +513,7 @@ fn main() -> Result<(), failure::Error> {
                         Block::default()
                             .borders(Borders::ALL)
                 )
-                .render(&mut f, buttons[1]);
+                .render(&mut f, buttons[2]);
 
             let text = [
                 Text::styled("Pause", Style::default().fg(Color::Red).modifier(Modifier::BOLD))
@@ -324,7 +523,7 @@ fn main() -> Result<(), failure::Error> {
                         Block::default()
                             .borders(Borders::ALL)
                 )
-                .render(&mut f, buttons[2]);
+                .render(&mut f, buttons[3]);
 
             let text = [
                 Text::styled("Run", Style::default().fg(Color::Green).modifier(Modifier::BOLD))
@@ -334,7 +533,7 @@ fn main() -> Result<(), failure::Error> {
                         Block::default()
                             .borders(Borders::ALL)
                 )
-                .render(&mut f, buttons[3]);
+                .render(&mut f, buttons[4]);
 
             //Register Status Text
             let regs_psr_pc = sim.get_registers_psr_and_pc();
@@ -431,7 +630,7 @@ fn main() -> Result<(), failure::Error> {
                 .block(
                         Block::default()
                             .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
-                            .title("Output")
+                            .title("Console")
                             .title_style(Style::default().fg(Color::Green)),
                 )
                 .wrap(true)
@@ -724,4 +923,59 @@ fn main() -> Result<(), failure::Error> {
     }
 
     Ok(())
+}
+
+/*fn output_to_console(String s){
+
+}*/
+
+fn input_mode_string(s: TuiState) -> String{
+    match s {
+        TuiState::CONT => return format!("Control"),
+        TuiState::IN => return format!("Input"),
+        TuiState::GPIO => return format!("GPIO"),
+        TuiState::ADC => return format!("ADC"),
+        TuiState::PWM => return format!("PWM"),
+        TuiState::TMR => return format!("Timer"),
+        TuiState::CLK => return format!("Clock")
+    }
+}
+
+fn get_pin_string(s: TuiState, g: GpioPin, a: AdcPin, p: PwmPin, t: TimerId) -> String{
+    match s {
+        TuiState::GPIO => {
+            match g {
+                GpioPin::G0 => return format!("G0"),
+                GpioPin::G1 => return format!("G1"),
+                GpioPin::G2 => return format!("G2"),
+                GpioPin::G3 => return format!("G3"),
+                GpioPin::G4 => return format!("G4"),
+                GpioPin::G5 => return format!("G5"),
+                GpioPin::G6 => return format!("G6"),
+                GpioPin::G7 => return format!("G7")
+            }
+        }
+        TuiState::ADC => {
+            match a {
+                AdcPin::A0 => return format!("A0"),
+                AdcPin::A1 => return format!("A1"),
+                AdcPin::A2 => return format!("A2"),
+                AdcPin::A3 => return format!("A3")
+            }
+        }
+        TuiState::PWM => {
+            match p {
+                PwmPin::P0 => return format!("P0"),
+                PwmPin::P1 => return format!("P1")
+            }
+        }
+        TuiState::TMR => {
+            match t {
+                TimerId::T0 => return format!("T0"),
+                TimerId::T1 => return format!("T1")
+            }
+        }
+        TuiState::CLK => return format!("clk"),
+        _ => return format!("")
+    }
 }
