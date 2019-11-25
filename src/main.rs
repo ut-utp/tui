@@ -114,8 +114,8 @@ pub enum TuiState {
 
 fn main() -> Result<(), failure::Error> {
     let file: String = format!("test_prog.mem");
-    // let mut console_out = String::from("");
-    // let console_count = 1;
+    let mut console_out = String::from("");
+    let mut console_count = 1;
 
     let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
     //let mut memory = FileBackedMemoryShim::from(&file);
@@ -136,7 +136,7 @@ fn main() -> Result<(), failure::Error> {
     let console_output = Mutex::new(Vec::new());
     let output_shim = OutputShim::with_ref(&console_output);
 
-    let mut iteratively_collect_into_console_output = || {
+    let iteratively_collect_into_console_output = || {
         let vec = console_output.lock().unwrap();
 
         if vec.len() > last_idx {
@@ -146,8 +146,6 @@ fn main() -> Result<(), failure::Error> {
 
             last_idx = vec.len();
         }
-
-        console_output_string.clone()
     };
 
     let peripherals = PeripheralSet::new(
@@ -164,14 +162,12 @@ fn main() -> Result<(), failure::Error> {
         .with_defaults()
         .with_peripherals(peripherals)
         .with_memory(memory)
-        // .with_interrupt_flags_by_ref(&_flags)
+        .with_interrupt_flags_by_ref(&_flags)
         .build();
 
     interp.reset();
-    interp.init(&_flags);
 
     let mut sim = Simulator::new(interp);
-    // sim.get_interpreter().init(&_flags);
 
     sim.reset();
 
@@ -228,7 +224,7 @@ fn main() -> Result<(), failure::Error> {
         });
     }
 
-    // console_out.push_str("Startup Complete \n");
+    console_out.push_str("Startup Complete \n");
 
     let mut offset: u16 = 2;
     let mut running = false;
@@ -276,13 +272,13 @@ fn main() -> Result<(), failure::Error> {
                             _ => {}
                         }
                     } else if input_mode == TuiState::IN {
+                        source_shim.push(c);
                         match c {
                             '\n' => {
                                 input_out = String::from("");
                             }
                             _ => {
                                 let x = format!("{}", c);
-                                source_shim.push(c);
                                 input_out.push_str(&x);
                             }
                         }
@@ -733,7 +729,7 @@ fn main() -> Result<(), failure::Error> {
                  .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
                  .borders(Borders::ALL)
                  .render(&mut f, right_pane[1]);
-
+                 
 
             Block::default()
                  .title("Footer")
@@ -759,28 +755,35 @@ fn main() -> Result<(), failure::Error> {
 
             //Footer Text
             let text = [
-                Text::raw("To control the TUI, you can use "),
+                Text::styled("To control the TUI, you can use ", Style::default().fg(Color::LightGreen)),
                 Text::styled("S to Step ", Style::default().fg(Color::LightCyan)),
-                Text::raw("through instructions, "),
+                Text::styled("through instructions, ", Style::default().fg(Color::LightGreen)),
                 Text::styled("P to Pause, ", Style::default().fg(Color::LightRed)),
-                Text::styled("R to Run, ", Style::default().fg(Color::Cyan)),
-                Text::raw("and "),
+                Text::styled("R to Run, ", Style::default().fg(Color::LightYellow)),
+                Text::styled("and ", Style::default().fg(Color::LightGreen)),
                 Text::styled("Q to Quit\n", Style::default().fg(Color::Gray)),
-                Text::raw("To set the peripherals use "),
+                Text::styled("To set the peripherals use ", Style::default().fg(Color::LightGreen)),
                 Text::styled("Ctrl + ", Style::default().fg(Color::White)),
-                Text::styled("g for GPIO, ", Style::default().fg(Color::Magenta)),
-                Text::styled("a for ADC, ", Style::default().fg(Color::Yellow)),
-                Text::styled("p for PWM, ", Style::default().fg(Color::LightMagenta)),
-                Text::styled("t for Timers, ", Style::default().fg(Color::LightYellow)),
-                Text::raw("and "),
-                Text::styled("c for CLK\n", Style::default().fg(Color::LightRed)),
-                Text::raw("To affect the simulator, use "),
-                Text::styled("Alt + ", Style::default().fg(Color::LightCyan)),
-                Text::styled("p for PC, ", Style::default().fg(Color::LightRed)),
-                Text::styled("m for Memory, ", Style::default().fg(Color::Cyan)),
-                Text::raw("and "),
+                Text::styled("g for GPIO, ", Style::default().fg(Color::Rgb(0xee, 0xee, 0xee))),
+                Text::styled("a for ADC, ", Style::default().fg(Color::Rgb(0xdd, 0xdd, 0xdd))),
+                Text::styled("p for PWM, ", Style::default().fg(Color::Rgb(0xcc, 0xcc, 0xcc))),
+                Text::styled("t for Timers, ", Style::default().fg(Color::Rgb(0xbb, 0xbb, 0xbb))),
+                Text::styled("and ", Style::default().fg(Color::LightGreen)),
+                Text::styled("c for CLK\n", Style::default().fg(Color::Rgb(0xaa, 0xaa, 0xaa))),
+                Text::styled("To affect the simulator, use ", Style::default().fg(Color::LightGreen)),
+                Text::styled("Alt + ", Style::default().fg(Color::White)),
+                Text::styled("p for PC, ", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                Text::styled("m for Memory, ", Style::default().fg(Color::LightCyan)),
+                Text::styled("and ", Style::default().fg(Color::LightGreen)),
                 Text::styled("r to reset\n", Style::default().fg(Color::Gray)),
-                Text::raw("To control memory, use the UP and DOWN arrow keys. Shift arrow jumps 10, Control arrow jumps 100. Ctrl h returns to PC\n")
+                Text::styled("To control memory, use ", Style::default().fg(Color::LightGreen)),
+                Text::styled("UP and DOWN ", Style::default().fg(Color::Gray)),
+                Text::styled("arrow keys. ", Style::default().fg(Color::LightGreen)),
+                Text::styled("Shift + arrow", Style::default().fg(Color::Gray)),
+                Text::styled("jumps 10, ", Style::default().fg(Color::LightGreen)),
+                Text::styled("Control + arrow ", Style::default().fg(Color::Gray)),
+                Text::styled("jumps 100. ", Style::default().fg(Color::LightGreen)),
+                Text::styled("Ctrl + h returns to PC\n", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
             ];
 
             Paragraph::new(text.iter())
@@ -798,11 +801,11 @@ fn main() -> Result<(), failure::Error> {
                 if pin_flag == 0 {
                    cur_pin = Text::styled("INPUT ADDRESS\n", Style::default().fg(Color::Red).modifier(Modifier::BOLD));
                 } else {
-                   cur_pin = Text::styled(format!("Current Addr: {}\n", mem_addr), Style::default().fg(Color::Gray));
+                   cur_pin = Text::styled(format!("Current Addr: {:#06x}\n", mem_addr), Style::default().fg(Color::Gray));
                 }
             } else if input_mode != TuiState::CONT && input_mode != TuiState::IN {
                 if pin_flag == 0 {
-                   cur_pin = Text::styled("SELECT SHIM\n", Style::default().fg(Color::Red).modifier(Modifier::BOLD));
+                   cur_pin = Text::styled("SELECT TARGET (Type an integer)\n", Style::default().fg(Color::Red).modifier(Modifier::BOLD));
                 } else {
                    cur_pin = Text::styled(format!("Current Selection: {}\n", get_pin_string(input_mode, gpio_pin, adc_pin, pwm_pin, timer_id, reg_id)), Style::default().fg(Color::Gray));
                 }
@@ -857,7 +860,8 @@ fn main() -> Result<(), failure::Error> {
             let (regs, psr, pc) = regs_psr_pc;
 
             let text = [
-                Text::styled(("R0:\nR1:\nR2\nR3:\nR4:\n"), Style::default().fg(Color::Gray)),
+                Text::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(Color::Gray)),
+                Text::styled("PSR:\n", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
             ];
 
             Paragraph::new(text.iter())
@@ -877,9 +881,10 @@ fn main() -> Result<(), failure::Error> {
                 .split(left_pane[1]);
 
             let mut s =  String::from("");
-            for i in 0..5 {
+            for i in 0..4 {
                 s.push_str(&format!("{:#018b} {:#06x} {:#05}\n", regs[i], regs[i], regs[i]));
             }
+            s.push_str(&format!("{:#018b} {:#06x} {:#05}\n", psr, psr, psr));
 
             let text = [
                 Text::styled(s, Style::default().fg(Color::LightGreen)),
@@ -894,7 +899,8 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, regs_partitions[1]);
 
             let text = [
-                Text::styled("R5:\nR6:\nR7\nPSR:\nPC:\n", Style::default().fg(Color::Gray)),
+                Text::styled("R4:\nR5:\nR6:\nR7:\n", Style::default().fg(Color::Gray)),
+                Text::styled("PC:\n", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
             ];
 
             Paragraph::new(text.iter())
@@ -906,10 +912,9 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, regs_partitions[2]);
 
             s =  String::from("");
-            for i in 5..8 {
+            for i in 4..8 {
                 s.push_str(&format!("{:#018b} {:#06x} {:#05}\n", regs[i], regs[i], regs[i]));
             }
-            s.push_str(&format!("{:#018b} {:#06x} {:#05}\n", psr, psr, psr));
             s.push_str(&format!("{:#018b} {:#06x} {:#05}\n", pc, pc, pc));
 
             let text = [
@@ -985,7 +990,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, mem_partitions[1]);
-
+            
             let text = [
                 Text::styled(s, Style::default().fg(Color::LightGreen)),
             ];
@@ -1010,29 +1015,19 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, mem_partitions[3]);
 
-            let console_height = console[0].height;
-            let output_string = iteratively_collect_into_console_output();
-            let num_lines = output_string.split('\n').count();
+            //Console
+            let text = [
+                Text::raw(console_out.clone())
+            ];
 
-            // output_string.split('\n').map(|s| Text::raw(s))
-
-            // //Console
-            // let text = [
-            //     Text::raw(iteratively_collect_into_console_output())
-            // ];
-
-            // let text: Vec<_> = output_string.split('\n').map(|s| Text::raw(s)).collect();
-
-            // Paragraph::new(text.iter())
-            Paragraph::new([Text::raw(output_string)].iter())
+            Paragraph::new(text.iter())
                 .block(
                         Block::default()
                             .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
                             .title("Console")
                             .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
-                .wrap(false)
-                .scroll((num_lines.saturating_sub(console_height as usize)) as u16)
+                .wrap(true)
                 .render(&mut f, console[0]);
 
             let text = [
@@ -1148,7 +1143,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, right_partitions[0]);
-
+            
             let gpio = match gpioin[GpioPin::G4]{
                 Ok(val) => format!("GPIO 4:  {}\n", val),
                 Err(e) => format!("GPIO 4:  -\n"),
@@ -1314,7 +1309,7 @@ fn main() -> Result<(), failure::Error> {
             let text = [
                 Text::styled("PWM 0:\n", Style::default().fg(Color::Gray)),
             ];
-
+            
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
@@ -1426,7 +1421,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, left_partitions[1]);
-
+            
 
             //Clock
             let clock = sim.get_clock();
