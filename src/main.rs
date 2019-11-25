@@ -114,8 +114,8 @@ pub enum TuiState {
 
 fn main() -> Result<(), failure::Error> {
     let file: String = format!("test_prog.mem");
-    let mut console_out = String::from("");
-    let mut console_count = 1;
+    // let mut console_out = String::from("");
+    // let console_count = 1;
 
     let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
     //let mut memory = FileBackedMemoryShim::from(&file);
@@ -136,7 +136,7 @@ fn main() -> Result<(), failure::Error> {
     let console_output = Mutex::new(Vec::new());
     let output_shim = OutputShim::with_ref(&console_output);
 
-    let iteratively_collect_into_console_output = || {
+    let mut iteratively_collect_into_console_output = || {
         let vec = console_output.lock().unwrap();
 
         if vec.len() > last_idx {
@@ -146,6 +146,8 @@ fn main() -> Result<(), failure::Error> {
 
             last_idx = vec.len();
         }
+
+        console_output_string.clone()
     };
 
     let peripherals = PeripheralSet::new(
@@ -162,12 +164,14 @@ fn main() -> Result<(), failure::Error> {
         .with_defaults()
         .with_peripherals(peripherals)
         .with_memory(memory)
-        .with_interrupt_flags_by_ref(&_flags)
+        // .with_interrupt_flags_by_ref(&_flags)
         .build();
 
     interp.reset();
+    interp.init(&_flags);
 
     let mut sim = Simulator::new(interp);
+    // sim.get_interpreter().init(&_flags);
 
     sim.reset();
 
@@ -224,7 +228,7 @@ fn main() -> Result<(), failure::Error> {
         });
     }
 
-    console_out.push_str("Startup Complete \n");
+    // console_out.push_str("Startup Complete \n");
 
     let mut offset: u16 = 2;
     let mut running = false;
@@ -729,7 +733,7 @@ fn main() -> Result<(), failure::Error> {
                  .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
                  .borders(Borders::ALL)
                  .render(&mut f, right_pane[1]);
-                 
+
 
             Block::default()
                  .title("Footer")
@@ -981,7 +985,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, mem_partitions[1]);
-            
+
             let text = [
                 Text::styled(s, Style::default().fg(Color::LightGreen)),
             ];
@@ -1006,9 +1010,10 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, mem_partitions[3]);
 
+
             //Console
             let text = [
-                Text::raw(console_out.clone())
+                Text::raw(iteratively_collect_into_console_output())
             ];
 
             Paragraph::new(text.iter())
@@ -1134,7 +1139,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, right_partitions[0]);
-            
+
             let gpio = match gpioin[GpioPin::G4]{
                 Ok(val) => format!("GPIO 4:  {}\n", val),
                 Err(e) => format!("GPIO 4:  -\n"),
@@ -1300,7 +1305,7 @@ fn main() -> Result<(), failure::Error> {
             let text = [
                 Text::styled("PWM 0:\n", Style::default().fg(Color::Gray)),
             ];
-            
+
             Paragraph::new(text.iter())
                 .block(
                         Block::default()
@@ -1412,7 +1417,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, left_partitions[1]);
-            
+
 
             //Clock
             let clock = sim.get_clock();
