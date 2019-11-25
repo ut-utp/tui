@@ -329,22 +329,24 @@ fn main() -> Result<(), failure::Error> {
                                             .unwrap(),
                                         Err(e) => {}
                                     }
-                                    let val = set_val_out.split_off(2);
-                                    if set_val_out == "0x" {
-                                        match u8::from_str_radix(&val, 16) {
-                                            Ok(n) => RwLock::write(&adc_shim)
-                                                .unwrap()
-                                                .set_value(adc_pin, n)
-                                                .unwrap(),
-                                            Err(e) => {}
-                                        }
-                                    } else if set_val_out == "0b" {
-                                        match u8::from_str_radix(&val, 2) {
-                                            Ok(n) => RwLock::write(&adc_shim)
-                                                .unwrap()
-                                                .set_value(adc_pin, n)
-                                                .unwrap(),
-                                            Err(e) => {}
+                                    if set_val_out.len() > 2 {
+                                        let val = set_val_out.split_off(2);
+                                        if set_val_out == "0x" {
+                                            match u8::from_str_radix(&val, 16) {
+                                                Ok(n) => RwLock::write(&adc_shim)
+                                                    .unwrap()
+                                                    .set_value(adc_pin, n)
+                                                    .unwrap(),
+                                                Err(e) => {}
+                                            }
+                                        } else if set_val_out == "0b" {
+                                            match u8::from_str_radix(&val, 2) {
+                                                Ok(n) => RwLock::write(&adc_shim)
+                                                    .unwrap()
+                                                    .set_value(adc_pin, n)
+                                                    .unwrap(),
+                                                Err(e) => {}
+                                            }
                                         }
                                     }
                                     set_val_out = String::from("");
@@ -372,22 +374,24 @@ fn main() -> Result<(), failure::Error> {
                                             .set_duty_cycle_helper(pwm_pin, n),
                                         Err(e) => {}
                                     }
-                                    let val = set_val_out.split_off(2);
-                                    if set_val_out == "0x" {
-                                        match u8::from_str_radix(&val, 16) {
-                                            Ok(n) => if n > 0 { RwLock::write(&pwm_shim)
-                                                .unwrap()
-                                                .set_duty_cycle_helper(pwm_pin, NonZeroU8::new(n).unwrap());
-                                            },
-                                            Err(e) => {}
-                                        }
-                                    } else if set_val_out == "0b" {
-                                        match u8::from_str_radix(&val, 2) {
-                                            Ok(n) => if n > 0 { RwLock::write(&pwm_shim)
-                                                .unwrap()
-                                                .set_duty_cycle_helper(pwm_pin, NonZeroU8::new(n).unwrap());
-                                            },
-                                            Err(e) => {}
+                                    if set_val_out.len() > 2 {
+                                        let val = set_val_out.split_off(2);
+                                        if set_val_out == "0x" {
+                                            match u8::from_str_radix(&val, 16) {
+                                                Ok(n) => if n > 0 { RwLock::write(&pwm_shim)
+                                                    .unwrap()
+                                                    .set_duty_cycle_helper(pwm_pin, NonZeroU8::new(n).unwrap());
+                                                },
+                                                Err(e) => {}
+                                            }
+                                        } else if set_val_out == "0b" {
+                                            match u8::from_str_radix(&val, 2) {
+                                                Ok(n) => if n > 0 { RwLock::write(&pwm_shim)
+                                                    .unwrap()
+                                                    .set_duty_cycle_helper(pwm_pin, NonZeroU8::new(n).unwrap());
+                                                },
+                                                Err(e) => {}
+                                            }
                                         }
                                     }
                                     set_val_out = String::from("");
@@ -438,16 +442,18 @@ fn main() -> Result<(), failure::Error> {
                                         Ok(w) => sim.set_register(reg_id, w),
                                         Err(e) => {}
                                     }
-                                    let val = set_val_out.split_off(2);
-                                    if set_val_out == "0x" {
-                                        match Word::from_str_radix(&val, 16) {
-                                            Ok(w) => sim.set_register(reg_id, w),
-                                            Err(e) => {}
-                                        }
-                                    } else if set_val_out == "0b" {
-                                        match Word::from_str_radix(&val, 2) {
-                                            Ok(w) => sim.set_register(reg_id, w),
-                                            Err(e) => {}
+                                    if set_val_out.len() > 2 {
+                                        let val = set_val_out.split_off(2);
+                                        if set_val_out == "0x" {
+                                            match Word::from_str_radix(&val, 16) {
+                                                Ok(w) => sim.set_register(reg_id, w),
+                                                Err(e) => {}
+                                            }
+                                        } else if set_val_out == "0b" {
+                                            match Word::from_str_radix(&val, 2) {
+                                                Ok(w) => sim.set_register(reg_id, w),
+                                                Err(e) => {}
+                                            }
                                         }
                                     }
                                     set_val_out = String::from("");
@@ -469,22 +475,24 @@ fn main() -> Result<(), failure::Error> {
                                         }
                                         Err(e) => {}
                                     }
-                                    let val = set_val_out.split_off(2);
-                                    if set_val_out == "0x" {
-                                        match Addr::from_str_radix(&val, 16) {
-                                            Ok(a) => {
-                                                pin_flag = 1;
-                                                mem_addr = a;
+                                    if set_val_out.len() > 2 {
+                                        let val = set_val_out.split_off(2);
+                                        if set_val_out == "0x" {
+                                            match Addr::from_str_radix(&val, 16) {
+                                                Ok(a) => {
+                                                    pin_flag = 1;
+                                                    mem_addr = a;
+                                                }
+                                                Err(e) => {}
                                             }
-                                            Err(e) => {}
-                                        }
-                                    } else if set_val_out == "0b" {
-                                        match Addr::from_str_radix(&val, 2) {
-                                            Ok(a) => {
-                                                pin_flag = 1;
-                                                mem_addr = a;
+                                        } else if set_val_out == "0b" {
+                                            match Addr::from_str_radix(&val, 2) {
+                                                Ok(a) => {
+                                                    pin_flag = 1;
+                                                    mem_addr = a;
+                                                }
+                                                Err(e) => {}
                                             }
-                                            Err(e) => {}
                                         }
                                     }
                                     set_val_out = String::from("");
