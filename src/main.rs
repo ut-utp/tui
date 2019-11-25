@@ -204,10 +204,6 @@ fn main() -> Result<(), failure::Error> {
                         if let Err(_) = tx.send(Event::Input(key.clone())) {
                             return;
                         }
-                        if key == KeyEvent::Char('q') {
-                            active = false;
-                            return;
-                        }
                     }
                     _ => {}
                 }
@@ -234,7 +230,10 @@ fn main() -> Result<(), failure::Error> {
     while active {
         if step == 1 {
             offset = 2;
-            sim.step();
+            match sim.step() {
+                State::Halted => step = 0,
+                _ => {}
+            }
         }
 
         match rx.recv()? {
@@ -264,6 +263,7 @@ fn main() -> Result<(), failure::Error> {
                             }
                             'p' => step = 0,
                             'r' => step = 1,
+                            'q' => active = false,
                             _ => {}
                         }
                     } else if input_mode == TuiState::IN {
@@ -542,7 +542,12 @@ fn main() -> Result<(), failure::Error> {
                         _ => {}
                     }
                 }
-
+                KeyEvent::Alt(c) => {
+                    match c {
+                        'r' => sim.reset(),
+                        _ => {}
+                    }
+                }
                 _ => {}
             },
             Event::Tick => {}
@@ -1091,7 +1096,7 @@ fn main() -> Result<(), failure::Error> {
         })?;
     }
 
-    process::exit(1);
+    //process::exit(1);
     Ok(())
 }
 
@@ -1117,43 +1122,49 @@ fn input_mode_string(s: TuiState) -> String {
 }
 
 fn get_pin_string(s: TuiState, g: GpioPin, a: AdcPin, p: PwmPin, t: TimerId, r: Reg) -> String {
+    use GpioPin::*;
+    use AdcPin::*;
+    use TuiState::*;
+    use PwmPin::*;
+    use Reg::*;
+
     match s {
-        TuiState::GPIO => match g {
-            GpioPin::G0 => return format!("G0"),
-            GpioPin::G1 => return format!("G1"),
-            GpioPin::G2 => return format!("G2"),
-            GpioPin::G3 => return format!("G3"),
-            GpioPin::G4 => return format!("G4"),
-            GpioPin::G5 => return format!("G5"),
-            GpioPin::G6 => return format!("G6"),
-            GpioPin::G7 => return format!("G7"),
+        GPIO => match g {
+            G0 => return format!("G0"),
+            G1 => return format!("G1"),
+            G2 => return format!("G2"),
+            G3 => return format!("G3"),
+            G4 => return format!("G4"),
+            G5 => return format!("G5"),
+            G6 => return format!("G6"),
+            G7 => return format!("G7"),
         },
-        TuiState::ADC => match a {
-            AdcPin::A0 => return format!("A0"),
-            AdcPin::A1 => return format!("A1"),
-            AdcPin::A2 => return format!("A2"),
-            AdcPin::A3 => return format!("A3"),
+        ADC => match a {
+            A0 => return format!("A0"),
+            A1 => return format!("A1"),
+            A2 => return format!("A2"),
+            A3 => return format!("A3"),
         },
-        TuiState::PWM => match p {
-            PwmPin::P0 => return format!("P0"),
-            PwmPin::P1 => return format!("P1"),
+        PWM => match p {
+            P0 => return format!("P0"),
+            P1 => return format!("P1"),
         },
-        TuiState::TMR => match t {
-            TimerId::T0 => return format!("T0"),
-            TimerId::T1 => return format!("T1"),
+        TMR => match t {
+            T0 => return format!("T0"),
+            T1 => return format!("T1"),
         },
-        TuiState::REG => match r {
-            Reg::R0 => return format!("R0"),
-            Reg::R1 => return format!("R1"),
-            Reg::R2 => return format!("R2"),
-            Reg::R3 => return format!("R3"),
-            Reg::R4 => return format!("R4"),
-            Reg::R5 => return format!("R5"),
-            Reg::R6 => return format!("R6"),
-            Reg::R7 => return format!("R7"),
+        REG => match r {
+            R0 => return format!("R0"),
+            R1 => return format!("R1"),
+            R2 => return format!("R2"),
+            R3 => return format!("R3"),
+            R4 => return format!("R4"),
+            R5 => return format!("R5"),
+            R6 => return format!("R6"),
+            R7 => return format!("R7"),
         },
-        TuiState::CLK => return format!("CLK"),
-        TuiState::PC => return format!("PC"),
+        CLK => return format!("CLK"),
+        PC => return format!("PC"),
         _ => return format!(""),
     }
 }
