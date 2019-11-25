@@ -80,6 +80,10 @@ use std::sync::{Arc, RwLock, mpsc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use core::num::NonZeroU8;
+
+use std::process;
+
 enum Event<I> {
     Input(I),
     Tick,
@@ -129,8 +133,7 @@ fn main() -> Result<(), failure::Error> {
 
     let mut sim = Simulator::new(interp);
 
-    sim.set_pc(0x3000);
-
+    sim.set_pc(0x2000);
     // sim.reset();
 
     let screen = AlternateScreen::to_alternate(true)?;
@@ -250,6 +253,10 @@ fn main() -> Result<(), failure::Error> {
                         } else {
                             match c{
                                 '\n' => {
+                                    match set_val_out.parse::<bool>() {
+                                        Ok(b) => RwLock::write(&gpio_shim).unwrap().set_pin(gpio_pin, b).unwrap(),
+                                        Err(e) => {},
+                                    }
                                     set_val_out = String::from("");
                                 }
                                 _ => {
@@ -271,6 +278,10 @@ fn main() -> Result<(), failure::Error> {
                         } else {
                             match c{
                                 '\n' => {
+                                    match set_val_out.parse::<u8>() {
+                                        Ok(n) => RwLock::write(&adc_shim).unwrap().set_value(adc_pin, n).unwrap(),
+                                        Err(e) => {},
+                                    }
                                     set_val_out = String::from("");
                                 }
                                 _ => {
@@ -290,6 +301,10 @@ fn main() -> Result<(), failure::Error> {
                         } else {
                             match c{
                                 '\n' => {
+                                    match set_val_out.parse::<NonZeroU8>() {
+                                        Ok(n) => RwLock::write(&pwm_shim).unwrap().set_duty_cycle_helper(pwm_pin, n),
+                                        Err(e) => {},
+                                    }
                                     set_val_out = String::from("");
                                 }
                                 _ => {
@@ -485,17 +500,17 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, buttons[0]);
 
-            
-                let mut cur_pin = Text::styled("\n", Style::default());
-                if input_mode != TuiState::CONT && input_mode != TuiState::IN {
-                    if pin_flag == 0 {
-                       cur_pin = Text::styled("SELECT SHIM\n", Style::default().fg(Color::Red).modifier(Modifier::BOLD));
-                    } else {
-                       cur_pin = Text::styled(format!("Current Shim: {}\n", get_pin_string(input_mode, gpio_pin, adc_pin, pwm_pin, timer_id)), Style::default());
-                    }
-                };
-
             //Shim Input
+
+            let mut cur_pin = Text::styled("\n", Style::default());
+            if input_mode != TuiState::CONT && input_mode != TuiState::IN {
+                if pin_flag == 0 {
+                   cur_pin = Text::styled("SELECT SHIM\n", Style::default().fg(Color::Red).modifier(Modifier::BOLD));
+                } else {
+                   cur_pin = Text::styled(format!("Current Shim: {}\n", get_pin_string(input_mode, gpio_pin, adc_pin, pwm_pin, timer_id)), Style::default());
+                }
+            };
+
             let text = [
                 Text::raw(format!("Input Mode: {}\n", input_mode_string(input_mode))),
                 cur_pin,
@@ -927,6 +942,7 @@ fn main() -> Result<(), failure::Error> {
         })?;
     }
 
+    process::exit(1);
     Ok(())
 }
 
@@ -946,7 +962,7 @@ fn input_mode_string(s: TuiState) -> String{
     }
 }
 
-fn get_pin_string(s: TuiState, g: GpioPin, a: AdcPin, p: PwmPin, t: TimerId) -> String{
+fn get_pin_string(s: TuiState, g: GpioPin, a: AdcPin, p: PwmPin, t: TimerId) -> String {
     match s {
         TuiState::GPIO => {
             match g {
