@@ -100,17 +100,19 @@ pub struct MpscTransport {
 
 impl TransportLayer for MpscTransport {
     fn send(&self, message: Message) -> Result<(), ()> {
+        println!("came here5");
         let point = message;
         let serialized = serde_json::to_string(&point).unwrap();
 
         self.tx.send(serialized).unwrap();
+        println!("came here6");
 
         Ok(())
     }
 
     fn get(&self) -> Option<Message> {
         let deserialized: Message = serde_json::from_str(&self.rx.recv().unwrap()).unwrap();
-
+        println!("came here7");
         println!("deserialized = {:?}", deserialized);
         Some(deserialized)
     }
@@ -131,7 +133,7 @@ pub fn mpsc_transport_pair() -> (MpscTransport, MpscTransport) {
 fn main() -> Result<(), failure::Error> {
 
 
-
+    println!("came here1");
 
     //MPSC Transport layer initialization
      let (host_channel, device_channel) = mpsc_transport_pair();
@@ -144,13 +146,16 @@ fn main() -> Result<(), failure::Error> {
         transport: device_channel,
     };
 
-
+    println!("came here2");
     let cl = Arc::new(Mutex::new(client));
     let counter = Arc::clone(&cl);
     //let sim_th = Arc::new(Mutex::new(sim));
     //let clone_sim = Arc::clone(&sim_th);
+    println!("came here3");
     sim.set_pc(0x3000);   
+    
     thread::spawn(move || {
+    println!("came here");
     //    // let mut dev_cpy = DummyDevice {};
      let file: String = format!("test_prog.mem");
 
