@@ -221,6 +221,10 @@ fn main() -> Result<(), failure::Error> {
     let mut iteratively_collect_into_console_output = || {
         let vec = console_output.lock().unwrap();
 
+        if console_output_string.len() > 5000 {
+            let _ = console_output_string.drain(0..(console_output_string.len() - 2000)); // Only keep the last 2000 characters
+        }
+
         if vec.len() > last_idx {
             vec[last_idx..].iter().for_each(|c| {
                 console_output_string.push(*c as char);
