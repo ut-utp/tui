@@ -36,10 +36,10 @@ lc3-traits = { path = "../traits", version = "0.1.0", default-features = false, 
 
 crossterm = "^0.10"
 failure = "0.1.6"
-serde = { version = "1.0", default-features = false, features = ["derive"] }
-serde_json = "1.0.41"
+# serde = { version = "1.0", default-features = false, features = ["derive"] }
 log = "0.4.8"
 flexi_logger = { version = "0.14", default_features = false }
+lazy_static = "1.4.0"
 
 [dependencies.tui]
 version = "0.6.2"
