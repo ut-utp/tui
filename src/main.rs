@@ -53,31 +53,29 @@ use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders, Paragraph, Text, Widget};
 
-use std::io::stdout;
-
 use lc3_isa::{Addr, Instruction, Reg, Word};
+use lc3_traits::control::rpc::SyncEventFutureSharedState;
 use lc3_traits::control::{Control, State};
-use lc3_traits::peripherals::adc::{AdcPin, AdcPinArr, AdcReadError, AdcState};
-use lc3_traits::peripherals::gpio::{GpioPin, GpioPinArr, GpioReadError, GpioState};
-use lc3_traits::peripherals::pwm::{PwmPin, PwmPinArr, PwmState};
-use lc3_traits::peripherals::timers::{TimerArr, TimerId, TimerState};
+use lc3_traits::peripherals::adc::{AdcPin, AdcState};
+use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
+use lc3_traits::peripherals::pwm::{PwmPin, PwmState};
+use lc3_traits::peripherals::timers::{TimerId, TimerState};
 use lc3_traits::peripherals::PeripheralSet;
-use lc3_traits::control::{MAX_BREAKPOINTS, MAX_MEMORY_WATCHES};
 
 use lc3_shims::peripherals::{
     AdcShim, ClockShim, GpioShim, InputShim, OutputShim, PwmShim, SourceShim, TimersShim,
 };
 
-use lc3_traits::control_rpc::*;
-
+use lc3_traits::control::rpc::mpsc_sync_pair;
+use lc3_traits::control::rpc::TransparentEncoding;
+use lc3_traits::control::rpc::*;
 
 use lc3_baseline_sim::interp::{
-    InstructionInterpreter, InstructionInterpreterPeripheralAccess, Interpreter,
-    InterpreterBuilder, MachineState, PeripheralInterruptFlags,
+    InstructionInterpreter, Interpreter, InterpreterBuilder, PeripheralInterruptFlags,
 };
-use lc3_baseline_sim::sim::{Simulator};
+use lc3_baseline_sim::sim::Simulator;
 
-use lc3_shims::memory::{FileBackedMemoryShim, MemoryShim};
+use lc3_shims::memory::FileBackedMemoryShim;
 use lc3_shims::peripherals::PeripheralsShim;
 
 use std::convert::TryInto;
@@ -85,33 +83,34 @@ use std::convert::TryInto;
 use std::sync::{mpsc, Arc, Mutex, RwLock};
 use std::thread;
 
-use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
-use std::{thread,time};
+use std::time;
 
 use std::time::Duration;
-use std::sync::{Arc, Mutex};
 
-use serde::{Deserialize, Serialize};
+// use serde::{Deserialize, Serialize};
 use log::{info, warn};
 extern crate flexi_logger;
 
-use flexi_logger::{Logger, opt_format};
+use flexi_logger::{opt_format, Logger};
 
-use std::fs::File;
+// use std::fs::File;
 
-use std::borrow::Cow::Borrowed;
+// use std::borrow::Cow::Borrowed;
 
 use core::num::NonZeroU8;
 
-use std::process;
+// use std::process;
 
 enum Event<I> {
     Input(I),
     Tick,
 }
 
-
+struct Cli {
+    tick_rate: u64,
+    log: bool,
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TuiState {
@@ -127,10 +126,13 @@ pub enum TuiState {
     MEM,
 }
 
+lazy_static::lazy_static! {
+    pub static ref EVENT_FUTURE_SHARED_STATE: SyncEventFutureSharedState = SyncEventFutureSharedState::new();
+}
+
 fn main() -> Result<(), failure::Error> {
     let file: String = format!("test_prog.mem");
 
-    let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
     let memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
     let gpio_shim = Arc::new(RwLock::new(GpioShim::default()));
     let adc_shim = Arc::new(RwLock::new(AdcShim::default()));
@@ -138,91 +140,24 @@ fn main() -> Result<(), failure::Error> {
     let timer_shim = Arc::new(RwLock::new(TimersShim::default()));
     let clock_shim = Arc::new(RwLock::new(ClockShim::default()));
 
-    let source_shim = SourceShim::new();
-    let input_shim = InputShim::with_ref(&source_shim);
+    let source_shim = Box::new(SourceShim::new());
+    let source_shim = Box::leak(source_shim);
+    let input_shim = Arc::new(Mutex::new(InputShim::with_ref(source_shim)));
 
     let mut console_output_string: String = String::new();
     let mut last_idx = 0;
 
-pub struct MpscTransport {
-    tx: Sender<std::string::String>,
-    rx: Receiver<std::string::String>,
-}
-
-impl TransportLayer for MpscTransport {
-    fn send(&self, message: Message) -> Result<(), ()> {
-       // println!("came here5");
-        let point = message;
-        let serialized = serde_json::to_string(&point).unwrap();
-
-        info!(target: "transmitted", "Sent: {:?}", serialized);
-        self.tx.send(serialized).unwrap();
-        //println!("came here6");
-
-
-        Ok(())
-    }
-
-    fn get(&self) -> Option<Message> {
-        let deserialized: Message = serde_json::from_str(&self.rx.recv().unwrap()).unwrap();
-        info!(target: "received", "Got: {:?}", deserialized);
-       // println!("came here7");
-        //println!("deserialized = {:?}", deserialized);
-        Some(deserialized)
-    }
-}
-
-pub fn mpsc_transport_pair() -> (MpscTransport, MpscTransport) {
-    let (tx_h, rx_h) = std::sync::mpsc::channel();
-    let (tx_d, rx_d) = std::sync::mpsc::channel();
-
-    let host_channel = MpscTransport { tx: tx_h, rx: rx_d };
-    let device_channel = MpscTransport { tx: tx_d, rx: rx_h };
-
-    (host_channel, device_channel)
-}
-
-fn main() -> Result<(), failure::Error> {
-
-    Logger::with_env_or_str("myprog=debug, mylib=warn")
-                .log_to_file()
-                .directory("log_files")
-                .format(opt_format)
-                .start()
-                .unwrap();
-
-    info!("This only appears in the log file");
-
- let (host_channel, device_channel) = mpsc_transport_pair();
-
-    let mut sim = Server::<MpscTransport> {
-        transport: host_channel,
-    };
-
-    let mut client = Client::<MpscTransport> {
-        transport: device_channel,
-    };
-
-    let cl = Arc::new(Mutex::new(client));
-    let counter = Arc::clone(&cl);
-
-
-    thread::spawn(move || {
-     let file: String = format!("test_prog.mem");
-
-    let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
-
-    let mut memory = FileBackedMemoryShim::from_existing_file(&file).unwrap();
-
-
-    let console_output = Mutex::new(Vec::new());
-    let output_shim = OutputShim::with_ref(&console_output);
+    let console_output = Box::new(Mutex::new(Vec::new()));
+    let console_output = Box::leak(console_output);
+    // let console_output_sink: &(dyn lc3_shims::peripherals::Sink + Send + Sync) = &console_output;
+    let output_shim = Arc::new(Mutex::new(OutputShim::with_ref(console_output)));
 
     let mut iteratively_collect_into_console_output = || {
         let vec = console_output.lock().unwrap();
 
         if console_output_string.len() > 5000 {
-            let _ = console_output_string.drain(0..(console_output_string.len() - 2000)); // Only keep the last 2000 characters
+            let _ = console_output_string.drain(0..(console_output_string.len() - 2000));
+            // Only keep the last 2000 characters
         }
 
         if vec.len() > last_idx {
@@ -235,43 +170,76 @@ fn main() -> Result<(), failure::Error> {
         console_output_string.clone()
     };
 
-    let peripherals = PeripheralSet::new(
-        gpio_shim.clone(),
-        adc_shim.clone(),
-        pwm_shim.clone(),
-        timer_shim,
-        clock_shim,
-        input_shim,
-        output_shim,
-    );
+    let (controller, mut device) = mpsc_sync_pair::<TransparentEncoding, _>(&EVENT_FUTURE_SHARED_STATE);
 
-    let mut interp: Interpreter<'_, _, _> = InterpreterBuilder::new() //.build();
-        .with_defaults()
-        .with_peripherals(peripherals)
-        .with_memory(memory)
-        //.with_interrupt_flags_by_ref(&_flags)
-        .build();
+    let gshim = gpio_shim.clone();
+    let ashim = adc_shim.clone();
+    let pshim = pwm_shim.clone();
+    let ishim = input_shim.clone();
+    let oshim = output_shim.clone();
 
-    interp.reset();
-    interp.init(&_flags);
+    use std::thread::Builder as ThreadBuilder;
 
-    let mut sim = Simulator::new(interp);
-    // sim.get_interpreter().init(&_flags);
+    ThreadBuilder::new()
+        .name("Device Thread".to_string())
+        .stack_size(1_000_000_000)
+        .spawn(move || {
 
+            let peripherals = PeripheralSet::new(
+                gshim,
+                ashim,
+                pshim,
+                timer_shim,
+                clock_shim,
+                ishim,
+                oshim,
+            );
 
-    sim.reset();
+            // TODO: this shouldn't have to be `'static`!
+            // let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
+            static _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
 
-         loop {
-             (*counter).lock().unwrap().step(&mut sim);
-             thread::sleep(time::Duration::from_millis(10));
-         }
-     });
+            let mut interp: Interpreter<'_, _, _> = InterpreterBuilder::new() //.build();
+                .with_defaults()
+                .with_peripherals(peripherals)
+                .with_memory(memory)
+                //.with_interrupt_flags_by_ref(&_flags)
+                .build();
+
+            interp.reset();
+            interp.init(&_flags);
+
+            let mut sim = Simulator::new(interp);
+            // sim.get_interpreter().init(&_flags);
+            sim.reset();
+
+            loop {
+                // (*counter).lock().unwrap().step(&mut sim);
+                device.step(&mut sim);
+                // thread::sleep(time::Duration::from_millis(10));
+            }
+        });
+
+    // thread::sleep(time::Duration::from_millis(100000));
 
     let screen = AlternateScreen::to_alternate(true)?;
     let backend = CrosstermBackend::with_alternate_screen(screen)?;
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
+    let cli = Cli{
+        tick_rate: 250,
+        log: true,
+    };
+
+    if cli.log {
+        Logger::with_env_or_str("myprog=debug, mylib=warn")
+            .log_to_file()
+            .directory("log_files")
+            .format(opt_format)
+            .start()
+            .unwrap();
+    }
 
     let mut input_mode = TuiState::CONT;
     let mut pin_flag = 0;
@@ -281,8 +249,6 @@ fn main() -> Result<(), failure::Error> {
     let mut timer_id = TimerId::T0;
     let mut reg_id = Reg::R0;
     let mut mem_addr: Addr = 1;
-
-
 
     let mut input_out = String::from("");
     let mut set_val_out = String::from("");
@@ -321,7 +287,9 @@ fn main() -> Result<(), failure::Error> {
     let mut offset: u16 = 2;
     let mut running = false;
 
+    let mut sim = controller;
     while active {
+
         let bp = sim.get_breakpoints();
 
         if running {
@@ -476,18 +444,30 @@ fn main() -> Result<(), failure::Error> {
                                         let val = set_val_out.split_off(2);
                                         if set_val_out == "0x" {
                                             match u8::from_str_radix(&val, 16) {
-                                                Ok(n) => if n > 0 { RwLock::write(&pwm_shim)
-                                                    .unwrap()
-                                                    .set_duty_cycle_helper(pwm_pin, NonZeroU8::new(n).unwrap());
-                                                },
+                                                Ok(n) => {
+                                                    if n > 0 {
+                                                        RwLock::write(&pwm_shim)
+                                                            .unwrap()
+                                                            .set_duty_cycle_helper(
+                                                                pwm_pin,
+                                                                NonZeroU8::new(n).unwrap(),
+                                                            );
+                                                    }
+                                                }
                                                 Err(e) => {}
                                             }
                                         } else if set_val_out == "0b" {
                                             match u8::from_str_radix(&val, 2) {
-                                                Ok(n) => if n > 0 { RwLock::write(&pwm_shim)
-                                                    .unwrap()
-                                                    .set_duty_cycle_helper(pwm_pin, NonZeroU8::new(n).unwrap());
-                                                },
+                                                Ok(n) => {
+                                                    if n > 0 {
+                                                        RwLock::write(&pwm_shim)
+                                                            .unwrap()
+                                                            .set_duty_cycle_helper(
+                                                                pwm_pin,
+                                                                NonZeroU8::new(n).unwrap(),
+                                                            );
+                                                    }
+                                                }
                                                 Err(e) => {}
                                             }
                                         }
@@ -603,7 +583,7 @@ fn main() -> Result<(), failure::Error> {
                         } else {
                             match c {
                                 '\n' => {
-                                    if set_val_out == "b"{
+                                    if set_val_out == "b" {
                                         sim.set_breakpoint(mem_addr);
                                     } else {
                                         match set_val_out.parse::<Word>() {
@@ -733,34 +713,32 @@ fn main() -> Result<(), failure::Error> {
                         _ => {}
                     }
                 }
-                KeyEvent::Alt(c) => {
-                    match c {
-                        'r' => {
-                            pin_flag = 0;
-                            input_mode = TuiState::CONT;
-                            set_val_out = String::from("");
-                            input_out = String::from("");
-                            sim.reset();
-                        }
-                        'm' => {
-                            if input_mode == TuiState::MEM {
-                                input_mode = TuiState::CONT;
-                            } else {
-                                pin_flag = 0;
-                                input_mode = TuiState::MEM;
-                            }
-                        }
-                        'p' => {
-                            if input_mode == TuiState::PC {
-                                input_mode = TuiState::CONT;
-                            } else {
-                                pin_flag = 1;
-                                input_mode = TuiState::PC;
-                            }
-                        }
-                        _ => {}
+                KeyEvent::Alt(c) => match c {
+                    'r' => {
+                        pin_flag = 0;
+                        input_mode = TuiState::CONT;
+                        set_val_out = String::from("");
+                        input_out = String::from("");
+                        sim.reset();
                     }
-                }
+                    'm' => {
+                        if input_mode == TuiState::MEM {
+                            input_mode = TuiState::CONT;
+                        } else {
+                            pin_flag = 0;
+                            input_mode = TuiState::MEM;
+                        }
+                    }
+                    'p' => {
+                        if input_mode == TuiState::PC {
+                            input_mode = TuiState::CONT;
+                        } else {
+                            pin_flag = 1;
+                            input_mode = TuiState::PC;
+                        }
+                    }
+                    _ => {}
+                },
                 _ => {}
             },
             Event::Tick => {}
@@ -771,18 +749,22 @@ fn main() -> Result<(), failure::Error> {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints(
-                    [
-                        Constraint::Min(10),
-                        Constraint::Length(6),
-                    ].as_ref()
-                )
+                .constraints([Constraint::Min(10), Constraint::Length(6)].as_ref())
                 .split(f.size());
 
             let buttons = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(1)
-                .constraints([Constraint::Min(20), Constraint::Length(50), Constraint::Length(8), Constraint::Length(8), Constraint::Length(8)].as_ref())
+                .constraints(
+                    [
+                        Constraint::Min(20),
+                        Constraint::Length(50),
+                        Constraint::Length(8),
+                        Constraint::Length(8),
+                        Constraint::Length(8),
+                    ]
+                    .as_ref(),
+                )
                 .split(chunks[1]);
 
             let body = chunks[0];
@@ -814,33 +796,41 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Min(10), Constraint::Length(3)].as_ref())
                 .split(right_pane[0]);
 
-
+            Block::default()
+                .title("> ")
+                .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
+                .render(&mut f, console[1]);
 
             Block::default()
-                 .title("> ")
-                 .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
-                 .render(&mut f, console[1]);
+                .title("IO")
+                .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
+                .borders(Borders::ALL)
+                .render(&mut f, right_pane[1]);
 
             Block::default()
-                 .title("IO")
-                 .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
-                 .borders(Borders::ALL)
-                 .render(&mut f, right_pane[1]);
-
-
-            Block::default()
-                 .title("Footer")
-                 .title_style(Style::default().fg(Color::LightRed).modifier(Modifier::BOLD))
-                 .borders(Borders::ALL)
-                 .render(&mut f, chunks[1]);
+                .title("Footer")
+                .title_style(
+                    Style::default()
+                        .fg(Color::LightRed)
+                        .modifier(Modifier::BOLD),
+                )
+                .borders(Borders::ALL)
+                .render(&mut f, chunks[1]);
 
             //Further breakdown of IO
             let io_panel = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Length(5), Constraint::Length(3), Constraint::Length(2), Constraint::Length(3)].as_ref())
+                .constraints(
+                    [
+                        Constraint::Length(5),
+                        Constraint::Length(3),
+                        Constraint::Length(2),
+                        Constraint::Length(3),
+                    ]
+                    .as_ref(),
+                )
                 .split(right_pane[1]);
-
 
             let timers_n_clock = Layout::default()
                 .direction(Direction::Horizontal)
@@ -852,42 +842,75 @@ fn main() -> Result<(), failure::Error> {
 
             //Footer Text
             let text = [
-                Text::styled("To control the TUI, you can use ", Style::default().fg(Color::LightGreen)),
+                Text::styled(
+                    "To control the TUI, you can use ",
+                    Style::default().fg(Color::LightGreen),
+                ),
                 Text::styled("S to Step ", Style::default().fg(Color::LightCyan)),
-                Text::styled("through instructions, ", Style::default().fg(Color::LightGreen)),
+                Text::styled(
+                    "through instructions, ",
+                    Style::default().fg(Color::LightGreen),
+                ),
                 Text::styled("P to Pause, ", Style::default().fg(Color::LightRed)),
                 Text::styled("R to Run, ", Style::default().fg(Color::LightYellow)),
                 Text::styled("and ", Style::default().fg(Color::LightGreen)),
                 Text::styled("Q to Quit\n", Style::default().fg(Color::Gray)),
-                Text::styled("To set the peripherals use ", Style::default().fg(Color::LightGreen)),
+                Text::styled(
+                    "To set the peripherals use ",
+                    Style::default().fg(Color::LightGreen),
+                ),
                 Text::styled("Ctrl + ", Style::default().fg(Color::White)),
-                Text::styled("g for GPIO, ", Style::default().fg(Color::Rgb(0xee, 0xee, 0xee))),
-                Text::styled("a for ADC, ", Style::default().fg(Color::Rgb(0xdd, 0xdd, 0xdd))),
-                Text::styled("p for PWM, ", Style::default().fg(Color::Rgb(0xcc, 0xcc, 0xcc))),
-                Text::styled("t for Timers, ", Style::default().fg(Color::Rgb(0xbb, 0xbb, 0xbb))),
+                Text::styled(
+                    "g for GPIO, ",
+                    Style::default().fg(Color::Rgb(0xee, 0xee, 0xee)),
+                ),
+                Text::styled(
+                    "a for ADC, ",
+                    Style::default().fg(Color::Rgb(0xdd, 0xdd, 0xdd)),
+                ),
+                Text::styled(
+                    "p for PWM, ",
+                    Style::default().fg(Color::Rgb(0xcc, 0xcc, 0xcc)),
+                ),
+                Text::styled(
+                    "t for Timers, ",
+                    Style::default().fg(Color::Rgb(0xbb, 0xbb, 0xbb)),
+                ),
                 Text::styled("and ", Style::default().fg(Color::LightGreen)),
-                Text::styled("c for CLK\n", Style::default().fg(Color::Rgb(0xaa, 0xaa, 0xaa))),
-                Text::styled("To affect the simulator, use ", Style::default().fg(Color::LightGreen)),
+                Text::styled(
+                    "c for CLK\n",
+                    Style::default().fg(Color::Rgb(0xaa, 0xaa, 0xaa)),
+                ),
+                Text::styled(
+                    "To affect the simulator, use ",
+                    Style::default().fg(Color::LightGreen),
+                ),
                 Text::styled("Alt + ", Style::default().fg(Color::White)),
-                Text::styled("p for PC, ", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                Text::styled(
+                    "p for PC, ",
+                    Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
+                ),
                 Text::styled("m for Memory, ", Style::default().fg(Color::LightCyan)),
                 Text::styled("and ", Style::default().fg(Color::LightGreen)),
                 Text::styled("r to reset\n", Style::default().fg(Color::Gray)),
-                Text::styled("To control memory, use ", Style::default().fg(Color::LightGreen)),
+                Text::styled(
+                    "To control memory, use ",
+                    Style::default().fg(Color::LightGreen),
+                ),
                 Text::styled("UP and DOWN ", Style::default().fg(Color::Gray)),
                 Text::styled("arrow keys. ", Style::default().fg(Color::LightGreen)),
                 Text::styled("Shift + arrow ", Style::default().fg(Color::Gray)),
                 Text::styled("jumps 10, ", Style::default().fg(Color::LightGreen)),
                 Text::styled("Control + arrow ", Style::default().fg(Color::Gray)),
                 Text::styled("jumps 100. ", Style::default().fg(Color::LightGreen)),
-                Text::styled("Ctrl + h returns to PC\n", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
+                Text::styled(
+                    "Ctrl + h returns to PC\n",
+                    Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
+                ),
             ];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::NONE)
-                )
+                .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, buttons[0]);
 
@@ -896,60 +919,73 @@ fn main() -> Result<(), failure::Error> {
             let mut cur_pin = Text::styled("\n", Style::default());
             if input_mode == TuiState::MEM {
                 if pin_flag == 0 {
-                   cur_pin = Text::styled("INPUT ADDRESS\n", Style::default().fg(Color::Red).modifier(Modifier::BOLD));
+                    cur_pin = Text::styled(
+                        "INPUT ADDRESS\n",
+                        Style::default().fg(Color::Red).modifier(Modifier::BOLD),
+                    );
                 } else {
-                   cur_pin = Text::styled(format!("Current Addr: {:#06x}\n", mem_addr), Style::default().fg(Color::Gray));
+                    cur_pin = Text::styled(
+                        format!("Current Addr: {:#06x}\n", mem_addr),
+                        Style::default().fg(Color::Gray),
+                    );
                 }
             } else if input_mode != TuiState::CONT && input_mode != TuiState::IN {
                 if pin_flag == 0 {
-                   cur_pin = Text::styled("SELECT TARGET (Type an integer)\n", Style::default().fg(Color::Red).modifier(Modifier::BOLD));
+                    cur_pin = Text::styled(
+                        "SELECT TARGET (Type an integer)\n",
+                        Style::default().fg(Color::Red).modifier(Modifier::BOLD),
+                    );
                 } else {
-                   cur_pin = Text::styled(format!("Current Selection: {}\n", get_pin_string(input_mode, gpio_pin, adc_pin, pwm_pin, timer_id, reg_id)), Style::default().fg(Color::Gray));
+                    cur_pin = Text::styled(
+                        format!(
+                            "Current Selection: {}\n",
+                            get_pin_string(
+                                input_mode, gpio_pin, adc_pin, pwm_pin, timer_id, reg_id
+                            )
+                        ),
+                        Style::default().fg(Color::Gray),
+                    );
                 }
             };
 
             let text = [
-                Text::styled(format!("Input Mode: {}\n", input_mode_string(input_mode)), Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                Text::styled(
+                    format!("Input Mode: {}\n", input_mode_string(input_mode)),
+                    Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
+                ),
                 cur_pin,
-                Text::raw(set_val_out.clone())
+                Text::raw(set_val_out.clone()),
             ];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::LEFT)
-                )
+                .block(Block::default().borders(Borders::LEFT))
                 .render(&mut f, buttons[1]);
 
             //Footer Buttons
-            let text = [
-                Text::styled("Step", Style::default().fg(Color::LightCyan).modifier(Modifier::BOLD))
-            ];
+            let text = [Text::styled(
+                "Step",
+                Style::default()
+                    .fg(Color::LightCyan)
+                    .modifier(Modifier::BOLD),
+            )];
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                )
+                .block(Block::default().borders(Borders::ALL))
                 .render(&mut f, buttons[2]);
 
-            let text = [
-                Text::styled("Pause", Style::default().fg(Color::Red).modifier(Modifier::BOLD))
-            ];
+            let text = [Text::styled(
+                "Pause",
+                Style::default().fg(Color::Red).modifier(Modifier::BOLD),
+            )];
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                )
+                .block(Block::default().borders(Borders::ALL))
                 .render(&mut f, buttons[3]);
 
-            let text = [
-                Text::styled("Run", Style::default().fg(Color::Green).modifier(Modifier::BOLD))
-            ];
+            let text = [Text::styled(
+                "Run",
+                Style::default().fg(Color::Green).modifier(Modifier::BOLD),
+            )];
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                )
+                .block(Block::default().borders(Borders::ALL))
                 .render(&mut f, buttons[4]);
 
             //Register Status Text
@@ -963,10 +999,10 @@ fn main() -> Result<(), failure::Error> {
 
             Paragraph::new(text.iter())
                 .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .title("Registers + PC + PSR")
-                            .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Registers + PC + PSR")
+                        .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
                 .wrap(true)
                 .render(&mut f, left_pane[1]);
@@ -974,24 +1010,30 @@ fn main() -> Result<(), failure::Error> {
             let regs_partitions = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(1)
-                .constraints([Constraint::Length(5), Constraint::Length(40), Constraint::Length(5), Constraint::Length(40)].as_ref())
+                .constraints(
+                    [
+                        Constraint::Length(5),
+                        Constraint::Length(40),
+                        Constraint::Length(5),
+                        Constraint::Length(40),
+                    ]
+                    .as_ref(),
+                )
                 .split(left_pane[1]);
 
-            let mut s =  String::from("");
+            let mut s = String::from("");
             for i in 0..4 {
-                s.push_str(&format!("{:#018b} {:#06x} {:#05}\n", regs[i], regs[i], regs[i]));
+                s.push_str(&format!(
+                    "{:#018b} {:#06x} {:#05}\n",
+                    regs[i], regs[i], regs[i]
+                ));
             }
             s.push_str(&format!("{:#018b} {:#06x} {:#05}\n", psr, psr, psr));
 
-            let text = [
-                Text::styled(s, Style::default().fg(Color::LightGreen)),
-            ];
+            let text = [Text::styled(s, Style::default().fg(Color::LightGreen))];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::NONE)
-                )
+                .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, regs_partitions[1]);
 
@@ -1001,31 +1043,25 @@ fn main() -> Result<(), failure::Error> {
             ];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::NONE)
-                )
+                .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, regs_partitions[2]);
 
-            s =  String::from("");
+            s = String::from("");
             for i in 4..8 {
-                s.push_str(&format!("{:#018b} {:#06x} {:#05}\n", regs[i], regs[i], regs[i]));
+                s.push_str(&format!(
+                    "{:#018b} {:#06x} {:#05}\n",
+                    regs[i], regs[i], regs[i]
+                ));
             }
             s.push_str(&format!("{:#018b} {:#06x} {:#05}\n", pc, pc, pc));
 
-            let text = [
-                Text::styled(s, Style::default().fg(Color::LightGreen)),
-            ];
+            let text = [Text::styled(s, Style::default().fg(Color::LightGreen))];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::NONE)
-                )
+                .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, regs_partitions[3]);
-
 
             //Memory
             let mut mem: [Word; 50] = [0; 50];
@@ -1037,35 +1073,50 @@ fn main() -> Result<(), failure::Error> {
 
             let mut pc_arrow = String::from("");
             let mut addresses = String::from("");
-            s =  String::from("");
+            s = String::from("");
             let mut insts = String::from("");
             x = 0;
             while x != 50 {
-                let inst: Instruction = match mem[x as usize].try_into(){
+                let inst: Instruction = match mem[x as usize].try_into() {
                     Ok(data) => data,
-                    Err(error) => Instruction::AddReg{dr: Reg::R0, sr1: Reg::R0, sr2: Reg::R0,},
+                    Err(error) => Instruction::AddReg {
+                        dr: Reg::R0,
+                        sr1: Reg::R0,
+                        sr2: Reg::R0,
+                    },
                 };
-                if x == offset{
+                if x == offset {
                     pc_arrow.push_str("-->\n");
-                }else{
+                } else {
                     pc_arrow.push_str("\n");
                 }
-                addresses.push_str(&format!("{:#06x}\n", pc.wrapping_sub(offset).wrapping_add(x)));
-                s.push_str(&format!("{:#018b} {:#06x} {:#05}\n", mem[x as usize], mem[x as usize], mem[x as usize]));
+                addresses.push_str(&format!(
+                    "{:#06x}\n",
+                    pc.wrapping_sub(offset).wrapping_add(x)
+                ));
+                s.push_str(&format!(
+                    "{:#018b} {:#06x} {:#05}\n",
+                    mem[x as usize], mem[x as usize], mem[x as usize]
+                ));
                 insts.push_str(&format!("{}\n", inst));
                 x = x + 1;
             }
 
-            let text = [
-                Text::styled(pc_arrow, Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
-            ];
+            let text = [Text::styled(
+                pc_arrow,
+                Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
+            )];
 
             Paragraph::new(text.iter())
                 .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .title("Memory")
-                            .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)).modifier(Modifier::BOLD)),
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Memory")
+                        .title_style(
+                            Style::default()
+                                .fg(Color::Rgb(0xFF, 0x97, 0x40))
+                                .modifier(Modifier::BOLD),
+                        ),
                 )
                 .wrap(true)
                 .render(&mut f, left_pane[0]);
@@ -1073,42 +1124,35 @@ fn main() -> Result<(), failure::Error> {
             let mem_partitions = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(1)
-                .constraints([Constraint::Length(5), Constraint::Length(10), Constraint::Length(40), Constraint::Min(10)].as_ref())
+                .constraints(
+                    [
+                        Constraint::Length(5),
+                        Constraint::Length(10),
+                        Constraint::Length(40),
+                        Constraint::Min(10),
+                    ]
+                    .as_ref(),
+                )
                 .split(left_pane[0]);
 
-            let text = [
-                Text::styled(addresses, Style::default().fg(Color::Gray)),
-            ];
+            let text = [Text::styled(addresses, Style::default().fg(Color::Gray))];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::NONE)
-                )
+                .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, mem_partitions[1]);
 
-            let text = [
-                Text::styled(s, Style::default().fg(Color::LightGreen)),
-            ];
+            let text = [Text::styled(s, Style::default().fg(Color::LightGreen))];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::NONE)
-                )
+                .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, mem_partitions[2]);
 
-            let text = [
-                Text::styled(insts, Style::default().fg(Color::LightCyan)),
-            ];
+            let text = [Text::styled(insts, Style::default().fg(Color::LightCyan))];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::NONE)
-                )
+                .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, mem_partitions[3]);
 
@@ -1127,27 +1171,31 @@ fn main() -> Result<(), failure::Error> {
 
             // let text: Vec<_> = output_string.split('\n').map(|s| Text::raw(s)).collect();
 
-            Paragraph::new([Text::styled(output_string, Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))].iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
-                            .title("Console")
-                            .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
-                )
-                .wrap(false)
-                .scroll((num_lines.saturating_sub(console_height as usize)) as u16)
-                .render(&mut f, console[0]);
+            Paragraph::new(
+                [Text::styled(
+                    output_string,
+                    Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
+                )]
+                .iter(),
+            )
+            .block(
+                Block::default()
+                    .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
+                    .title("Console")
+                    .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+            )
+            .wrap(false)
+            .scroll((num_lines.saturating_sub(console_height as usize)) as u16)
+            .render(&mut f, console[0]);
 
-            let text = [
-                Text::raw(input_out.clone())
-            ];
+            let text = [Text::raw(input_out.clone())];
 
             Paragraph::new(text.iter())
                 .block(
-                        Block::default()
-                            .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
-                            .title(">")
-                            .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                    Block::default()
+                        .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
+                        .title(">")
+                        .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
                 .wrap(true)
                 .render(&mut f, console[1]);
@@ -1156,18 +1204,19 @@ fn main() -> Result<(), failure::Error> {
 
             //GPIO
             let GPIO_states = sim.get_gpio_states();
-            let gpioin = sim.get_gpio_reading();
+            let gpioin = sim.get_gpio_readings();
 
-            let text = [
-                Text::styled("GPIO 0:\nGPIO 1:\nGPIO 2:\nGPIO 3:\n", Style::default().fg(Color::Gray))
-            ];
+            let text = [Text::styled(
+                "GPIO 0:\nGPIO 1:\nGPIO 2:\nGPIO 3:\n",
+                Style::default().fg(Color::Gray),
+            )];
 
             Paragraph::new(text.iter())
                 .block(
-                        Block::default()
-                            .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
-                            .title("GPIO")
-                            .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                    Block::default()
+                        .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
+                        .title("GPIO")
+                        .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
                 .wrap(true)
                 .render(&mut f, io_panel[0]);
@@ -1178,53 +1227,58 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Length(10), Constraint::Min(20)].as_ref())
                 .split(io_panel[0]);
 
-            let gpio = match gpioin[GpioPin::G0]{
+            let gpio = match gpioin[GpioPin::G0] {
                 Ok(val) => format!("{}\n", val),
                 Err(e) => format!("-\n"),
             };
 
             let t0 = match GPIO_states[GpioPin::G0] {
-                GpioState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                GpioState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(gpio, Style::default().fg(Color::LightGreen)),
             };
 
-            let gpio = match gpioin[GpioPin::G1]{
+            let gpio = match gpioin[GpioPin::G1] {
                 Ok(val) => format!("{}\n", val),
                 Err(e) => format!("-\n"),
             };
 
             let t1 = match GPIO_states[GpioPin::G1] {
-                GpioState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                GpioState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(gpio, Style::default().fg(Color::LightGreen)),
             };
 
-            let gpio = match gpioin[GpioPin::G2]{
+            let gpio = match gpioin[GpioPin::G2] {
                 Ok(val) => format!("{}\n", val),
                 Err(e) => format!("-\n"),
             };
 
             let t2 = match GPIO_states[GpioPin::G2] {
-                GpioState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                GpioState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(gpio, Style::default().fg(Color::LightGreen)),
             };
 
-            let gpio = match gpioin[GpioPin::G3]{
+            let gpio = match gpioin[GpioPin::G3] {
                 Ok(val) => format!("{}\n", val),
                 Err(e) => format!("-\n"),
             };
 
             let t3 = match GPIO_states[GpioPin::G3] {
-                GpioState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                GpioState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(gpio, Style::default().fg(Color::LightGreen)),
             };
 
             let text = [t0, t1, t2, t3];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::TOP)
-                )
+                .block(Block::default().borders(Borders::TOP))
                 .wrap(true)
                 .render(&mut f, left_partitions[1]);
 
@@ -1240,82 +1294,86 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Length(10), Constraint::Min(20)].as_ref())
                 .split(gpio_half[1]);
 
-            let text = [
-                Text::styled("GPIO 4:\nGPIO 5:\nGPIO 6:\nGPIO 7:\n", Style::default().fg(Color::Gray))
-            ];
+            let text = [Text::styled(
+                "GPIO 4:\nGPIO 5:\nGPIO 6:\nGPIO 7:\n",
+                Style::default().fg(Color::Gray),
+            )];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::TOP)
-                )
+                .block(Block::default().borders(Borders::TOP))
                 .wrap(true)
                 .render(&mut f, right_partitions[0]);
 
-            let gpio = match gpioin[GpioPin::G4]{
+            let gpio = match gpioin[GpioPin::G4] {
                 Ok(val) => format!("GPIO 4:  {}\n", val),
                 Err(e) => format!("GPIO 4:  -\n"),
             };
 
             let t0 = match GPIO_states[GpioPin::G4] {
-                GpioState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                GpioState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(gpio, Style::default().fg(Color::LightGreen)),
             };
 
-            let gpio = match gpioin[GpioPin::G5]{
+            let gpio = match gpioin[GpioPin::G5] {
                 Ok(val) => format!("GPIO 5:  {}\n", val),
                 Err(e) => format!("GPIO 5:  -\n"),
             };
 
             let t1 = match GPIO_states[GpioPin::G5] {
-                GpioState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                GpioState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(gpio, Style::default().fg(Color::LightGreen)),
             };
 
-            let gpio = match gpioin[GpioPin::G6]{
+            let gpio = match gpioin[GpioPin::G6] {
                 Ok(val) => format!("GPIO 6:  {}\n", val),
                 Err(e) => format!("GPIO 6:  -\n"),
             };
 
             let t2 = match GPIO_states[GpioPin::G6] {
-                GpioState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                GpioState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(gpio, Style::default().fg(Color::LightGreen)),
             };
 
-            let gpio = match gpioin[GpioPin::G7]{
+            let gpio = match gpioin[GpioPin::G7] {
                 Ok(val) => format!("GPIO 7:  {}\n", val),
                 Err(e) => format!("GPIO 7:  -\n"),
             };
 
             let t3 = match GPIO_states[GpioPin::G7] {
-                GpioState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                GpioState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(gpio, Style::default().fg(Color::LightGreen)),
             };
 
             let text = [t0, t1, t2, t3];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::TOP | Borders::RIGHT)
-                )
+                .block(Block::default().borders(Borders::TOP | Borders::RIGHT))
                 .wrap(true)
                 .render(&mut f, right_partitions[1]);
 
             //ADC
             let ADC_states = sim.get_adc_states();
-            let adcin = sim.get_adc_reading();
+            let adcin = sim.get_adc_readings();
 
-            let text = [
-                Text::styled("ADC 0:\nADC 1:\n", Style::default().fg(Color::Gray))
-            ];
+            let text = [Text::styled(
+                "ADC 0:\nADC 1:\n",
+                Style::default().fg(Color::Gray),
+            )];
 
             Paragraph::new(text.iter())
                 .block(
-                        Block::default()
-                            .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
-                            .title("ADC")
-                            .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                    Block::default()
+                        .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
+                        .title("ADC")
+                        .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
                 .wrap(true)
                 .render(&mut f, io_panel[1]);
@@ -1332,7 +1390,9 @@ fn main() -> Result<(), failure::Error> {
             };
 
             let t0 = match ADC_states[AdcPin::A0] {
-                AdcState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                AdcState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(adc, Style::default().fg(Color::LightGreen)),
             };
 
@@ -1342,17 +1402,16 @@ fn main() -> Result<(), failure::Error> {
             };
 
             let t1 = match ADC_states[AdcPin::A1] {
-                AdcState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                AdcState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(adc, Style::default().fg(Color::LightGreen)),
             };
 
             let text = [t0, t1];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::TOP)
-                )
+                .block(Block::default().borders(Borders::TOP))
                 .wrap(true)
                 .render(&mut f, left_partitions[1]);
 
@@ -1368,15 +1427,13 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Length(10), Constraint::Min(20)].as_ref())
                 .split(right_ADC[1]);
 
-            let text = [
-                Text::styled("ADC 2:\nADC 3:\n", Style::default().fg(Color::Gray))
-            ];
+            let text = [Text::styled(
+                "ADC 2:\nADC 3:\n",
+                Style::default().fg(Color::Gray),
+            )];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::TOP)
-                )
+                .block(Block::default().borders(Borders::TOP))
                 .wrap(true)
                 .render(&mut f, right_ADC[1]);
 
@@ -1386,7 +1443,9 @@ fn main() -> Result<(), failure::Error> {
             };
 
             let t0 = match ADC_states[AdcPin::A2] {
-                AdcState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                AdcState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(adc, Style::default().fg(Color::LightGreen)),
             };
 
@@ -1396,17 +1455,16 @@ fn main() -> Result<(), failure::Error> {
             };
 
             let t1 = match ADC_states[AdcPin::A3] {
-                AdcState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
+                AdcState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
                 _ => Text::styled(adc, Style::default().fg(Color::LightGreen)),
             };
 
-            let text = [t0,t1];
+            let text = [t0, t1];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::TOP)
-                )
+                .block(Block::default().borders(Borders::TOP))
                 .wrap(true)
                 .render(&mut f, right_partitions[1]);
 
@@ -1414,16 +1472,14 @@ fn main() -> Result<(), failure::Error> {
             let PWM_states = sim.get_pwm_states();
             let PWM = sim.get_pwm_config();
 
-            let text = [
-                Text::styled("PWM 0:\n", Style::default().fg(Color::Gray)),
-            ];
+            let text = [Text::styled("PWM 0:\n", Style::default().fg(Color::Gray))];
 
             Paragraph::new(text.iter())
                 .block(
-                        Block::default()
-                            .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
-                            .title("PWM")
-                            .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                    Block::default()
+                        .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
+                        .title("PWM")
+                        .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
                 .wrap(true)
                 .render(&mut f, io_panel[2]);
@@ -1435,15 +1491,23 @@ fn main() -> Result<(), failure::Error> {
                 .split(io_panel[2]);
 
             let text = match PWM_states[PwmPin::P0] {
-                PwmState::Disabled => [Text::styled(format!("Disabled"), Style::default().fg(Color::LightRed))],
-                PwmState::Enabled(_) => [Text::styled(format!("{:#018b} {:#06x} {:#05}\n", PWM[PwmPin::P0], PWM[PwmPin::P0], PWM[PwmPin::P0]), Style::default().fg(Color::LightGreen))],
+                PwmState::Disabled => [Text::styled(
+                    format!("Disabled"),
+                    Style::default().fg(Color::LightRed),
+                )],
+                PwmState::Enabled(_) => [Text::styled(
+                    format!(
+                        "{:#018b} {:#06x} {:#05}\n",
+                        PWM[PwmPin::P0],
+                        PWM[PwmPin::P0],
+                        PWM[PwmPin::P0]
+                    ),
+                    Style::default().fg(Color::LightGreen),
+                )],
             };
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::TOP)
-                )
+                .block(Block::default().borders(Borders::TOP))
                 .wrap(true)
                 .render(&mut f, left_partitions[1]);
 
@@ -1459,28 +1523,31 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Length(10), Constraint::Min(20)].as_ref())
                 .split(right_PWM[1]);
 
-            let text = [
-                Text::styled("PWM 1:\n", Style::default().fg(Color::Gray)),
-            ];
+            let text = [Text::styled("PWM 1:\n", Style::default().fg(Color::Gray))];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::TOP)
-                )
+                .block(Block::default().borders(Borders::TOP))
                 .wrap(true)
                 .render(&mut f, right_partitions[0]);
 
             let text = match PWM_states[PwmPin::P1] {
-                PwmState::Disabled => [Text::styled(format!("Disabled"), Style::default().fg(Color::LightRed))],
-                PwmState::Enabled(_) => [Text::styled(format!("{:#018b} {:#06x} {:#05}\n", PWM[PwmPin::P0], PWM[PwmPin::P0], PWM[PwmPin::P0]), Style::default().fg(Color::LightGreen))],
+                PwmState::Disabled => [Text::styled(
+                    format!("Disabled"),
+                    Style::default().fg(Color::LightRed),
+                )],
+                PwmState::Enabled(_) => [Text::styled(
+                    format!(
+                        "{:#018b} {:#06x} {:#05}\n",
+                        PWM[PwmPin::P0],
+                        PWM[PwmPin::P0],
+                        PWM[PwmPin::P0]
+                    ),
+                    Style::default().fg(Color::LightGreen),
+                )],
             };
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::TOP | Borders::RIGHT)
-                )
+                .block(Block::default().borders(Borders::TOP | Borders::RIGHT))
                 .wrap(true)
                 .render(&mut f, right_partitions[1]);
 
@@ -1488,16 +1555,17 @@ fn main() -> Result<(), failure::Error> {
             let timer_state = sim.get_timer_states();
             let timer = sim.get_timer_config();
 
-            let text = [
-                Text::styled("Timer 1:\nTimer 2:\n", Style::default().fg(Color::Gray)),
-            ];
+            let text = [Text::styled(
+                "Timer 1:\nTimer 2:\n",
+                Style::default().fg(Color::Gray),
+            )];
 
             Paragraph::new(text.iter())
                 .block(
-                        Block::default()
-                            .borders(Borders::ALL & !(Borders::RIGHT))
-                            .title("Timers")
-                            .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                    Block::default()
+                        .borders(Borders::ALL & !(Borders::RIGHT))
+                        .title("Timers")
+                        .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
                 .wrap(true)
                 .render(&mut f, timers_n_clock[0]);
@@ -1509,52 +1577,83 @@ fn main() -> Result<(), failure::Error> {
                 .split(timers_n_clock[0]);
 
             let t0 = match timer_state[TimerId::T0] {
-                TimerState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
-                TimerState::Repeated => Text::styled(format!("Repeat:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T0], timer[TimerId::T0], timer[TimerId::T0]), Style::default().fg(Color::LightGreen)),
-                TimerState::SingleShot => Text::styled(format!("Single:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T0], timer[TimerId::T0], timer[TimerId::T0]), Style::default().fg(Color::LightGreen)),
+                TimerState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
+                TimerState::Repeated => Text::styled(
+                    format!(
+                        "Repeat:  {:#018b} {:#06x} {:#05}\n",
+                        timer[TimerId::T0],
+                        timer[TimerId::T0],
+                        timer[TimerId::T0]
+                    ),
+                    Style::default().fg(Color::LightGreen),
+                ),
+                TimerState::SingleShot => Text::styled(
+                    format!(
+                        "Single:  {:#018b} {:#06x} {:#05}\n",
+                        timer[TimerId::T0],
+                        timer[TimerId::T0],
+                        timer[TimerId::T0]
+                    ),
+                    Style::default().fg(Color::LightGreen),
+                ),
             };
 
             let t1 = match timer_state[TimerId::T1] {
-                TimerState::Disabled => Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed)),
-                TimerState::Repeated => Text::styled(format!("Repeat:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T1], timer[TimerId::T1], timer[TimerId::T1]), Style::default().fg(Color::LightGreen)),
-                TimerState::SingleShot => Text::styled(format!("Single:  {:#018b} {:#06x} {:#05}\n", timer[TimerId::T1], timer[TimerId::T1], timer[TimerId::T1]), Style::default().fg(Color::LightGreen)),
+                TimerState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
+                TimerState::Repeated => Text::styled(
+                    format!(
+                        "Repeat:  {:#018b} {:#06x} {:#05}\n",
+                        timer[TimerId::T1],
+                        timer[TimerId::T1],
+                        timer[TimerId::T1]
+                    ),
+                    Style::default().fg(Color::LightGreen),
+                ),
+                TimerState::SingleShot => Text::styled(
+                    format!(
+                        "Single:  {:#018b} {:#06x} {:#05}\n",
+                        timer[TimerId::T1],
+                        timer[TimerId::T1],
+                        timer[TimerId::T1]
+                    ),
+                    Style::default().fg(Color::LightGreen),
+                ),
             };
 
-            let text = [t0,t1];
+            let text = [t0, t1];
 
             Paragraph::new(text.iter())
-                .block(
-                        Block::default()
-                            .borders(Borders::TOP)
-                )
+                .block(Block::default().borders(Borders::TOP))
                 .wrap(true)
                 .render(&mut f, left_partitions[1]);
-
 
             //Clock
             let clock = sim.get_clock();
 
-            let text = [
-                Text::raw(format!("{:#018b} {:#06x} {:#05}\n", clock, clock, clock))
-            ];
+            let text = [Text::raw(format!(
+                "{:#018b} {:#06x} {:#05}\n",
+                clock, clock, clock
+            ))];
 
             Paragraph::new(text.iter())
                 .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .title("Clock")
-                            .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Clock")
+                        .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
                 .wrap(true)
                 .render(&mut f, timers_n_clock[1]);
-
         })?;
-      //  loop{}
+        //  loop{}
     }
 
     Ok(())
 }
-
 
 fn input_mode_string(s: TuiState) -> String {
     use TuiState::*;
@@ -1574,11 +1673,11 @@ fn input_mode_string(s: TuiState) -> String {
 }
 
 fn get_pin_string(s: TuiState, g: GpioPin, a: AdcPin, p: PwmPin, t: TimerId, r: Reg) -> String {
-    use GpioPin::*;
     use AdcPin::*;
-    use TuiState::*;
+    use GpioPin::*;
     use PwmPin::*;
     use Reg::*;
+    use TuiState::*;
 
     match s {
         GPIO => match g {
