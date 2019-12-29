@@ -18,17 +18,13 @@ const fn fib_program_executed_insn_count(num_iters: Word) -> u64 {
 
 fn build_fib_memory_image(num_iters: Word) -> MemoryDump {
     const F: Word = 24;
-    // let res: Word = fib_closed_form(24) as Word; // 46368; fits in 16 bits
 
     let prog: AssembledProgram = program! {
-        // .ORIG #0x2FFE;
         .ORIG #0x3000;
         BRnzp @START;
 
         @NUM_ITERS .FILL #num_iters;
         @FIB_NUM .FILL #F;
-
-        // .ORIG #0x3000;
 
         @START
         LD R1, @NUM_ITERS;
@@ -67,12 +63,6 @@ fn build_fib_memory_image(num_iters: Word) -> MemoryDump {
     let mut image = OS_IMAGE.clone();
     image.layer_loadable(&prog);
 
-    // lc3_shims::memory::FileBackedMemoryShim::with_initialized_memory("fib.mem", image.clone())
-    //     .flush()
-    //     .map_err(|_| std::io::Error::last_os_error());
-
-    // std::thread::sleep_ms(100000);
-
     image
 }
 
@@ -89,11 +79,9 @@ use lc3_shims::{memory::MemoryShim, peripherals::PeripheralsShim};
 use lc3_traits::peripherals::stubs::PeripheralsStub;
 use lc3_isa::util::MemoryDump;
 
-// pub fn bare_interpreter<'a, 'b>(program: MemoryDump, flags: &'b PeripheralInterruptFlags) -> Interpreter<'b, MemoryShim, PeripheralsShim<'b>>/*impl Control*/ {
-pub fn bare_interpreter<'a, 'b>(program: MemoryDump, flags: &'b PeripheralInterruptFlags) -> Interpreter<'b, MemoryShim, PeripheralsStub<'b>>/*impl Control*/ {
+pub fn bare_interpreter<'a, 'b>(program: MemoryDump, flags: &'b PeripheralInterruptFlags) -> Interpreter<'b, MemoryShim, PeripheralsStub<'b>> {
     let memory = MemoryShim::new(*program);
 
-    // let mut interp: Interpreter<'b, MemoryShim, PeripheralsShim<'b>> = InterpreterBuilder::new()
     let mut interp: Interpreter<'b, MemoryShim, PeripheralsStub<'b>> = InterpreterBuilder::new()
         .with_defaults()
         .with_memory(memory)
@@ -106,11 +94,9 @@ pub fn bare_interpreter<'a, 'b>(program: MemoryDump, flags: &'b PeripheralInterr
 }
 
 use lc3_baseline_sim::sim::Simulator;
-
-// type Sim<'a> = Simulator<'a, Interpreter<'a, MemoryShim, PeripheralsShim<'a>>>;
 type Sim<'a> = Simulator<'a, Interpreter<'a, MemoryShim, PeripheralsStub<'a>>>;
 
-pub fn simulator</*'a, */'b>(program: MemoryDump, flags: &'b PeripheralInterruptFlags) -> Sim {
+pub fn simulator<'a>(program: MemoryDump, flags: &'a PeripheralInterruptFlags) -> Sim<'a> {
     let mut sim = Simulator::new(bare_interpreter(program, flags));
     sim.reset();
 
@@ -119,8 +105,8 @@ pub fn simulator</*'a, */'b>(program: MemoryDump, flags: &'b PeripheralInterrupt
 
 use std::thread::Builder as ThreadBuilder;
 
-// fn device_thread<'a, 'b, Enc, Transp>(device: Device<Enc, Transp, Sim>, program: MemoryDump, flags: &'b PeripheralInterruptFlags)
-fn device_thread<Enc: 'static, Transp: 'static>(rx: Receiver<()>, mut device: Device<Enc, Transp, Sim<'static>>, program: MemoryDump, flags: &'static PeripheralInterruptFlags)
+static FLAGS: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
+fn device_thread<Enc: 'static, Transp: 'static>(rx: Receiver<()>, mut device: Device<Enc, Transp, Sim<'static>>, program: MemoryDump)
 where
     Enc: Encoding + Send,
     Transp: Transport<Enc::Encoded> + Send,
@@ -129,7 +115,7 @@ where
         .name("Device Thread".to_string())
         .stack_size(1024 * 1024 * 4)
         .spawn(move || {
-            let mut sim = simulator/*::<'_, 'static>*/(program, flags);
+            let mut sim = simulator(program, &FLAGS);
 
             loop {
                 device.step(&mut sim);
@@ -152,12 +138,11 @@ use lc3_traits::control::rpc::mpsc_sync_pair;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 // TODO: test spin vs. sleep
-pub fn remote_simulator/*<'a, 'b: 'a>*/(program: MemoryDump, flags: &'static PeripheralInterruptFlags) -> (Sender<()>, impl Control) {
+pub fn remote_simulator/*<'a, 'b: 'a>*/(program: MemoryDump) -> (Sender<()>, impl Control) {
     let (controller, device) = mpsc_sync_pair(&STATE);
     let (tx, rx) = channel();
 
-    // device_thread::<'a, 'b, TransparentEncoding, MpscTransport<ControlMessage>>(device, program, flags);
-    device_thread::</*'a, 'b, */TransparentEncoding, _>(rx, device, program, flags);
+    device_thread::<TransparentEncoding, _>(rx, device, program);
 
     (tx, controller)
 }
@@ -172,99 +157,45 @@ use lc3_baseline_sim::interp::MachineState;
 const ITERS: [Word; 5] = [1, 10, 100, 500, 1000];
 // 506, 1937, 16247, 79847, 159347, 795347,
 // // 159 * x + 347
-// fn bench_interp(c: &mut Criterion) {
-//     let flags = PeripheralInterruptFlags::new();
-//     let mut group = c.benchmark_group("bare interpreter");
-
-//     for num_iter in ITERS.iter() {
-//         group.throughput(Throughput::Elements(fib_program_executed_insn_count(*num_iter)));
-//         // let interp = bare_interpreter(build_fib_memory_image(num_iter), &flags);
-
-//         group.bench_with_input(BenchmarkId::from_parameter(*num_iter), num_iter, |b, num| {
-//         // group.bench_with_input(BenchmarkId::from_parameter(num_iter), num_iter, |b, num| {
-//             let mut int = bare_interpreter(build_fib_memory_image(*num), &flags);
-//             b.iter(|| {
-//                 int.reset();
-//                 // let mut count = 0;
-//                 // while let MachineState::Running = int.step() { count += 1; }
-//                 // println!("insns: {}", count);
-//                 while let MachineState::Running = int.step() { }
-//             })
-//             // b.iter_batched(
-//             //     || bare_interpreter(build_fib_memory_image(*num), &flags),
-//             //     |mut int| while let MachineState::Running = int.step() {},
-//             //     BatchSize::LargeInput
-//             // );
-//         });
-//     }
-// }
 
 use lc3_traits::control::State;
-// fn bench_sim(c: &mut Criterion) {
-//     let flags = PeripheralInterruptFlags::new();
-//     let mut group = c.benchmark_group("simulator");
-
-//     for num_iter in ITERS.iter() {
-//         group.throughput(Throughput::Elements(fib_program_executed_insn_count(*num_iter)));
-
-//         group.bench_with_input(BenchmarkId::from_parameter(*num_iter), num_iter, |b, num| {
-//             let mut sim = simulator(build_fib_memory_image(*num), &flags);
-//             b.iter(|| {
-//                 sim.reset();
-//                 while let State::Paused = sim.step() { }
-//             })
-//         });
-//     }
-// }
-
-static FLAGS: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
 
 fn bench_fib(c: &mut Criterion) {
-    // let flags = PeripheralInterruptFlags::new();
+    let flags = PeripheralInterruptFlags::new();
     let mut group = c.benchmark_group("fib(24)");
 
     for num_iter in ITERS.iter() {
         group.throughput(Throughput::Elements(fib_program_executed_insn_count(*num_iter)));
 
-        group.bench_with_input(BenchmarkId::new("Bare Interpreter", *num_iter), num_iter, |b, num| {
-            let mut int = bare_interpreter(build_fib_memory_image(*num), &FLAGS);
+        group.bench_with_input(BenchmarkId::new("Bare Interpreter - step", *num_iter), num_iter, |b, num| {
+            let mut int = bare_interpreter(build_fib_memory_image(*num), &flags);
             b.iter(|| {
                 int.reset();
                 while let MachineState::Running = int.step() { }
             })
         });
 
-        group.bench_with_input(BenchmarkId::new("Simulator", *num_iter), num_iter, |b, num| {
-            let mut sim = simulator(build_fib_memory_image(*num), &FLAGS);
+        group.bench_with_input(BenchmarkId::new("Simulator - step", *num_iter), num_iter, |b, num| {
+            let mut sim = simulator(build_fib_memory_image(*num), &flags);
             b.iter(|| {
                 sim.reset();
                 while let State::Paused = sim.step() { }
             })
         });
 
-        group.bench_with_input(BenchmarkId::new("Remote Simulator", *num_iter), num_iter, |b, num| {
-            // println!("new sim!!");
-            let (send, mut sim) = remote_simulator(build_fib_memory_image(*num), &FLAGS);
+        group.bench_with_input(BenchmarkId::new("Remote Simulator - step: mpsc, transparent", *num_iter), num_iter, |b, num| {
+            let (halt, mut sim) = remote_simulator(build_fib_memory_image(*num));
             b.iter(|| {
-                // println!("new use");
                 sim.reset();
                 while let State::Paused = sim.step() { }
             });
 
-            send.send(());
+            halt.send(());
         });
     }
 }
 
-// fn bench_remote(c: &mut Criterion) {
-//     let flags = PeripheralInterruptFlags::new();
-//     let mut group = c.benchmark_group("remote simulator");
-
-// }
-
 use criterion::{criterion_group, criterion_main};
 
 criterion_group!(benches, bench_fib);
-// criterion_group!(benches, bench_sim);
-// criterion_group!(benches, bench_remote);
 criterion_main!(benches);
