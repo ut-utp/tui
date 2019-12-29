@@ -49,3 +49,10 @@ features = ["crossterm"]
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
+criterion = "0.3.0"
+lc3-os = { path = "../os", version = "0.1.0" }
+
+
+[[bench]]
+name = "speed"
+harness = false
