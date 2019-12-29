@@ -4,7 +4,7 @@
 // TODO: move this to the top of the workspace! (doesn't belong in TUI)
 // TODO: have CI run this and give us reports
 
-use lc3_isa::{Word, program, util::AssembledProgram};
+use lc3_isa::{program, util::AssembledProgram, Word};
 use lc3_os::OS_IMAGE;
 
 use lazy_static::lazy_static;
@@ -58,7 +58,8 @@ fn build_fib_memory_image(num_iters: Word) -> MemoryDump {
 
         @END
             HALT;
-    }.into();
+    }
+    .into();
 
     let mut image = OS_IMAGE.clone();
     image.layer_loadable(&prog);
@@ -73,13 +74,21 @@ fn fib_closed_form(n: Word) -> u64 {
     r as u64
 }
 
-use lc3_baseline_sim::interp::{Interpreter, InterpreterBuilder, PeripheralInterruptFlags, InstructionInterpreter};
-use lc3_traits::control::{Control, rpc::{Encoding, Transport, TransparentEncoding, Device, Controller}};
-use lc3_shims::{memory::MemoryShim, peripherals::PeripheralsShim};
-use lc3_traits::peripherals::stubs::PeripheralsStub;
+use lc3_baseline_sim::interp::{
+    InstructionInterpreter, Interpreter, InterpreterBuilder, PeripheralInterruptFlags,
+};
 use lc3_isa::util::MemoryDump;
+use lc3_shims::{memory::MemoryShim, peripherals::PeripheralsShim};
+use lc3_traits::control::{
+    rpc::{Controller, Device, Encoding, TransparentEncoding, Transport},
+    Control,
+};
+use lc3_traits::peripherals::stubs::PeripheralsStub;
 
-pub fn bare_interpreter<'a, 'b>(program: MemoryDump, flags: &'b PeripheralInterruptFlags) -> Interpreter<'b, MemoryShim, PeripheralsStub<'b>> {
+pub fn bare_interpreter<'a, 'b>(
+    program: MemoryDump,
+    flags: &'b PeripheralInterruptFlags,
+) -> Interpreter<'b, MemoryShim, PeripheralsStub<'b>> {
     let memory = MemoryShim::new(*program);
 
     let mut interp: Interpreter<'b, MemoryShim, PeripheralsStub<'b>> = InterpreterBuilder::new()
@@ -106,8 +115,11 @@ pub fn simulator<'a>(program: MemoryDump, flags: &'a PeripheralInterruptFlags) -
 use std::thread::Builder as ThreadBuilder;
 
 static FLAGS: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
-fn device_thread<Enc: 'static, Transp: 'static>(rx: Receiver<()>, mut device: Device<Enc, Transp, Sim<'static>>, program: MemoryDump)
-where
+fn device_thread<Enc: 'static, Transp: 'static>(
+    rx: Receiver<()>,
+    mut device: Device<Enc, Transp, Sim<'static>>,
+    program: MemoryDump,
+) where
     Enc: Encoding + Send,
     Transp: Transport<Enc::Encoded> + Send,
 {
@@ -121,7 +133,7 @@ where
                 device.step(&mut sim);
                 if let State::Halted = sim.get_state() {
                     if let Ok(()) = rx.try_recv() {
-                        break
+                        break;
                     }
                 }
             }
@@ -138,7 +150,7 @@ use lc3_traits::control::rpc::mpsc_sync_pair;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 // TODO: test spin vs. sleep
-pub fn remote_simulator/*<'a, 'b: 'a>*/(program: MemoryDump) -> (Sender<()>, impl Control) {
+pub fn remote_simulator(program: MemoryDump) -> (Sender<()>, impl Control) {
     let (controller, device) = mpsc_sync_pair(&STATE);
     let (tx, rx) = channel();
 
@@ -149,8 +161,7 @@ pub fn remote_simulator/*<'a, 'b: 'a>*/(program: MemoryDump) -> (Sender<()>, imp
 
 //// Benches ////
 
-
-use criterion::{BenchmarkId, BatchSize, Criterion, Throughput};
+use criterion::{BatchSize, BenchmarkId, Criterion, Throughput};
 use lc3_baseline_sim::interp::MachineState;
 
 // const ITERS: [Word; 10] = [1, 10, 100, 500, 1000, 5000, 10000, 25000, 50000, 65535];
@@ -165,33 +176,47 @@ fn bench_fib(c: &mut Criterion) {
     let mut group = c.benchmark_group("fib(24)");
 
     for num_iter in ITERS.iter() {
-        group.throughput(Throughput::Elements(fib_program_executed_insn_count(*num_iter)));
+        group.throughput(Throughput::Elements(fib_program_executed_insn_count(
+            *num_iter,
+        )));
 
-        group.bench_with_input(BenchmarkId::new("Bare Interpreter - step", *num_iter), num_iter, |b, num| {
-            let mut int = bare_interpreter(build_fib_memory_image(*num), &flags);
-            b.iter(|| {
-                int.reset();
-                while let MachineState::Running = int.step() { }
-            })
-        });
+        group.bench_with_input(
+            BenchmarkId::new("Bare Interpreter - step", *num_iter),
+            num_iter,
+            |b, num| {
+                let mut int = bare_interpreter(build_fib_memory_image(*num), &flags);
+                b.iter(|| {
+                    int.reset();
+                    while let MachineState::Running = int.step() {}
+                })
+            },
+        );
 
-        group.bench_with_input(BenchmarkId::new("Simulator - step", *num_iter), num_iter, |b, num| {
-            let mut sim = simulator(build_fib_memory_image(*num), &flags);
-            b.iter(|| {
-                sim.reset();
-                while let State::Paused = sim.step() { }
-            })
-        });
+        group.bench_with_input(
+            BenchmarkId::new("Simulator - step", *num_iter),
+            num_iter,
+            |b, num| {
+                let mut sim = simulator(build_fib_memory_image(*num), &flags);
+                b.iter(|| {
+                    sim.reset();
+                    while let State::Paused = sim.step() {}
+                })
+            },
+        );
 
-        group.bench_with_input(BenchmarkId::new("Remote Simulator - step: mpsc, transparent", *num_iter), num_iter, |b, num| {
-            let (halt, mut sim) = remote_simulator(build_fib_memory_image(*num));
-            b.iter(|| {
-                sim.reset();
-                while let State::Paused = sim.step() { }
-            });
+        group.bench_with_input(
+            BenchmarkId::new("Remote Simulator - step: mpsc, transparent", *num_iter),
+            num_iter,
+            |b, num| {
+                let (halt, mut sim) = remote_simulator(build_fib_memory_image(*num));
+                b.iter(|| {
+                    sim.reset();
+                    while let State::Paused = sim.step() {}
+                });
 
-            halt.send(());
-        });
+                halt.send(());
+            },
+        );
     }
 }
 
