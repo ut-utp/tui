@@ -103,10 +103,16 @@ pub fn bare_interpreter<'a, 'b>(
 }
 
 use lc3_baseline_sim::sim::Simulator;
-type Sim<'a> = Simulator<'a, Interpreter<'a, MemoryShim, PeripheralsStub<'a>>>;
+use lc3_traits::control::rpc::SyncEventFutureSharedState;
+
+lazy_static! {
+    static ref SIM_STATE: SyncEventFutureSharedState = SyncEventFutureSharedState::new();
+}
+
+type Sim<'a> = Simulator<'a, 'static, Interpreter<'a, MemoryShim, PeripheralsStub<'a>>, SyncEventFutureSharedState>;
 
 pub fn simulator<'a>(program: MemoryDump, flags: &'a PeripheralInterruptFlags) -> Sim<'a> {
-    let mut sim = Simulator::new(bare_interpreter(program, flags));
+    let mut sim = Simulator::new_with_state(bare_interpreter(program, flags), &*SIM_STATE);
     sim.reset();
 
     sim
@@ -125,12 +131,13 @@ fn device_thread<Enc: 'static, Transp: 'static>(
 {
     ThreadBuilder::new()
         .name("Device Thread".to_string())
-        .stack_size(1024 * 1024 * 4)
+        .stack_size(1024 * 1024 * 4 * 10)
         .spawn(move || {
             let mut sim = simulator(program, &FLAGS);
 
             loop {
                 device.step(&mut sim);
+                sim.tick();
                 if let State::Halted = sim.get_state() {
                     if let Ok(()) = rx.try_recv() {
                         break;
@@ -140,18 +147,19 @@ fn device_thread<Enc: 'static, Transp: 'static>(
         });
 }
 
-use lc3_traits::control::rpc::SyncEventFutureSharedState;
-
 lazy_static! {
-    static ref STATE: SyncEventFutureSharedState = SyncEventFutureSharedState::new();
+    static ref RPC_STATE: SyncEventFutureSharedState = SyncEventFutureSharedState::new();
 }
 
-use lc3_traits::control::rpc::mpsc_sync_pair;
+use lc3_traits::control::rpc::{mpsc_sync_pair, MpscTransport, ControlMessage};
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 // TODO: test spin vs. sleep
-pub fn remote_simulator(program: MemoryDump) -> (Sender<()>, impl Control) {
-    let (controller, device) = mpsc_sync_pair(&STATE);
+pub fn remote_simulator/*<C: Control>*/(program: MemoryDump) -> (Sender<()>, Controller<'static, TransparentEncoding, MpscTransport<ControlMessage>, SyncEventFutureSharedState>)
+// where
+//     <C as Control>::EventFuture: Sync + Send,
+{
+    let (controller, device) = mpsc_sync_pair(&RPC_STATE);
     let (tx, rx) = channel();
 
     device_thread::<TransparentEncoding, _>(rx, device, program);
@@ -170,6 +178,37 @@ const ITERS: [Word; 5] = [1, 10, 100, 500, 1000];
 // // 159 * x + 347
 
 use lc3_traits::control::State;
+
+fn executor_thread<C: Control>(mut dev: C) -> (Sender<Option<()>>, impl Fn(&Sender<Option<()>>), impl Fn(&Sender<Option<()>>) -> C::EventFuture)
+where
+    C: Send + 'static,
+    <C as Control>::EventFuture: Send,
+{
+    let (halt_or_fut, rx_halt_or_fut) = channel();
+    let (tx_fut, rx_fut) = channel();
+    std::thread::spawn(move || {
+        loop {
+            match rx_halt_or_fut.try_recv() {
+                Err(_) => dev.tick(),
+                Ok(None) => break,
+                Ok(Some(())) => {
+                    dev.reset();
+                    tx_fut.send(dev.run_until_event()).unwrap();
+                }
+            }
+        }
+    });
+
+    let next = move |c: &Sender<Option<()>>| { c.send(Some(())).unwrap(); rx_fut.recv().unwrap() };
+    let halt = |c: &Sender<Option<()>>| c.send(None).unwrap();
+
+    (halt_or_fut, halt, next)
+}
+
+use lc3_traits::control::rpc::RW_CLONE;
+use std::task::{Context, Waker, Poll};
+use std::pin::Pin;
+use std::future::Future;
 
 fn bench_fib(c: &mut Criterion) {
     let flags = PeripheralInterruptFlags::new();
@@ -199,8 +238,27 @@ fn bench_fib(c: &mut Criterion) {
                 let mut sim = simulator(build_fib_memory_image(*num), &flags);
                 b.iter(|| {
                     sim.reset();
-                    while let State::Paused = sim.step() {}
+
+                    // Since we didn't register any break or watch points, the only
+                    // event that can happen is a halt. Until that happens, we'll keep
+                    // running.
+                    while let None = sim.step() {}
                 })
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("Simulator - run_until_event", *num_iter),
+            num_iter,
+            |b, num| {
+                let sim = simulator(build_fib_memory_image(*num), &FLAGS);
+                let (chan, halt, next) = executor_thread(sim);
+
+                b.iter(|| {
+                    async_std::task::block_on(next(&chan));
+                });
+
+                halt(&chan);
             },
         );
 
@@ -211,10 +269,90 @@ fn bench_fib(c: &mut Criterion) {
                 let (halt, mut sim) = remote_simulator(build_fib_memory_image(*num));
                 b.iter(|| {
                     sim.reset();
-                    while let State::Paused = sim.step() {}
+                    while let None = sim.step() {}
                 });
 
-                halt.send(());
+                halt.send(()).unwrap();
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("Remote Simulator - run_until_event: mpsc, transparent", *num_iter),
+            num_iter,
+            |b, num| {
+                let (halt_dev, sim) = remote_simulator(build_fib_memory_image(*num));
+                let (chan, halt_exec, next) = executor_thread(sim);
+
+                // let (halt_or_fut, rx_halt_or_fut) = channel();
+                // let (tx_fut, rx_fut) = channel();
+                // std::thread::spawn(move || {
+                //     loop {
+                //         match rx_halt_or_fut.try_recv() {
+                //             Err(_) => sim.tick(),
+                //             Ok(None) => break,
+                //             Ok(Some(())) => {
+                //                 sim.reset();
+                //                 tx_fut.send(sim.run_until_event()).unwrap();
+                //             }
+                //         }
+                //     }
+                // });
+
+                // let next = || { halt_or_fut.send(Some(())).unwrap(); rx_fut.recv().unwrap() };
+
+                b.iter(|| {
+                    async_std::task::block_on(next(&chan));
+                    // println!("FIN!!\n")
+                });
+
+                // halt_or_fut.send(None).unwrap();
+                halt_dev.send(()).unwrap();
+                halt_exec(&chan);
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("Remote Simulator - run_until_event [no separate thread]: mpsc, transparent", *num_iter),
+            num_iter,
+            |b, num| {
+                let (halt_dev, mut sim) = remote_simulator(build_fib_memory_image(*num));
+
+                b.iter(|| {
+                    sim.reset();
+                    let mut fut = sim.run_until_event();
+
+                    loop {
+                        if let Poll::Ready(_) = Pin::new(&mut fut).poll(&mut Context::from_waker(&unsafe { Waker::from_raw(RW_CLONE(&())) } )) {
+                            break;
+                        }
+
+                        sim.tick();
+                    }
+                });
+
+                halt_dev.send(()).unwrap();
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("Simulator - run_until_event [no separate thread]", *num_iter),
+            num_iter,
+            |b, num| {
+                let mut sim = simulator(build_fib_memory_image(*num), &FLAGS);
+
+                b.iter(|| {
+                    sim.reset();
+                    let mut fut = sim.run_until_event();
+
+                    loop {
+                        if let Poll::Ready(_) = Pin::new(&mut fut).poll(&mut Context::from_waker(&unsafe { Waker::from_raw(RW_CLONE(&())) } )) {
+                            break;
+                        }
+
+                        sim.tick();
+                        sim.tick();
+                    }
+                });
             },
         );
     }
