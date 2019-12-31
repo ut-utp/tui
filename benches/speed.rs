@@ -131,7 +131,7 @@ fn device_thread<Enc: 'static, Transp: 'static>(
 {
     ThreadBuilder::new()
         .name("Device Thread".to_string())
-        .stack_size(1024 * 1024 * 4 * 10)
+        .stack_size(1024 * 1024 * 4)
         .spawn(move || {
             let mut sim = simulator(program, &FLAGS);
 
@@ -169,7 +169,7 @@ pub fn remote_simulator/*<C: Control>*/(program: MemoryDump) -> (Sender<()>, Con
 
 //// Benches ////
 
-use criterion::{BatchSize, BenchmarkId, Criterion, Throughput};
+use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, PlotConfiguration, AxisScale};
 use lc3_baseline_sim::interp::MachineState;
 
 // const ITERS: [Word; 10] = [1, 10, 100, 500, 1000, 5000, 10000, 25000, 50000, 65535];
@@ -213,6 +213,11 @@ use std::future::Future;
 fn bench_fib(c: &mut Criterion) {
     let flags = PeripheralInterruptFlags::new();
     let mut group = c.benchmark_group("fib(24)");
+
+    let plot_config = PlotConfiguration::default()
+        .summary_scale(AxisScale::Logarithmic);
+
+    group.plot_config(plot_config);
 
     for num_iter in ITERS.iter() {
         group.throughput(Throughput::Elements(fib_program_executed_insn_count(
