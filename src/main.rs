@@ -55,6 +55,7 @@ use tui::widgets::{Block, Borders, Paragraph, Text, Widget};
 
 use lc3_isa::{Addr, Instruction, Reg, Word};
 use lc3_traits::control::rpc::SyncEventFutureSharedState;
+use lc3_traits::control::metadata::{DeviceInfo, ProgramMetadata, ProgramId, Identifier};
 use lc3_traits::control::{Control, State};
 use lc3_traits::peripherals::adc::{AdcPin, AdcState};
 use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
@@ -67,7 +68,7 @@ use lc3_shims::peripherals::{
 };
 
 use lc3_traits::control::rpc::mpsc_sync_pair;
-use lc3_traits::control::rpc::TransparentEncoding;
+use lc3_traits::control::rpc::encoding::Transparent;
 use lc3_traits::control::rpc::*;
 
 use lc3_baseline_sim::interp::{
@@ -127,7 +128,11 @@ pub enum TuiState {
 }
 
 lazy_static::lazy_static! {
-    pub static ref EVENT_FUTURE_SHARED_STATE: SyncEventFutureSharedState = SyncEventFutureSharedState::new();
+    pub static ref EVENT_FUTURE_SHARED_STATE_CONTROLLER: SyncEventFutureSharedState = SyncEventFutureSharedState::new();
+}
+
+lazy_static::lazy_static! {
+    pub static ref EVENT_FUTURE_SHARED_STATE_SIM: SyncEventFutureSharedState = SyncEventFutureSharedState::new();
 }
 
 fn main() -> Result<(), failure::Error> {
@@ -155,10 +160,10 @@ fn main() -> Result<(), failure::Error> {
     let mut iteratively_collect_into_console_output = || {
         let vec = console_output.lock().unwrap();
 
-        if console_output_string.len() > 5000 {
-            let _ = console_output_string.drain(0..(console_output_string.len() - 2000));
-            // Only keep the last 2000 characters
-        }
+        // if console_output_string.len() > 5000 {
+        //     let _ = console_output_string.drain(0..(console_output_string.len() - 2000));
+        //     // Only keep the last 2000 characters
+        // }
 
         if vec.len() > last_idx {
             vec[last_idx..].iter().for_each(|c| {
@@ -170,7 +175,8 @@ fn main() -> Result<(), failure::Error> {
         console_output_string.clone()
     };
 
-    let (controller, mut device) = mpsc_sync_pair::<TransparentEncoding, _>(&EVENT_FUTURE_SHARED_STATE);
+    let (controller, mut device) =
+        mpsc_sync_pair::<RequestMessage, ResponseMessage, Transparent<_>, Transparent<_>, Transparent<_>, Transparent<_>, _>(&EVENT_FUTURE_SHARED_STATE_CONTROLLER);
 
     let gshim = gpio_shim.clone();
     let ashim = adc_shim.clone();
@@ -182,18 +188,10 @@ fn main() -> Result<(), failure::Error> {
 
     ThreadBuilder::new()
         .name("Device Thread".to_string())
-        .stack_size(1_000_000_000)
+        .stack_size(1024 * 1024 * 4)
         .spawn(move || {
-
-            let peripherals = PeripheralSet::new(
-                gshim,
-                ashim,
-                pshim,
-                timer_shim,
-                clock_shim,
-                ishim,
-                oshim,
-            );
+            let peripherals =
+                PeripheralSet::new(gshim, ashim, pshim, timer_shim, clock_shim, ishim, oshim);
 
             // TODO: this shouldn't have to be `'static`!
             // let _flags: PeripheralInterruptFlags = PeripheralInterruptFlags::new();
@@ -209,7 +207,7 @@ fn main() -> Result<(), failure::Error> {
             interp.reset();
             interp.init(&_flags);
 
-            let mut sim = Simulator::new(interp);
+            let mut sim = Simulator::new_with_state(interp, &*EVENT_FUTURE_SHARED_STATE_SIM);
             // sim.get_interpreter().init(&_flags);
             sim.reset();
 
@@ -227,13 +225,13 @@ fn main() -> Result<(), failure::Error> {
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    let cli = Cli{
+    let cli = Cli {
         tick_rate: 250,
         log: true,
     };
 
     if cli.log {
-        Logger::with_env_or_str("myprog=debug, mylib=warn")
+        Logger::with_env_or_str("")
             .log_to_file()
             .directory("log_files")
             .format(opt_format)
@@ -289,18 +287,17 @@ fn main() -> Result<(), failure::Error> {
 
     let mut sim = controller;
     while active {
-
         let bp = sim.get_breakpoints();
 
-        if running {
-            offset = 2;
-            for _ in 0..10000 {
-                match sim.step() {
-                    State::Halted => running = false,
-                    _ => {}
-                }
-            }
-        }
+        // if running {
+        //     offset = 2;
+        //     for _ in 0..10000 {
+        //         match sim.step() {
+        //             State::Halted => running = false,
+        //             _ => {}
+        //         }
+        //     }
+        // }
 
         match rx.recv()? {
             Event::Input(event) => match event {
@@ -327,8 +324,12 @@ fn main() -> Result<(), failure::Error> {
                                     offset = 2;
                                 }
                             }
-                            'p' => running = false,
-                            'r' => running = true,
+                            'p' => {
+                                sim.pause();
+                            }
+                            'r' => {
+                                sim.run_until_event();
+                            }
                             'q' => active = false,
                             _ => {}
                         }
@@ -948,6 +949,13 @@ fn main() -> Result<(), failure::Error> {
                 }
             };
 
+            let info = sim.get_info();
+            let mut proxies = String::new();
+
+            for p in info.proxies.iter().filter_map(|p| *p) {
+                proxies += format!("-> {}", p).as_str();
+            }
+
             let text = [
                 Text::styled(
                     format!("Input Mode: {}\n", input_mode_string(input_mode)),
@@ -955,6 +963,14 @@ fn main() -> Result<(), failure::Error> {
                 ),
                 cur_pin,
                 Text::raw(set_val_out.clone()),
+                Text::styled(
+                    format!("Prog: {:?}\nSource: {} | Proxies: {}",
+                        info.current_program_metadata,
+                        info.source_name,
+                        proxies,
+                    ),
+                    Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
+                ),
             ];
 
             Paragraph::new(text.iter())
