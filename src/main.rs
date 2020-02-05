@@ -54,8 +54,8 @@ use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders, Paragraph, Text, Widget};
 
 use lc3_isa::{Addr, Instruction, Reg, Word};
+use lc3_traits::control::metadata::{DeviceInfo, Identifier, ProgramId, ProgramMetadata};
 use lc3_traits::control::rpc::SyncEventFutureSharedState;
-use lc3_traits::control::metadata::{DeviceInfo, ProgramMetadata, ProgramId, Identifier};
 use lc3_traits::control::{Control, State};
 use lc3_traits::peripherals::adc::{AdcPin, AdcState};
 use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
@@ -67,8 +67,8 @@ use lc3_shims::peripherals::{
     AdcShim, ClockShim, GpioShim, InputShim, OutputShim, PwmShim, SourceShim, TimersShim,
 };
 
-use lc3_traits::control::rpc::mpsc_sync_pair;
 use lc3_traits::control::rpc::encoding::Transparent;
+use lc3_traits::control::rpc::mpsc_sync_pair;
 use lc3_traits::control::rpc::*;
 
 use lc3_baseline_sim::interp::{
@@ -175,8 +175,15 @@ fn main() -> Result<(), failure::Error> {
         console_output_string.clone()
     };
 
-    let (controller, mut device) =
-        mpsc_sync_pair::<RequestMessage, ResponseMessage, Transparent<_>, Transparent<_>, Transparent<_>, Transparent<_>, _>(&EVENT_FUTURE_SHARED_STATE_CONTROLLER);
+    let (controller, mut device) = mpsc_sync_pair::<
+        RequestMessage,
+        ResponseMessage,
+        Transparent<_>,
+        Transparent<_>,
+        Transparent<_>,
+        Transparent<_>,
+        _,
+    >(&EVENT_FUTURE_SHARED_STATE_CONTROLLER);
 
     let gshim = gpio_shim.clone();
     let ashim = adc_shim.clone();
@@ -964,10 +971,9 @@ fn main() -> Result<(), failure::Error> {
                 cur_pin,
                 Text::raw(set_val_out.clone()),
                 Text::styled(
-                    format!("Prog: {:?}\nSource: {} | Proxies: {}",
-                        info.current_program_metadata,
-                        info.source_name,
-                        proxies,
+                    format!(
+                        "Prog: {:?}\nSource: {} | Proxies: {}",
+                        info.current_program_metadata, info.source_name, proxies,
                     ),
                     Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
                 ),
