@@ -1717,6 +1717,8 @@ fn get_pin_string(s: TuiState, g: GpioPin, a: AdcPin, p: PwmPin, t: TimerId, r: 
             A1 => return format!("A1"),
             A2 => return format!("A2"),
             A3 => return format!("A3"),
+            A4 => return format!("A4"),
+            A5 => return format!("A5"),
         },
         PWM => match p {
             P0 => return format!("P0"),
