@@ -1695,51 +1695,16 @@ fn input_mode_string(s: TuiState) -> String {
 }
 
 fn get_pin_string(s: TuiState, g: GpioPin, a: AdcPin, p: PwmPin, t: TimerId, r: Reg) -> String {
-    use AdcPin::*;
-    use GpioPin::*;
-    use PwmPin::*;
-    use Reg::*;
     use TuiState::*;
 
     match s {
-        GPIO => match g {
-            G0 => return format!("G0"),
-            G1 => return format!("G1"),
-            G2 => return format!("G2"),
-            G3 => return format!("G3"),
-            G4 => return format!("G4"),
-            G5 => return format!("G5"),
-            G6 => return format!("G6"),
-            G7 => return format!("G7"),
-        },
-        ADC => match a {
-            A0 => return format!("A0"),
-            A1 => return format!("A1"),
-            A2 => return format!("A2"),
-            A3 => return format!("A3"),
-            A4 => return format!("A4"),
-            A5 => return format!("A5"),
-        },
-        PWM => match p {
-            P0 => return format!("P0"),
-            P1 => return format!("P1"),
-        },
-        TMR => match t {
-            T0 => return format!("T0"),
-            T1 => return format!("T1"),
-        },
-        REG => match r {
-            R0 => return format!("R0"),
-            R1 => return format!("R1"),
-            R2 => return format!("R2"),
-            R3 => return format!("R3"),
-            R4 => return format!("R4"),
-            R5 => return format!("R5"),
-            R6 => return format!("R6"),
-            R7 => return format!("R7"),
-        },
-        CLK => return format!("CLK"),
-        PC => return format!("PC"),
+        GPIO => g.to_string(),
+        ADC => a.to_string(),
+        PWM => p.to_string(),
+        TMR => t.to_string(),
+        REG => r.to_string(),
+        CLK => format!("CLK"),
+        PC => format!("PC"),
         _ => return format!(""),
     }
 }
