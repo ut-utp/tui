@@ -103,6 +103,8 @@ use core::num::NonZeroU8;
 
 // use std::process;
 
+use std::collections::HashMap;
+
 enum Event<I> {
     Input(I),
     Tick,
@@ -290,21 +292,12 @@ fn main() -> Result<(), failure::Error> {
     }
 
     let mut offset: u16 = 2;
-    let mut running = false;
-
     let mut sim = controller;
-    while active {
-        let bp = sim.get_breakpoints();
+    let mut bp = HashMap::new();
+    let mut wp = HashMap::new();
 
-        // if running {
-        //     offset = 2;
-        //     for _ in 0..10000 {
-        //         match sim.step() {
-        //             State::Halted => running = false,
-        //             _ => {}
-        //         }
-        //     }
-        // }
+    while active {
+        //let bp = sim.get_breakpoints();
 
         match rx.recv()? {
             Event::Input(event) => match event {
@@ -326,16 +319,16 @@ fn main() -> Result<(), failure::Error> {
                     if input_mode == TuiState::CONT {
                         match c {
                             's' => {
-                                if !running {
-                                    sim.step();
-                                    offset = 2;
-                                }
+                                sim.step();
+                                offset = 2;
                             }
                             'p' => {
                                 sim.pause();
+                                offset = 2;
                             }
                             'r' => {
                                 sim.run_until_event();
+                                offset = 2;
                             }
                             'q' => active = false,
                             _ => {}
@@ -391,6 +384,8 @@ fn main() -> Result<(), failure::Error> {
                                 '1' => adc_pin = AdcPin::A1,
                                 '2' => adc_pin = AdcPin::A2,
                                 '3' => adc_pin = AdcPin::A3,
+                                '4' => adc_pin = AdcPin::A4,
+                                '5' => adc_pin = AdcPin::A5,
                                 _ => pin_flag = 0,
                             }
                         } else {
@@ -593,6 +588,18 @@ fn main() -> Result<(), failure::Error> {
                                 '\n' => {
                                     if set_val_out == "b" {
                                         sim.set_breakpoint(mem_addr);
+                                        bp.insert(mem_addr, bp.len());
+                                    } if set_val_out == "w" {
+                                        sim.set_memory_watchpoint(mem_addr);
+                                        wp.insert(mem_addr, wp.len());
+                                    } if set_val_out == "rb" {
+                                        match bp.remove(&mem_addr) {
+                                            Some(val) => sim.unset_breakpoint(val),
+                                        };
+                                    } if set_val_out == "rw" {
+                                        match wp.remove(&mem_addr) {
+                                            Some(val) =>  sim.unset_memory_watchpoint(val),
+                                        };
                                     } else {
                                         match set_val_out.parse::<Word>() {
                                             Ok(w) => {
@@ -809,11 +816,17 @@ fn main() -> Result<(), failure::Error> {
                 .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
                 .render(&mut f, console[1]);
 
+            let IO_watch = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(1)
+                .constraints([Constraint::Percentage(66), Constraint::Percentage(34)].as_ref())
+                .split(right_pane[1]);
+
             Block::default()
                 .title("IO")
                 .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
                 .borders(Borders::ALL)
-                .render(&mut f, right_pane[1]);
+                .render(&mut f, IO_watch[0]);
 
             Block::default()
                 .title("Footer")
@@ -826,7 +839,7 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, chunks[1]);
 
             //Further breakdown of IO
-            let io_panel = Layout::default()
+            let io_pane = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
                 .constraints(
@@ -838,13 +851,13 @@ fn main() -> Result<(), failure::Error> {
                     ]
                     .as_ref(),
                 )
-                .split(right_pane[1]);
+                .split(IO_watch[0]);
 
             let timers_n_clock = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
                 .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
-                .split(io_panel[3]);
+                .split(io_pane[3]);
 
             //TEXT BELOW HERE
 
@@ -1094,6 +1107,8 @@ fn main() -> Result<(), failure::Error> {
             }
 
             let mut pc_arrow = String::from("");
+            let mut bp_locs = String::from("");
+            let mut wp_locs = String::from("");
             let mut addresses = String::from("");
             s = String::from("");
             let mut insts = String::from("");
@@ -1107,11 +1122,25 @@ fn main() -> Result<(), failure::Error> {
                         sr2: Reg::R0,
                     },
                 };
+
                 if x == offset {
                     pc_arrow.push_str("-->\n");
                 } else {
                     pc_arrow.push_str("\n");
                 }
+
+                if bp.contains_key(&x) {
+                    bp_locs.push_str("<b>");
+                } else {
+                    bp_locs.push_str("\n");
+                }
+
+                if wp.contains_key(&x) {
+                    wp_locs.push_str("<w>");
+                } else {
+                    wp_locs.push_str("<w>");
+                }
+
                 addresses.push_str(&format!(
                     "{:#06x}\n",
                     pc.wrapping_sub(offset).wrapping_add(x)
@@ -1149,6 +1178,8 @@ fn main() -> Result<(), failure::Error> {
                 .constraints(
                     [
                         Constraint::Length(5),
+                        Constraint::Length(5),
+                        Constraint::Length(5),
                         Constraint::Length(10),
                         Constraint::Length(40),
                         Constraint::Min(10),
@@ -1157,26 +1188,46 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .split(left_pane[0]);
 
-            let text = [Text::styled(addresses, Style::default().fg(Color::Gray))];
-
-            Paragraph::new(text.iter())
-                .block(Block::default().borders(Borders::NONE))
-                .wrap(true)
-                .render(&mut f, mem_partitions[1]);
-
-            let text = [Text::styled(s, Style::default().fg(Color::LightGreen))];
+            let text = [Text::styled(
+                bp_locs,
+                Style::default().fg(Color::Rgb(0xCC, 0x02, 0x02)),
+            )];
 
             Paragraph::new(text.iter())
                 .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, mem_partitions[2]);
 
-            let text = [Text::styled(insts, Style::default().fg(Color::LightCyan))];
+            let text = [Text::styled(
+                wp_locs,
+                Style::default().fg(Color::Rgb(0x30, 0x49, 0xDE)),
+            )];
+
+            Paragraph::new(text.iter())
+                .block(Block::default().borders(Borders::NONE))
+                .wrap(true)
+                .render(&mut f, mem_partitions[2]);
+
+            let text = [Text::styled(addresses, Style::default().fg(Color::Gray))];
 
             Paragraph::new(text.iter())
                 .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, mem_partitions[3]);
+
+            let text = [Text::styled(s, Style::default().fg(Color::LightGreen))];
+
+            Paragraph::new(text.iter())
+                .block(Block::default().borders(Borders::NONE))
+                .wrap(true)
+                .render(&mut f, mem_partitions[4]);
+
+            let text = [Text::styled(insts, Style::default().fg(Color::LightCyan))];
+
+            Paragraph::new(text.iter())
+                .block(Block::default().borders(Borders::NONE))
+                .wrap(true)
+                .render(&mut f, mem_partitions[5]);
 
             //Console
 
@@ -1241,13 +1292,13 @@ fn main() -> Result<(), failure::Error> {
                         .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
                 .wrap(true)
-                .render(&mut f, io_panel[0]);
+                .render(&mut f, io_pane[0]);
 
             let left_partitions = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
                 .constraints([Constraint::Length(10), Constraint::Min(20)].as_ref())
-                .split(io_panel[0]);
+                .split(io_pane[0]);
 
             let gpio = match gpioin[GpioPin::G0] {
                 Ok(val) => format!("{}\n", val),
@@ -1308,7 +1359,7 @@ fn main() -> Result<(), failure::Error> {
                 .direction(Direction::Horizontal)
                 .margin(0)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                .split(io_panel[0]);
+                .split(io_pane[0]);
 
             let right_partitions = Layout::default()
                 .direction(Direction::Horizontal)
@@ -1398,13 +1449,13 @@ fn main() -> Result<(), failure::Error> {
                         .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
                 .wrap(true)
-                .render(&mut f, io_panel[1]);
+                .render(&mut f, io_pane[1]);
 
             let left_partitions = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
                 .constraints([Constraint::Length(10), Constraint::Min(20)].as_ref())
-                .split(io_panel[1]);
+                .split(io_pane[1]);
 
             let adc = match adcin[AdcPin::A0] {
                 Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
@@ -1430,7 +1481,19 @@ fn main() -> Result<(), failure::Error> {
                 _ => Text::styled(adc, Style::default().fg(Color::LightGreen)),
             };
 
-            let text = [t0, t1];
+            let adc = match adcin[AdcPin::A2] {
+                Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
+                Err(e) => format!("-                  -      -\n"),
+            };
+
+            let t2 = match ADC_states[AdcPin::A2] {
+                AdcState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
+                _ => Text::styled(adc, Style::default().fg(Color::LightGreen)),
+            };
+
+            let text = [t0, t1, t2];
 
             Paragraph::new(text.iter())
                 .block(Block::default().borders(Borders::TOP))
@@ -1441,7 +1504,7 @@ fn main() -> Result<(), failure::Error> {
                 .direction(Direction::Horizontal)
                 .margin(0)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                .split(io_panel[1]);
+                .split(io_pane[1]);
 
             let right_partitions = Layout::default()
                 .direction(Direction::Horizontal)
@@ -1459,31 +1522,43 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, right_ADC[1]);
 
-            let adc = match adcin[AdcPin::A2] {
-                Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
-                Err(e) => format!("-                  -      -\n"),
-            };
-
-            let t0 = match ADC_states[AdcPin::A2] {
-                AdcState::Disabled => {
-                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
-                }
-                _ => Text::styled(adc, Style::default().fg(Color::LightGreen)),
-            };
-
             let adc = match adcin[AdcPin::A3] {
                 Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
                 Err(e) => format!("-                  -      -\n"),
             };
 
-            let t1 = match ADC_states[AdcPin::A3] {
+            let t0 = match ADC_states[AdcPin::A3] {
                 AdcState::Disabled => {
                     Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
                 }
                 _ => Text::styled(adc, Style::default().fg(Color::LightGreen)),
             };
 
-            let text = [t0, t1];
+            let adc = match adcin[AdcPin::A4] {
+                Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
+                Err(e) => format!("-                  -      -\n"),
+            };
+
+            let t1 = match ADC_states[AdcPin::A4] {
+                AdcState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
+                _ => Text::styled(adc, Style::default().fg(Color::LightGreen)),
+            };
+
+            let adc = match adcin[AdcPin::A5] {
+                Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
+                Err(e) => format!("-                  -      -\n"),
+            };
+
+            let t2 = match ADC_states[AdcPin::A5] {
+                AdcState::Disabled => {
+                    Text::styled(format!("Disabled\n"), Style::default().fg(Color::LightRed))
+                }
+                _ => Text::styled(adc, Style::default().fg(Color::LightGreen)),
+            };
+
+            let text = [t0, t1, t2];
 
             Paragraph::new(text.iter())
                 .block(Block::default().borders(Borders::TOP))
@@ -1504,13 +1579,13 @@ fn main() -> Result<(), failure::Error> {
                         .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
                 .wrap(true)
-                .render(&mut f, io_panel[2]);
+                .render(&mut f, io_pane[2]);
 
             let left_partitions = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
                 .constraints([Constraint::Length(10), Constraint::Min(20)].as_ref())
-                .split(io_panel[2]);
+                .split(io_pane[2]);
 
             let text = match PWM_states[PwmPin::P0] {
                 PwmState::Disabled => [Text::styled(
@@ -1537,7 +1612,7 @@ fn main() -> Result<(), failure::Error> {
                 .direction(Direction::Horizontal)
                 .margin(0)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                .split(io_panel[2]);
+                .split(io_pane[2]);
 
             let right_partitions = Layout::default()
                 .direction(Direction::Horizontal)
@@ -1670,6 +1745,23 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .wrap(true)
                 .render(&mut f, timers_n_clock[1]);
+
+            let mut wp_addrs = String::from("");
+            let mut wp_data = String::from("");
+
+            for wp_addr in wp {
+                wp_addr = wp_addr.0;
+                wp_addrs.push_str(&format!(
+                    "{:#06x}\n",
+                    wp_addr
+                ));
+                wp_data.push_str(&format!(
+                    "{:#018b} {:#06x} {:#05}\n",
+                    mem[wp_addr as usize], mem[wp_addr as usize], mem[wp_addr as usize]
+                ));
+            }
+
+
         })?;
         //  loop{}
     }
