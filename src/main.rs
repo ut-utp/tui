@@ -62,6 +62,7 @@ use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
 use lc3_traits::peripherals::pwm::{PwmPin, PwmState};
 use lc3_traits::peripherals::timers::{TimerId, TimerState};
 use lc3_traits::peripherals::PeripheralSet;
+use lc3_traits::control::control::{MAX_BREAKPOINTS, MAX_MEMORY_WATCHPOINTS};
 
 use lc3_shims::peripherals::{
     AdcShim, ClockShim, GpioShim, InputShim, OutputShim, PwmShim, SourceShim, TimersShim,
@@ -366,7 +367,7 @@ fn main() -> Result<(), failure::Error> {
                                             .unwrap()
                                             .set_pin(gpio_pin, b)
                                             .unwrap(),
-                                        Err(e) => {}
+                                        Err(_e) => {}
                                     }
                                     set_val_out = String::from("");
                                 }
@@ -396,7 +397,7 @@ fn main() -> Result<(), failure::Error> {
                                             .unwrap()
                                             .set_value(adc_pin, n)
                                             .unwrap(),
-                                        Err(e) => {}
+                                        Err(_e) => {}
                                     }
                                     if set_val_out.len() > 2 {
                                         let val = set_val_out.split_off(2);
@@ -406,7 +407,7 @@ fn main() -> Result<(), failure::Error> {
                                                     .unwrap()
                                                     .set_value(adc_pin, n)
                                                     .unwrap(),
-                                                Err(e) => {}
+                                                Err(_e) => {}
                                             }
                                         } else if set_val_out == "0b" {
                                             match u8::from_str_radix(&val, 2) {
@@ -414,7 +415,7 @@ fn main() -> Result<(), failure::Error> {
                                                     .unwrap()
                                                     .set_value(adc_pin, n)
                                                     .unwrap(),
-                                                Err(e) => {}
+                                                Err(_e) => {}
                                             }
                                         }
                                     }
@@ -441,7 +442,7 @@ fn main() -> Result<(), failure::Error> {
                                         Ok(n) => RwLock::write(&pwm_shim)
                                             .unwrap()
                                             .set_duty_cycle_helper(pwm_pin, n),
-                                        Err(e) => {}
+                                        Err(_e) => {}
                                     }
                                     if set_val_out.len() > 2 {
                                         let val = set_val_out.split_off(2);
@@ -457,7 +458,7 @@ fn main() -> Result<(), failure::Error> {
                                                             );
                                                     }
                                                 }
-                                                Err(e) => {}
+                                                Err(_e) => {}
                                             }
                                         } else if set_val_out == "0b" {
                                             match u8::from_str_radix(&val, 2) {
@@ -471,7 +472,7 @@ fn main() -> Result<(), failure::Error> {
                                                             );
                                                     }
                                                 }
-                                                Err(e) => {}
+                                                Err(_e) => {}
                                             }
                                         }
                                     }
@@ -521,19 +522,19 @@ fn main() -> Result<(), failure::Error> {
                                 '\n' => {
                                     match set_val_out.parse::<Word>() {
                                         Ok(w) => sim.set_register(reg_id, w),
-                                        Err(e) => {}
+                                        Err(_e) => {}
                                     }
                                     if set_val_out.len() > 2 {
                                         let val = set_val_out.split_off(2);
                                         if set_val_out == "0x" {
                                             match Word::from_str_radix(&val, 16) {
                                                 Ok(w) => sim.set_register(reg_id, w),
-                                                Err(e) => {}
+                                                Err(_e) => {}
                                             }
                                         } else if set_val_out == "0b" {
                                             match Word::from_str_radix(&val, 2) {
                                                 Ok(w) => sim.set_register(reg_id, w),
-                                                Err(e) => {}
+                                                Err(_e) => {}
                                             }
                                         }
                                     }
@@ -554,7 +555,7 @@ fn main() -> Result<(), failure::Error> {
                                             pin_flag = 1;
                                             mem_addr = a;
                                         }
-                                        Err(e) => {}
+                                        Err(_e) => {}
                                     }
                                     if set_val_out.len() > 2 {
                                         let val = set_val_out.split_off(2);
@@ -564,7 +565,7 @@ fn main() -> Result<(), failure::Error> {
                                                     pin_flag = 1;
                                                     mem_addr = a;
                                                 }
-                                                Err(e) => {}
+                                                Err(_e) => {}
                                             }
                                         } else if set_val_out == "0b" {
                                             match Addr::from_str_radix(&val, 2) {
@@ -572,7 +573,7 @@ fn main() -> Result<(), failure::Error> {
                                                     pin_flag = 1;
                                                     mem_addr = a;
                                                 }
-                                                Err(e) => {}
+                                                Err(_e) => {}
                                             }
                                         }
                                     }
@@ -587,26 +588,35 @@ fn main() -> Result<(), failure::Error> {
                             match c {
                                 '\n' => {
                                     if set_val_out == "b" {
-                                        sim.set_breakpoint(mem_addr);
-                                        bp.insert(mem_addr, bp.len());
-                                    } if set_val_out == "w" {
-                                        sim.set_memory_watchpoint(mem_addr);
-                                        wp.insert(mem_addr, wp.len());
-                                    } if set_val_out == "rb" {
+                                        match sim.set_breakpoint(mem_addr) {
+                                            Ok(val) => {bp.insert(mem_addr, val);},
+                                            Err(_e) => {},
+                                        }
+                                    } else if set_val_out == "w" {
+                                        match sim.set_memory_watchpoint(mem_addr) {
+                                            Ok(val) => {wp.insert(mem_addr, val);},
+                                            Err(_e) => {},
+                                        }
+                                        
+                                    } else if set_val_out == "rb" {
                                         match bp.remove(&mem_addr) {
-                                            Some(val) => sim.unset_breakpoint(val),
+                                            Some(val) => sim.unset_breakpoint(val).unwrap(),
+                                            None => {},
                                         };
-                                    } if set_val_out == "rw" {
+                                    } else if set_val_out == "rw" {
                                         match wp.remove(&mem_addr) {
-                                            Some(val) =>  sim.unset_memory_watchpoint(val),
+                                            Some(val) =>  sim.unset_memory_watchpoint(val).unwrap(),
+                                            None => {},
                                         };
+                                    } else if set_val_out == "j" {
+                                        offset = sim.get_pc().wrapping_sub(mem_addr)
                                     } else {
                                         match set_val_out.parse::<Word>() {
                                             Ok(w) => {
                                                 sim.write_word(mem_addr, w);
                                                 pin_flag = 0;
                                             }
-                                            Err(e) => {}
+                                            Err(_e) => {}
                                         }
                                         let val = set_val_out.split_off(2);
                                         if set_val_out == "0x" {
@@ -615,7 +625,7 @@ fn main() -> Result<(), failure::Error> {
                                                     sim.write_word(mem_addr, w);
                                                     pin_flag = 0;
                                                 }
-                                                Err(e) => {}
+                                                Err(_e) => {}
                                             }
                                         } else if set_val_out == "0b" {
                                             match Word::from_str_radix(&val, 2) {
@@ -623,7 +633,7 @@ fn main() -> Result<(), failure::Error> {
                                                     sim.write_word(mem_addr, w);
                                                     pin_flag = 0;
                                                 }
-                                                Err(e) => {}
+                                                Err(_e) => {}
                                             }
                                         }
                                     }
@@ -650,18 +660,18 @@ fn main() -> Result<(), failure::Error> {
                             '\n' => {
                                 match set_val_out.parse::<Addr>() {
                                     Ok(a) => sim.set_pc(a),
-                                    Err(e) => {}
+                                    Err(_e) => {}
                                 }
                                 let val = set_val_out.split_off(2);
                                 if set_val_out == "0x" {
                                     match Addr::from_str_radix(&val, 16) {
                                         Ok(a) => sim.set_pc(a),
-                                        Err(e) => {}
+                                        Err(_e) => {}
                                     }
                                 } else if set_val_out == "0b" {
                                     match Addr::from_str_radix(&val, 2) {
                                         Ok(a) => sim.set_pc(a),
-                                        Err(e) => {}
+                                        Err(_e) => {}
                                     }
                                 }
                                 set_val_out = String::from("");
@@ -760,23 +770,19 @@ fn main() -> Result<(), failure::Error> {
         }
 
         terminal.draw(|mut f| {
-            //Creates vertical device for footer
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
                 .constraints([Constraint::Min(10), Constraint::Length(6)].as_ref())
                 .split(f.size());
 
-            let buttons = Layout::default()
+            let footer = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(1)
                 .constraints(
                     [
                         Constraint::Min(20),
-                        Constraint::Length(50),
-                        Constraint::Length(8),
-                        Constraint::Length(8),
-                        Constraint::Length(8),
+                        Constraint::Length(60),
                     ]
                     .as_ref(),
                 )
@@ -827,16 +833,6 @@ fn main() -> Result<(), failure::Error> {
                 .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
                 .borders(Borders::ALL)
                 .render(&mut f, IO_watch[0]);
-
-            Block::default()
-                .title("Footer")
-                .title_style(
-                    Style::default()
-                        .fg(Color::LightRed)
-                        .modifier(Modifier::BOLD),
-                )
-                .borders(Borders::ALL)
-                .render(&mut f, chunks[1]);
 
             //Further breakdown of IO
             let io_pane = Layout::default()
@@ -931,9 +927,13 @@ fn main() -> Result<(), failure::Error> {
             ];
 
             Paragraph::new(text.iter())
-                .block(Block::default().borders(Borders::NONE))
+                .block(
+                    Block::default().borders(Borders::ALL)
+                    .title("Footer")
+                    .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                )
                 .wrap(true)
-                .render(&mut f, buttons[0]);
+                .render(&mut f, footer[0]);
 
             //Shim Input
 
@@ -993,35 +993,13 @@ fn main() -> Result<(), failure::Error> {
             ];
 
             Paragraph::new(text.iter())
-                .block(Block::default().borders(Borders::LEFT))
-                .render(&mut f, buttons[1]);
-
-            //Footer Buttons
-            let text = [Text::styled(
-                "Step",
-                Style::default()
-                    .fg(Color::LightCyan)
-                    .modifier(Modifier::BOLD),
-            )];
-            Paragraph::new(text.iter())
-                .block(Block::default().borders(Borders::ALL))
-                .render(&mut f, buttons[2]);
-
-            let text = [Text::styled(
-                "Pause",
-                Style::default().fg(Color::Red).modifier(Modifier::BOLD),
-            )];
-            Paragraph::new(text.iter())
-                .block(Block::default().borders(Borders::ALL))
-                .render(&mut f, buttons[3]);
-
-            let text = [Text::styled(
-                "Run",
-                Style::default().fg(Color::Green).modifier(Modifier::BOLD),
-            )];
-            Paragraph::new(text.iter())
-                .block(Block::default().borders(Borders::ALL))
-                .render(&mut f, buttons[4]);
+                .block(
+                    Block::default().borders(Borders::ALL)
+                    .title("Status Window")
+                    .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+                )
+                .wrap(true)
+                .render(&mut f, footer[1]);
 
             //Register Status Text
             let regs_psr_pc = sim.get_registers_psr_and_pc();
@@ -1116,7 +1094,7 @@ fn main() -> Result<(), failure::Error> {
             while x != 50 {
                 let inst: Instruction = match mem[x as usize].try_into() {
                     Ok(data) => data,
-                    Err(error) => Instruction::AddReg {
+                    Err(_e) => Instruction::AddReg {
                         dr: Reg::R0,
                         sr1: Reg::R0,
                         sr2: Reg::R0,
@@ -1166,7 +1144,6 @@ fn main() -> Result<(), failure::Error> {
                         .title_style(
                             Style::default()
                                 .fg(Color::Rgb(0xFF, 0x97, 0x40))
-                                .modifier(Modifier::BOLD),
                         ),
                 )
                 .wrap(true)
@@ -1196,7 +1173,7 @@ fn main() -> Result<(), failure::Error> {
             Paragraph::new(text.iter())
                 .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
-                .render(&mut f, mem_partitions[2]);
+                .render(&mut f, mem_partitions[1]);
 
             let text = [Text::styled(
                 wp_locs,
@@ -1302,7 +1279,7 @@ fn main() -> Result<(), failure::Error> {
 
             let gpio = match gpioin[GpioPin::G0] {
                 Ok(val) => format!("{}\n", val),
-                Err(e) => format!("-\n"),
+                Err(_e) => format!("-\n"),
             };
 
             let t0 = match GPIO_states[GpioPin::G0] {
@@ -1314,7 +1291,7 @@ fn main() -> Result<(), failure::Error> {
 
             let gpio = match gpioin[GpioPin::G1] {
                 Ok(val) => format!("{}\n", val),
-                Err(e) => format!("-\n"),
+                Err(_e) => format!("-\n"),
             };
 
             let t1 = match GPIO_states[GpioPin::G1] {
@@ -1326,7 +1303,7 @@ fn main() -> Result<(), failure::Error> {
 
             let gpio = match gpioin[GpioPin::G2] {
                 Ok(val) => format!("{}\n", val),
-                Err(e) => format!("-\n"),
+                Err(_e) => format!("-\n"),
             };
 
             let t2 = match GPIO_states[GpioPin::G2] {
@@ -1338,7 +1315,7 @@ fn main() -> Result<(), failure::Error> {
 
             let gpio = match gpioin[GpioPin::G3] {
                 Ok(val) => format!("{}\n", val),
-                Err(e) => format!("-\n"),
+                Err(_e) => format!("-\n"),
             };
 
             let t3 = match GPIO_states[GpioPin::G3] {
@@ -1379,7 +1356,7 @@ fn main() -> Result<(), failure::Error> {
 
             let gpio = match gpioin[GpioPin::G4] {
                 Ok(val) => format!("GPIO 4:  {}\n", val),
-                Err(e) => format!("GPIO 4:  -\n"),
+                Err(_e) => format!("GPIO 4:  -\n"),
             };
 
             let t0 = match GPIO_states[GpioPin::G4] {
@@ -1391,7 +1368,7 @@ fn main() -> Result<(), failure::Error> {
 
             let gpio = match gpioin[GpioPin::G5] {
                 Ok(val) => format!("GPIO 5:  {}\n", val),
-                Err(e) => format!("GPIO 5:  -\n"),
+                Err(_e) => format!("GPIO 5:  -\n"),
             };
 
             let t1 = match GPIO_states[GpioPin::G5] {
@@ -1403,7 +1380,7 @@ fn main() -> Result<(), failure::Error> {
 
             let gpio = match gpioin[GpioPin::G6] {
                 Ok(val) => format!("GPIO 6:  {}\n", val),
-                Err(e) => format!("GPIO 6:  -\n"),
+                Err(_e) => format!("GPIO 6:  -\n"),
             };
 
             let t2 = match GPIO_states[GpioPin::G6] {
@@ -1415,7 +1392,7 @@ fn main() -> Result<(), failure::Error> {
 
             let gpio = match gpioin[GpioPin::G7] {
                 Ok(val) => format!("GPIO 7:  {}\n", val),
-                Err(e) => format!("GPIO 7:  -\n"),
+                Err(_e) => format!("GPIO 7:  -\n"),
             };
 
             let t3 = match GPIO_states[GpioPin::G7] {
@@ -1459,7 +1436,7 @@ fn main() -> Result<(), failure::Error> {
 
             let adc = match adcin[AdcPin::A0] {
                 Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
-                Err(e) => format!("-                  -      -\n"),
+                Err(_e) => format!("-                  -      -\n"),
             };
 
             let t0 = match ADC_states[AdcPin::A0] {
@@ -1471,7 +1448,7 @@ fn main() -> Result<(), failure::Error> {
 
             let adc = match adcin[AdcPin::A1] {
                 Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
-                Err(e) => format!("-                  -      -\n"),
+                Err(_e) => format!("-                  -      -\n"),
             };
 
             let t1 = match ADC_states[AdcPin::A1] {
@@ -1483,7 +1460,7 @@ fn main() -> Result<(), failure::Error> {
 
             let adc = match adcin[AdcPin::A2] {
                 Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
-                Err(e) => format!("-                  -      -\n"),
+                Err(_e) => format!("-                  -      -\n"),
             };
 
             let t2 = match ADC_states[AdcPin::A2] {
@@ -1524,7 +1501,7 @@ fn main() -> Result<(), failure::Error> {
 
             let adc = match adcin[AdcPin::A3] {
                 Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
-                Err(e) => format!("-                  -      -\n"),
+                Err(_e) => format!("-                  -      -\n"),
             };
 
             let t0 = match ADC_states[AdcPin::A3] {
@@ -1536,7 +1513,7 @@ fn main() -> Result<(), failure::Error> {
 
             let adc = match adcin[AdcPin::A4] {
                 Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
-                Err(e) => format!("-                  -      -\n"),
+                Err(_e) => format!("-                  -      -\n"),
             };
 
             let t1 = match ADC_states[AdcPin::A4] {
@@ -1548,7 +1525,7 @@ fn main() -> Result<(), failure::Error> {
 
             let adc = match adcin[AdcPin::A5] {
                 Ok(number) => format!("{:#018b} {:#06x} {:#05}\n", number, number, number),
-                Err(e) => format!("-                  -      -\n"),
+                Err(_e) => format!("-                  -      -\n"),
             };
 
             let t2 = match ADC_states[AdcPin::A5] {
@@ -1746,24 +1723,121 @@ fn main() -> Result<(), failure::Error> {
                 .wrap(true)
                 .render(&mut f, timers_n_clock[1]);
 
-            let mut wp_addrs = String::from("");
-            let mut wp_data = String::from("");
+            //Watchpoints
 
-            for wp_addr in wp {
-                wp_addr = wp_addr.0;
-                wp_addrs.push_str(&format!(
+            let mut wp_indices = String::from("");
+            addresses = String::from("");
+            s = String::from("");
+
+            for (wp_addr, index) in wp.iter() {
+                wp_indices.push_str(&format!(
+                    "{}\n",
+                    index
+                ));
+
+                addresses.push_str(&format!(
                     "{:#06x}\n",
                     wp_addr
                 ));
-                wp_data.push_str(&format!(
+
+                s.push_str(&format!(
                     "{:#018b} {:#06x} {:#05}\n",
-                    mem[wp_addr as usize], mem[wp_addr as usize], mem[wp_addr as usize]
+                    mem[*wp_addr as usize], mem[*wp_addr as usize], mem[*wp_addr as usize]
                 ));
             }
+
+            let text = [Text::styled(
+                wp_indices,
+                Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
+            )];
+
+            Paragraph::new(text.iter())
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Watch Window")
+                        .title_style(
+                            Style::default()
+                                .fg(Color::Rgb(0xFF, 0x97, 0x40))
+                        ),
+                )
+                .wrap(true)
+                .render(&mut f, IO_watch[1]);
+
+            let mem_partitions = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(1)
+                .constraints(
+                    [
+                        Constraint::Length(5),
+                        Constraint::Length(5),
+                        Constraint::Length(40),
+                        Constraint::Min(10),
+                    ]
+                    .as_ref(),
+                )
+                .split(IO_watch[0]);
+
+            let text = [Text::styled(addresses, Style::default().fg(Color::Gray))];
+
+            Paragraph::new(text.iter())
+                .block(Block::default().borders(Borders::NONE))
+                .wrap(true)
+                .render(&mut f, mem_partitions[1]);
+
+            let text = [Text::styled(s, Style::default().fg(Color::LightGreen))];
+
+            Paragraph::new(text.iter())
+                .block(Block::default().borders(Borders::NONE))
+                .wrap(true)
+                .render(&mut f, mem_partitions[2]);
+
+            //Breakpoints
+
+            s = String::from("Breakpoints:\n");
+            let mut i = 0;
+
+            for (bp_addr, index) in bp.iter() {
+                s.push_str(&format!(
+                    " {:#06x}",
+                    bp_addr
+                ));
+
+                if i < 5 {
+                    s.push_str(",");
+                    i = i + 1;
+                } else {
+                    s.push_str("\n");
+                    i = 0;
+                }
+            }
+
+            let text = [Text::styled(s, Style::default().fg(Color::Rgb(0xCC, 0x02, 0x02)))];
+
+            let status = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(1)
+                .constraints(
+                    [
+                        Constraint::Length(20),
+                        Constraint::Length(40),
+                    ]
+                    .as_ref(),
+                )
+                .split(footer[1]);
+
+             Paragraph::new(text.iter())
+                .block(Block::default().borders(Borders::NONE))
+                .wrap(true)
+                .render(&mut f, status[1]);
 
 
         })?;
         //  loop{}
+
+       
+
+
     }
 
     Ok(())
