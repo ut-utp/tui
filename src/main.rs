@@ -589,27 +589,28 @@ fn main() -> Result<(), failure::Error> {
                                 '\n' => {
                                     if set_val_out == "b" {
                                         match sim.set_breakpoint(mem_addr) {
-                                            Ok(val) => {bp.insert(mem_addr, val);},
+                                            Ok(val) => {bp.insert(mem_addr, val); pin_flag = 0;},
                                             Err(_e) => {},
                                         }
                                     } else if set_val_out == "w" {
                                         match sim.set_memory_watchpoint(mem_addr) {
-                                            Ok(val) => {wp.insert(mem_addr, val);},
+                                            Ok(val) => {wp.insert(mem_addr, val); pin_flag = 0;},
                                             Err(_e) => {},
                                         }
                                         
                                     } else if set_val_out == "rb" {
                                         match bp.remove(&mem_addr) {
-                                            Some(val) => sim.unset_breakpoint(val).unwrap(),
+                                            Some(val) => {sim.unset_breakpoint(val); pin_flag = 0;},
                                             None => {},
                                         };
                                     } else if set_val_out == "rw" {
                                         match wp.remove(&mem_addr) {
-                                            Some(val) =>  sim.unset_memory_watchpoint(val).unwrap(),
+                                            Some(val) =>  {sim.unset_memory_watchpoint(val); pin_flag = 0;},
                                             None => {},
                                         };
                                     } else if set_val_out == "j" {
                                         offset = sim.get_pc().wrapping_sub(mem_addr)
+                                        pin_flag = 0;
                                     } else {
                                         match set_val_out.parse::<Word>() {
                                             Ok(w) => {
@@ -773,7 +774,7 @@ fn main() -> Result<(), failure::Error> {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Min(10), Constraint::Length(6)].as_ref())
+                .constraints([Constraint::Min(10), Constraint::Length(10)].as_ref())
                 .split(f.size());
 
             let footer = Layout::default()
@@ -782,7 +783,7 @@ fn main() -> Result<(), failure::Error> {
                 .constraints(
                     [
                         Constraint::Min(20),
-                        Constraint::Length(60),
+                        Constraint::Length(100),
                     ]
                     .as_ref(),
                 )
@@ -823,7 +824,7 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, console[1]);
 
             let IO_watch = Layout::default()
-                .direction(Direction::Vertical)
+                .direction(Direction::Horizontal)
                 .margin(1)
                 .constraints([Constraint::Percentage(66), Constraint::Percentage(34)].as_ref())
                 .split(right_pane[1]);
@@ -1108,15 +1109,15 @@ fn main() -> Result<(), failure::Error> {
                 }
 
                 if bp.contains_key(&x) {
-                    bp_locs.push_str("<b>");
+                    bp_locs.push_str("<b>\n");
                 } else {
                     bp_locs.push_str("\n");
                 }
 
                 if wp.contains_key(&x) {
-                    wp_locs.push_str("<w>");
+                    wp_locs.push_str("<w>\n");
                 } else {
-                    wp_locs.push_str("<w>");
+                    wp_locs.push_str("\n");
                 }
 
                 addresses.push_str(&format!(
@@ -1819,8 +1820,8 @@ fn main() -> Result<(), failure::Error> {
                 .margin(1)
                 .constraints(
                     [
-                        Constraint::Length(20),
                         Constraint::Length(40),
+                        Constraint::Length(60),
                     ]
                     .as_ref(),
                 )
