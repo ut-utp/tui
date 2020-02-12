@@ -609,7 +609,7 @@ fn main() -> Result<(), failure::Error> {
                                             None => {},
                                         };
                                     } else if set_val_out == "j" {
-                                        offset = sim.get_pc().wrapping_sub(mem_addr)
+                                        offset = sim.get_pc().wrapping_sub(mem_addr - 2);
                                         pin_flag = 0;
                                     } else {
                                         match set_val_out.parse::<Word>() {
@@ -774,7 +774,7 @@ fn main() -> Result<(), failure::Error> {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Min(10), Constraint::Length(10)].as_ref())
+                .constraints([Constraint::Min(10), Constraint::Length(8)].as_ref())
                 .split(f.size());
 
             let footer = Layout::default()
@@ -783,11 +783,18 @@ fn main() -> Result<(), failure::Error> {
                 .constraints(
                     [
                         Constraint::Min(20),
-                        Constraint::Length(100),
+                        Constraint::Length(80),
                     ]
                     .as_ref(),
                 )
                 .split(chunks[1]);
+
+            Block::default()
+                .title("Status Window")
+                .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
+                .borders(Borders::ALL)
+                .render(&mut f, footer[1]);
+                    
 
             let body = chunks[0];
 
@@ -984,21 +991,39 @@ fn main() -> Result<(), failure::Error> {
                 ),
                 cur_pin,
                 Text::raw(set_val_out.clone()),
+            ];
+
+            let status = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(1)
+                .constraints(
+                    [
+                        Constraint::Length(30),
+                        Constraint::Length(50),
+                    ]
+                    .as_ref(),
+                )
+                .split(footer[1]);
+
+            Paragraph::new(text.iter())
+                .block(Block::default().borders(Borders::NONE))
+                .wrap(true)
+                .render(&mut f, status[0]);
+
+            //Metadata
+
+            let text = [
                 Text::styled(
                     format!(
-                        "Prog: {:?}\nSource: {} | Proxies: {}",
+                        "\n\n\nProg: {:?}\nSource: {} | Proxies: {}",
                         info.current_program_metadata, info.source_name, proxies,
                     ),
-                    Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
-                ),
+                    Style::default().fg(Color::Rgb(0xA6, 0x97, 0xB7)),
+                )
             ];
 
             Paragraph::new(text.iter())
-                .block(
-                    Block::default().borders(Borders::ALL)
-                    .title("Status Window")
-                    .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
-                )
+                .block(Block::default().borders(Borders::ALL))
                 .wrap(true)
                 .render(&mut f, footer[1]);
 
@@ -1102,19 +1127,20 @@ fn main() -> Result<(), failure::Error> {
                     },
                 };
 
+                let addr = pc.wrapping_sub(offset).wrapping_add(x);
                 if x == offset {
                     pc_arrow.push_str("-->\n");
                 } else {
                     pc_arrow.push_str("\n");
                 }
 
-                if bp.contains_key(&x) {
+                if bp.contains_key(&addr) {
                     bp_locs.push_str("<b>\n");
                 } else {
                     bp_locs.push_str("\n");
                 }
 
-                if wp.contains_key(&x) {
+                if wp.contains_key(&addr) {
                     wp_locs.push_str("<w>\n");
                 } else {
                     wp_locs.push_str("\n");
@@ -1122,7 +1148,7 @@ fn main() -> Result<(), failure::Error> {
 
                 addresses.push_str(&format!(
                     "{:#06x}\n",
-                    pc.wrapping_sub(offset).wrapping_add(x)
+                    addr
                 ));
                 s.push_str(&format!(
                     "{:#018b} {:#06x} {:#05}\n",
@@ -1131,6 +1157,19 @@ fn main() -> Result<(), failure::Error> {
                 insts.push_str(&format!("{}\n", inst));
                 x = x + 1;
             }
+
+            let text = [Text::styled(
+                "\n\n-->",
+                Style::default().fg(Color::Rgb(0x73, 0xB7, 0xE8)),
+            )];
+
+            Paragraph::new(text.iter())
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                )
+                .wrap(true)
+                .render(&mut f, left_pane[0]);
 
             let text = [Text::styled(
                 pc_arrow,
@@ -1638,7 +1677,7 @@ fn main() -> Result<(), failure::Error> {
             Paragraph::new(text.iter())
                 .block(
                     Block::default()
-                        .borders(Borders::ALL & !(Borders::RIGHT))
+                        .borders(Borders::TOP | Borders::LEFT)
                         .title("Timers")
                         .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
@@ -1717,7 +1756,7 @@ fn main() -> Result<(), failure::Error> {
             Paragraph::new(text.iter())
                 .block(
                     Block::default()
-                        .borders(Borders::ALL)
+                        .borders(Borders::ALL & !(Borders::BOTTOM))
                         .title("Clock")
                         .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
@@ -1795,37 +1834,31 @@ fn main() -> Result<(), failure::Error> {
 
             //Breakpoints
 
-            s = String::from("Breakpoints:\n");
+            s = String::from("Breakpoints:");
+            s.push_str(&format!(
+                    " {}/{}\n", bp.len(), MAX_BREAKPOINTS));
+
             let mut i = 0;
 
             for (bp_addr, index) in bp.iter() {
+                if i == 5 {
+                    s.push_str(",\n");
+                    i = 0;
+                } else if i > 0 {
+                    s.push_str(",");
+                    i = i + 1;
+                } else {
+                    i = i + 1;
+                }
+
                 s.push_str(&format!(
                     " {:#06x}",
                     bp_addr
                 ));
 
-                if i < 5 {
-                    s.push_str(",");
-                    i = i + 1;
-                } else {
-                    s.push_str("\n");
-                    i = 0;
-                }
             }
 
             let text = [Text::styled(s, Style::default().fg(Color::Rgb(0xCC, 0x02, 0x02)))];
-
-            let status = Layout::default()
-                .direction(Direction::Horizontal)
-                .margin(1)
-                .constraints(
-                    [
-                        Constraint::Length(40),
-                        Constraint::Length(60),
-                    ]
-                    .as_ref(),
-                )
-                .split(footer[1]);
 
              Paragraph::new(text.iter())
                 .block(Block::default().borders(Borders::NONE))
