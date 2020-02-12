@@ -619,22 +619,24 @@ fn main() -> Result<(), failure::Error> {
                                             }
                                             Err(_e) => {}
                                         }
-                                        let val = set_val_out.split_off(2);
-                                        if set_val_out == "0x" {
-                                            match Word::from_str_radix(&val, 16) {
-                                                Ok(w) => {
-                                                    sim.write_word(mem_addr, w);
-                                                    pin_flag = 0;
+                                        if set_val_out.len() > 2 {
+                                            let val = set_val_out.split_off(2);
+                                            if set_val_out == "0x" {
+                                                match Word::from_str_radix(&val, 16) {
+                                                    Ok(w) => {
+                                                        sim.write_word(mem_addr, w);
+                                                        pin_flag = 0;
+                                                    }
+                                                    Err(_e) => {}
                                                 }
-                                                Err(_e) => {}
-                                            }
-                                        } else if set_val_out == "0b" {
-                                            match Word::from_str_radix(&val, 2) {
-                                                Ok(w) => {
-                                                    sim.write_word(mem_addr, w);
-                                                    pin_flag = 0;
+                                            } else if set_val_out == "0b" {
+                                                match Word::from_str_radix(&val, 2) {
+                                                    Ok(w) => {
+                                                        sim.write_word(mem_addr, w);
+                                                        pin_flag = 0;
+                                                    }
+                                                    Err(_e) => {}
                                                 }
-                                                Err(_e) => {}
                                             }
                                         }
                                     }
@@ -663,16 +665,18 @@ fn main() -> Result<(), failure::Error> {
                                     Ok(a) => sim.set_pc(a),
                                     Err(_e) => {}
                                 }
-                                let val = set_val_out.split_off(2);
-                                if set_val_out == "0x" {
-                                    match Addr::from_str_radix(&val, 16) {
-                                        Ok(a) => sim.set_pc(a),
-                                        Err(_e) => {}
-                                    }
-                                } else if set_val_out == "0b" {
-                                    match Addr::from_str_radix(&val, 2) {
-                                        Ok(a) => sim.set_pc(a),
-                                        Err(_e) => {}
+                                if set_val_out.len() > 2 {
+                                    let val = set_val_out.split_off(2);
+                                    if set_val_out == "0x" {
+                                        match Addr::from_str_radix(&val, 16) {
+                                            Ok(a) => sim.set_pc(a),
+                                            Err(_e) => {}
+                                        }
+                                    } else if set_val_out == "0b" {
+                                        match Addr::from_str_radix(&val, 2) {
+                                            Ok(a) => sim.set_pc(a),
+                                            Err(_e) => {}
+                                        }
                                     }
                                 }
                                 set_val_out = String::from("");
@@ -789,13 +793,6 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .split(chunks[1]);
 
-            Block::default()
-                .title("Status Window")
-                .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
-                .borders(Borders::ALL)
-                .render(&mut f, footer[1]);
-                    
-
             let body = chunks[0];
 
             //Divides top half into left and right
@@ -860,7 +857,7 @@ fn main() -> Result<(), failure::Error> {
             let timers_n_clock = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
-                .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
+                .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
                 .split(io_pane[3]);
 
             //TEXT BELOW HERE
@@ -1023,7 +1020,9 @@ fn main() -> Result<(), failure::Error> {
             ];
 
             Paragraph::new(text.iter())
-                .block(Block::default().borders(Borders::ALL))
+                .block(Block::default().borders(Borders::ALL)
+                    .title("Status Window")
+                    .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))))
                 .wrap(true)
                 .render(&mut f, footer[1]);
 
@@ -1771,18 +1770,18 @@ fn main() -> Result<(), failure::Error> {
 
             for (wp_addr, index) in wp.iter() {
                 wp_indices.push_str(&format!(
-                    "{}\n",
+                    "{}\n\n",
                     index
                 ));
 
                 addresses.push_str(&format!(
-                    "{:#06x}\n",
+                    "{:#06x}\n\n",
                     wp_addr
                 ));
 
                 s.push_str(&format!(
                     "{:#018b} {:#06x} {:#05}\n",
-                    mem[*wp_addr as usize], mem[*wp_addr as usize], mem[*wp_addr as usize]
+                    sim.read_word(*wp_addr), sim.read_word(*wp_addr), sim.read_word(*wp_addr)
                 ));
             }
 
@@ -1809,14 +1808,14 @@ fn main() -> Result<(), failure::Error> {
                 .margin(1)
                 .constraints(
                     [
-                        Constraint::Length(5),
-                        Constraint::Length(5),
+                        Constraint::Length(3),
+                        Constraint::Length(8),
                         Constraint::Length(40),
                         Constraint::Min(10),
                     ]
                     .as_ref(),
                 )
-                .split(IO_watch[0]);
+                .split(IO_watch[1]);
 
             let text = [Text::styled(addresses, Style::default().fg(Color::Gray))];
 
@@ -1833,10 +1832,14 @@ fn main() -> Result<(), failure::Error> {
                 .render(&mut f, mem_partitions[2]);
 
             //Breakpoints
+            let mut bp_title = String::from("Breakpoints:");
+            bp_title.push_str(&format!(
+                    "{}/{} ", bp.len(), MAX_BREAKPOINTS));
 
-            s = String::from("Breakpoints:");
-            s.push_str(&format!(
-                    " {}/{}\n", bp.len(), MAX_BREAKPOINTS));
+            let mut wp_title = String::from("");
+            wp_title.push_str(&format!("    Watchpoints: {}/{}\n",wp.len(), MAX_MEMORY_WATCHPOINTS));
+
+            s = String::from("");
 
             let mut i = 0;
 
@@ -1858,9 +1861,11 @@ fn main() -> Result<(), failure::Error> {
 
             }
 
-            let text = [Text::styled(s, Style::default().fg(Color::Rgb(0xCC, 0x02, 0x02)))];
+            let text = [Text::styled(bp_title, Style::default().fg(Color::Rgb(0xCC, 0x02, 0x02))),
+                Text::styled(wp_title, Style::default().fg(Color::Rgb(0x30, 0x49, 0xDE))),
+                Text::styled(s, Style::default().fg(Color::Rgb(0xCC, 0x02, 0x02)))];
 
-             Paragraph::new(text.iter())
+            Paragraph::new(text.iter())
                 .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, status[1]);
