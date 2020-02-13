@@ -331,6 +331,27 @@ fn main() -> Result<(), failure::Error> {
                                 sim.run_until_event();
                                 offset = 2;
                             }
+                            'b' => {
+                                let cur_addr = sim.get_pc().wrapping_sub(offset).wrapping_add(2);
+                                match bp.remove(&cur_addr) {
+                                    Some(val) => {sim.unset_breakpoint(val);},
+                                    None => {match sim.set_breakpoint(cur_addr) {
+                                        Ok(val) => {bp.insert(cur_addr, val);},
+                                        Err(_e) => {},
+                                    }},
+                                };
+                                offset = sim.get_pc().wrapping_sub(cur_addr - 2);
+                            }
+                            'w' => {
+                                let cur_addr = sim.get_pc().wrapping_sub(offset).wrapping_add(2);
+                                match wp.remove(&cur_addr) {
+                                    Some(val) => {sim.unset_memory_watchpoint(val);},
+                                    None => {match sim.set_memory_watchpoint(cur_addr) {
+                                        Ok(val) => {wp.insert(cur_addr, val);},
+                                        Err(_e) => {},
+                                    }},
+                                };
+                            }
                             'q' => active = false,
                             _ => {}
                         }
@@ -816,28 +837,28 @@ fn main() -> Result<(), failure::Error> {
                 .constraints([Constraint::Min(13), Constraint::Length(16)].as_ref())
                 .split(panes[1]);
 
+            let console_watch = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(0)
+                .constraints([Constraint::Percentage(66), Constraint::Percentage(34)].as_ref())
+                .split(right_pane[0]);
+
             let console = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(0)
                 .constraints([Constraint::Min(10), Constraint::Length(3)].as_ref())
-                .split(right_pane[0]);
+                .split(console_watch[0]);
 
             Block::default()
                 .title("> ")
                 .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
                 .render(&mut f, console[1]);
 
-            let IO_watch = Layout::default()
-                .direction(Direction::Horizontal)
-                .margin(1)
-                .constraints([Constraint::Percentage(66), Constraint::Percentage(34)].as_ref())
-                .split(right_pane[1]);
-
             Block::default()
                 .title("IO")
                 .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
                 .borders(Borders::ALL)
-                .render(&mut f, IO_watch[0]);
+                .render(&mut f, right_pane[1]);
 
             //Further breakdown of IO
             let io_pane = Layout::default()
@@ -852,12 +873,12 @@ fn main() -> Result<(), failure::Error> {
                     ]
                     .as_ref(),
                 )
-                .split(IO_watch[0]);
+                .split(right_pane[1]);
 
             let timers_n_clock = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
-                .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
+                .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
                 .split(io_pane[3]);
 
             //TEXT BELOW HERE
@@ -1676,7 +1697,7 @@ fn main() -> Result<(), failure::Error> {
             Paragraph::new(text.iter())
                 .block(
                     Block::default()
-                        .borders(Borders::TOP | Borders::LEFT)
+                        .borders(Borders::ALL & (!Borders::RIGHT))
                         .title("Timers")
                         .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
@@ -1755,7 +1776,7 @@ fn main() -> Result<(), failure::Error> {
             Paragraph::new(text.iter())
                 .block(
                     Block::default()
-                        .borders(Borders::ALL & !(Borders::BOTTOM))
+                        .borders(Borders::ALL)
                         .title("Clock")
                         .title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
                 )
@@ -1801,7 +1822,7 @@ fn main() -> Result<(), failure::Error> {
                         ),
                 )
                 .wrap(true)
-                .render(&mut f, IO_watch[1]);
+                .render(&mut f, console_watch[1]);
 
             let mem_partitions = Layout::default()
                 .direction(Direction::Horizontal)
@@ -1815,7 +1836,7 @@ fn main() -> Result<(), failure::Error> {
                     ]
                     .as_ref(),
                 )
-                .split(IO_watch[1]);
+                .split(console_watch[1]);
 
             let text = [Text::styled(addresses, Style::default().fg(Color::Gray))];
 
@@ -1846,7 +1867,7 @@ fn main() -> Result<(), failure::Error> {
             for (bp_addr, index) in bp.iter() {
                 if i == 5 {
                     s.push_str(",\n");
-                    i = 0;
+                    i = i + 1;
                 } else if i > 0 {
                     s.push_str(",");
                     i = i + 1;
