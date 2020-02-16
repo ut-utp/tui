@@ -222,10 +222,52 @@ fn main() -> Result<(), failure::Error> {
             // sim.get_interpreter().init(&_flags);
             sim.reset();
 
+            let mut idle_count = 0;
+
             loop {
                 // (*counter).lock().unwrap().step(&mut sim);
-                device.step(&mut sim);
-                // thread::sleep(time::Duration::from_millis(10));
+                // TODO: this constant needs tuning
+                // TODO: which approach?
+                // for _ in 0..100 { let _ = device.step(&mut sim); }
+                // let (msgs, insns) = device.step(&mut sim);
+
+                let mut msgs = 0;
+                let mut insns = 0;
+
+                for _ in 0..100 { let (m, i) = device.step(&mut sim); msgs += m; insns += i; }
+
+                // eprint!("did {} msgs, {} isnsn | ", msgs, insns);
+
+                if msgs == 0 && insns == 0 { idle_count += 1; }
+                else { eprintln!("woken!"); idle_count = 0; }
+
+                // eprint!("idle spins: {} | ", idle_count);
+
+                // TODO: these constants need tuning:
+                //
+                // An unfortunate side-effect of these being tuned badly is that they
+                // make the controller (host) thread eat CPU if the controller has to
+                // wait since it busy waits.
+                const IDLE_COUNT_SLEEP_THRESHOLD: u64 = 20000;
+                const IDLE_COUNT_DIVISOR: u64 = 2000;
+                const MAX_SLEEP_TIME_MS: u64 = 100;
+                if idle_count > IDLE_COUNT_SLEEP_THRESHOLD {
+                    let sleep_time = time::Duration::from_millis(MAX_SLEEP_TIME_MS.min(idle_count / IDLE_COUNT_DIVISOR));
+
+                    eprint!("sleeping for {:?}\n", sleep_time);
+
+                    thread::sleep(sleep_time);
+                }
+
+                // if idle_count > 200 {
+                //     let sleep_time = time::Duration::from_millis(200.max(idle_count / 200));
+
+                //     // eprint!("sleeping for {:?}", sleep_time);
+
+                //     thread::sleep(sleep_time);
+                // }
+
+                // eprintln!("");
             }
         });
 
