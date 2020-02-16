@@ -95,6 +95,7 @@ use log::{info, warn};
 extern crate flexi_logger;
 
 use flexi_logger::{opt_format, Logger};
+use futures_executor::block_on;
 
 // use std::fs::File;
 
@@ -297,6 +298,8 @@ fn main() -> Result<(), failure::Error> {
     let mut bp = HashMap::new();
     let mut wp = HashMap::new();
 
+    let mut event_fut = None;
+
     while active {
         //let bp = sim.get_breakpoints();
 
@@ -328,7 +331,19 @@ fn main() -> Result<(), failure::Error> {
                                 offset = 2;
                             }
                             'r' => {
-                                sim.run_until_event();
+                                if State::RunningUntilEvent != sim.get_state() {
+                                    // Dispose of any currently running futures correctly.
+                                    if let Some(e) = event_fut {
+                                        block_on(e);
+                                    }
+
+                                    event_fut = Some(sim.run_until_event());
+                                } else {
+                                    eprintln!("Already running!");
+
+                                    assert!(event_fut.is_some());
+                                }
+
                                 offset = 2;
                             }
                             'b' => {
@@ -618,7 +633,7 @@ fn main() -> Result<(), failure::Error> {
                                             Ok(val) => {wp.insert(mem_addr, val); pin_flag = 0;},
                                             Err(_e) => {},
                                         }
-                                        
+
                                     } else if set_val_out == "rb" {
                                         match bp.remove(&mem_addr) {
                                             Some(val) => {sim.unset_breakpoint(val); pin_flag = 0;},
@@ -770,7 +785,14 @@ fn main() -> Result<(), failure::Error> {
                         input_mode = TuiState::CONT;
                         set_val_out = String::from("");
                         input_out = String::from("");
+
                         sim.reset();
+
+                        // Resolve the pending future, if there is one.
+                        if let Some(e) = event_fut.take() {
+                            sim.step();
+                            block_on(e);
+                        }
                     }
                     'm' => {
                         if input_mode == TuiState::MEM {
@@ -1895,7 +1917,7 @@ fn main() -> Result<(), failure::Error> {
         })?;
         //  loop{}
 
-       
+
 
 
     }

@@ -39,6 +39,7 @@ failure = "0.1.6"
 log = "0.4.8"
 flexi_logger = { version = "0.14", default_features = false }
 lazy_static = "1.4.0"
+futures-executor = "0.3.4"
 
 [dependencies.tui]
 version = "0.6.2"
