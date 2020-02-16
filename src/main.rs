@@ -195,7 +195,7 @@ fn main() -> Result<(), failure::Error> {
 
     ThreadBuilder::new()
         .name("Device Thread".to_string())
-        .stack_size(1024 * 1024 * 4)
+        .stack_size(1024 * 1024 * 8)
         .spawn(move || {
             let peripherals =
                 PeripheralSet::new(gshim, ashim, pshim, timer_shim, clock_shim, ishim, oshim);
