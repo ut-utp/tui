@@ -239,7 +239,7 @@ fn main() -> Result<(), failure::Error> {
                 // eprint!("did {} msgs, {} isnsn | ", msgs, insns);
 
                 if msgs == 0 && insns == 0 { idle_count += 1; }
-                else { eprintln!("woken!"); idle_count = 0; }
+                else { /*eprintln!("woken!"); */idle_count = 0; }
 
                 // eprint!("idle spins: {} | ", idle_count);
 
@@ -248,13 +248,13 @@ fn main() -> Result<(), failure::Error> {
                 // An unfortunate side-effect of these being tuned badly is that they
                 // make the controller (host) thread eat CPU if the controller has to
                 // wait since it busy waits.
-                const IDLE_COUNT_SLEEP_THRESHOLD: u64 = 20000;
-                const IDLE_COUNT_DIVISOR: u64 = 2000;
+                const IDLE_COUNT_SLEEP_THRESHOLD: u64 = 2000;
+                const IDLE_COUNT_DIVISOR: u64 = 500;
                 const MAX_SLEEP_TIME_MS: u64 = 100;
                 if idle_count > IDLE_COUNT_SLEEP_THRESHOLD {
                     let sleep_time = time::Duration::from_millis(MAX_SLEEP_TIME_MS.min(idle_count / IDLE_COUNT_DIVISOR));
 
-                    eprint!("sleeping for {:?}\n", sleep_time);
+                    // eprint!("sleeping for {:?}\n", sleep_time);
 
                     thread::sleep(sleep_time);
                 }
