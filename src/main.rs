@@ -339,7 +339,7 @@ fn main() -> Result<(), failure::Error> {
 
                                     event_fut = Some(sim.run_until_event());
                                 } else {
-                                    eprintln!("Already running!");
+                                    // eprintln!("Already running!");
 
                                     assert!(event_fut.is_some());
                                 }
