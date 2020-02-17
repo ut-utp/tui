@@ -51,7 +51,8 @@ use tui::Terminal;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders, Paragraph, Text, Widget};
+use tui::widgets::{Block, Borders, Paragraph, Text, Widget, Tabs};
+use tui::symbols::{DOT};
 
 use lc3_isa::{Addr, Instruction, Reg, Word};
 use lc3_traits::control::metadata::{DeviceInfo, Identifier, ProgramId, ProgramMetadata};
@@ -361,6 +362,13 @@ fn main() -> Result<(), failure::Error> {
                 KeyEvent::ShiftDown => offset = offset.wrapping_sub(10),
                 KeyEvent::CtrlUp => offset = offset.wrapping_add(100),
                 KeyEvent::CtrlDown => offset = offset.wrapping_sub(100),
+                KeyEvent::Backspace => {
+                    if pin_flag == 1 {
+                        set_val_out.pop();
+                    } else if input_mode == TuiState::MEM {
+                        set_val_out.pop();
+                    }
+                }
                 KeyEvent::Char(c) => {
                     if input_mode == TuiState::CONT {
                         match c {
@@ -863,7 +871,7 @@ fn main() -> Result<(), failure::Error> {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Min(10), Constraint::Length(8)].as_ref())
+                .constraints([Constraint::Length(2), Constraint::Min(10), Constraint::Length(8)].as_ref())
                 .split(f.size());
 
             let footer = Layout::default()
@@ -876,9 +884,9 @@ fn main() -> Result<(), failure::Error> {
                     ]
                     .as_ref(),
                 )
-                .split(chunks[1]);
+                .split(chunks[2]);
 
-            let body = chunks[0];
+            let body = chunks[1];
 
             //Divides top half into left and right
             let panes = Layout::default()
@@ -1954,6 +1962,14 @@ fn main() -> Result<(), failure::Error> {
                 .block(Block::default().borders(Borders::NONE))
                 .wrap(true)
                 .render(&mut f, status[1]);
+
+            Tabs::default()
+                .block(Block::default().borders(Borders::TOP).title("UTP TUI"))
+                .titles(&["Main Display", "Metadata"])
+                .style(Style::default().fg(Color::Green))
+                .highlight_style(Style::default().fg(Color::Yellow))
+                /*.select(app.tabs.index)*/
+                .render(&mut f, chunks[0]);
 
 
         })?;
