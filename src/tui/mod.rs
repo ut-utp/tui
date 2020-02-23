@@ -1,8 +1,7 @@
 //! TODO
 
-use crate::shim_support::ShimPeripheralSet;
-use crate::io_peripherals::{InputSink, OutputSource};
-use crate::shim_support::{Shims};
+use lc3_application_support::shim_support::{ShimPeripheralSet, Shims};
+use lc3_application_support::io_peripherals::{InputSink, OutputSource};
 
 use lc3_shims::peripherals::SourceShim;
 use lc3_traits::control::rpc::{EventFuture, SyncEventFutureSharedState};

@@ -44,8 +44,6 @@
 #![cfg_attr(feature = "no_std", no_std)]
 
 mod widgets;
-mod io_peripherals;
-mod shim_support;
 
 mod tui;
 pub use crate::tui::*;
