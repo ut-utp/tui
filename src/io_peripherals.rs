@@ -1,10 +1,13 @@
 //! Traits for [`Input`] and [`Output`] Peripherals that let controllers (like
 //! the tui) write and read from them (respectively).
 //!
-//! TODO!
-//!
 //! [`Input`]: `lc3_traits::peripherals::Input`
 //! [`Output`]: `lc3_traits::peripherals::Output`
+
+use lc3_shims::peripherals::{Sink, SourceShim};
+
+use std::io::{Read, Write};
+use std::sync::Mutex;
 
 /// A trait for [`Input`] Peripherals that lets us, a controller, supply the
 /// inputs to the peripheral.
@@ -105,13 +108,13 @@ impl OutputSource for Mutex<Vec<u8>> {
 // that we can actually implement OutputSource.
 impl<W: Read + Write> OutputSource for Mutex<W>
 where
-    Mutex<W>: Sink
+    Mutex<W>: Sink // This is really guaranteed.
 {
     fn get_chars(&self) -> Option<String> {
         let mut buf = Vec::new();
         let mut source = self.lock().unwrap();
 
-        if let Some(n) = source.read_to_end(&mut vec) {
+        if let Some(n) = source.read_to_end(&mut buf) {
             if n > 0 {
                 // TODO: maybe handle non-utf8 chars better than this.
                 String::from_utf8(buf).ok()
