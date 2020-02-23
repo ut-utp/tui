@@ -68,6 +68,7 @@ impl<'a> DynTui<'a> {
         I: InputSink + 'a,
         O: OutputSource + 'a,
     {
-        Self::new(sim, input, output)
+        Self::new(sim)
+            .attach_input_output(input, output)
     }
 }
