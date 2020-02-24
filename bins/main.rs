@@ -140,8 +140,8 @@ lazy_static::lazy_static! {
     pub static ref EVENT_FUTURE_SHARED_STATE_SIM: SyncEventFutureSharedState = SyncEventFutureSharedState::new();
 }
 
-pub struct TuiData{
-    sim: Control,
+pub struct TuiData<C: Control> {
+    sim: C,
     active: bool,
 
     input_mode: TuiState,
@@ -156,7 +156,7 @@ pub struct TuiData{
     input_out: String,
     set_val_out: String,
     output_string: String,
-    
+
     offset: u16,
     watch_break: bool,
     bp: HashMap<Addr, usize>,
@@ -339,9 +339,9 @@ fn main() -> Result<(), failure::Error> {
             .unwrap();
     }
 
-    
-    
-    
+
+
+
     let (tx, rx) = mpsc::channel();
     {
         let tx = tx.clone();
@@ -372,7 +372,7 @@ fn main() -> Result<(), failure::Error> {
         });
     }
 
-    
+
     let mut event_fut = None;
 
     while tui.active {
@@ -935,7 +935,7 @@ fn main() -> Result<(), failure::Error> {
     }
 
     Ok(())
-}  
+}
 
 fn input_mode_string(s: TuiState) -> String {
     use TuiState::*;
@@ -969,7 +969,7 @@ fn get_pin_string(s: TuiState, g: GpioPin, a: AdcPin, p: PwmPin, t: TimerId, r: 
     }
 }
 
-fn draw_first_tab<B>(f: &mut Frame<B>, tui: &TuiData, chunks: Vec<Rect>)
+fn draw_first_tab<B, C: Control>(mut f: &mut Frame<'_, B>, tui: &TuiData<C>, chunks: Vec<Rect>)
 where
     B: Backend,
 {
@@ -1453,7 +1453,7 @@ where
 
     Paragraph::new(
         [Text::styled(
-            tui.output_string,
+            tui.output_string.clone(),
             Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
         )]
         .iter(),
