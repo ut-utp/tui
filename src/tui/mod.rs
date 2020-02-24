@@ -8,6 +8,7 @@ use lc3_shims::peripherals::SourceShim;
 use lc3_traits::control::rpc::{EventFuture, SyncEventFutureSharedState};
 use lc3_traits::control::control::Control;
 
+use std::path::PathBuf;
 use std::sync::Mutex;
 
 pub struct Tui<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
@@ -20,6 +21,8 @@ where
     pub(in crate::tui) input: Option<&'a I>,
     pub(in crate::tui) output: Option<&'a O>,
     pub(in crate::tui) shims: Option<Shims<'int>>,
+
+    pub(in crate::tui) program_path: Option<PathBuf>,
 }
 
 impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSource + ?Sized + 'a> Tui<'a, 'int, C, I, O> {
@@ -29,6 +32,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
             input: None,
             output: None,
             shims: None,
+            program_path: None,
         }
     }
 
@@ -101,5 +105,16 @@ impl<'a> DynTui<'a, 'static> {
         }
 
         tui
+    }
+}
+
+impl<'a, 'int, C, I, O> Tui<'a, 'int, C, I, O>
+where
+    C: Control + ?Sized + 'a,
+    I: InputSink + ?Sized + 'a,
+    O: OutputSource + ?Sized + 'a
+{
+    pub fn set_program_path(&mut self, path: PathBuf) {
+        self.program_path = Some(path);
     }
 }
