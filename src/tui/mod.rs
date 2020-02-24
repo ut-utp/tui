@@ -61,7 +61,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
     // }
 }
 
-type DynControl<'a> = (dyn Control<EventFuture = EventFuture<'a, SyncEventFutureSharedState>> + 'a);
+type DynControl<'a> = (dyn Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>> + 'a);
 type DynInputSink<'a> = (dyn InputSink + 'a);
 type DynOutputSource<'a> = (dyn OutputSource + 'a);
 
@@ -70,7 +70,7 @@ pub type DynTui<'a, 'int> = Tui<'a, 'int, DynControl<'a>, DynInputSink<'a>, DynO
 impl<'a, 'int> DynTui<'a, 'int> {
     pub fn new_boxed<C>(sim: &'a mut C) -> Self
     where
-        C: Control<EventFuture = EventFuture<'a, SyncEventFutureSharedState>> + 'a,
+        C: Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>>,
     {
         Self::new(sim)
     }
@@ -87,7 +87,7 @@ impl<'a, 'int> DynTui<'a, 'int> {
 impl<'a> DynTui<'a, 'static> {
     pub fn new_boxed_from_init<I: Init<'a>>(b: &'a mut BlackBox) -> Self
     where
-        <I as Init<'a>>::ControlImpl: Control<EventFuture = EventFuture<'a, SyncEventFutureSharedState>> + 'a,
+        <I as Init<'a>>::ControlImpl: Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>> + 'a,
         <I as Init<'a>>::ControlImpl: Sized,
         <I as Init<'a>>::Input: Sized,
         <I as Init<'a>>::Output: Sized,
