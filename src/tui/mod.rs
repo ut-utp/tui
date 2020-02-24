@@ -37,8 +37,9 @@ impl<'a, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSource +
     //
     // But, in reality, I think this is equally likely either way and this is a
     // nicer API.
-    pub fn attach_shims(mut self, shims: &'a ShimPeripheralSet<'a>) -> Self {
-        self.shims = Some(Shims::from_peripheral_set(shims));
+    pub fn attach_shims(mut self, shims: Shims<'a>) -> Self {
+        // self.shims = Some(Shims::from_peripheral_set(shims));
+        self.shims = Some(shims);
         self
     }
 
