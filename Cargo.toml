@@ -16,7 +16,7 @@ keywords = ["lc-3", "cli", "tui", "peripherals", "utp"]
 categories = ["simulation", "command-line-utilities"]
 
 license = "MPL-2.0"
-
+default-run = "tui-old" # TODO: remove, eventually
 
 [badges]
 github-actions = { repository = "ut-utp/prototype", workflow = "tui" }
@@ -41,6 +41,7 @@ log = "0.4.8"
 flexi_logger = { version = "0.14", default_features = false }
 lazy_static = "1.4.0"
 futures-executor = "0.3.4"
+structopt = { version = "0.3", default-features = false }
 
 [dependencies.tui]
 version = "0.6.2"
@@ -50,3 +51,13 @@ features = ["crossterm"]
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
+
+
+[[bin]]
+name = "tui"
+path = "bins/tui.rs"
+
+
+[[bin]]
+name = "tui-old"
+path = "bins/main.rs"
