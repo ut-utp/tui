@@ -1,11 +1,12 @@
 use lc3_tui::DynTui;
 use lc3_application_support::init::{BlackBox, SimDevice, SimWithRpcDevice};
 
-use std::path::PathBuf;
-use std::str::FromStr;
-
 use structopt::StructOpt;
 use flexi_logger::{Logger, opt_format};
+
+use std::path::PathBuf;
+use std::str::FromStr;
+use std::time::Duration;
 
 #[derive(Debug)]
 enum DeviceType {
@@ -43,24 +44,45 @@ impl DeviceType {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+struct TimeInMs(pub Duration);
+
+impl From<TimeInMs> for Duration {
+    fn from(time: TimeInMs) -> Self {
+        time.0
+    }
+}
+
+impl FromStr for TimeInMs {
+    type Err = std::num::ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(TimeInMs(Duration::from_millis(s.parse()?)))
+    }
+}
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "lc3-tui", about = "The UTP LC-3 TUI.")]
 struct Args {
     /// Type of device to use with the TUI.
-    #[structopt(short, long, default_value = "sim")]
+    #[structopt(short, long, default_value = "sim", help = "TODO")]
     device: DeviceType,
 
     /// Enable logging
     // (TODO!)
-    #[structopt(short, long)]
+    #[structopt(short, long, help = "TODO")]
     debug: bool,
 
     /// Program file (optional)
-    #[structopt(parse(from_os_str))]
+    #[structopt(parse(from_os_str), help = "TODO")]
     program_file: Option<PathBuf>,
+
+    /// Update period
+    #[structopt(short, long, default_value = "250", help = "Update period in milliseconds")]
+    update_period: TimeInMs,
 }
 
-fn main() -> Result<(), Box<failure::Error>> {
+fn main() -> Result<(), failure::Error> {
     let options = Args::from_args();
 
     // TODO!
@@ -80,7 +102,6 @@ fn main() -> Result<(), Box<failure::Error>> {
         tui.set_program_path(p);
     }
 
-    // tui.run();
-
-    Ok(())
+    tui.set_update_period(options.update_period.into());
+    tui.run_with_crossterm()
 }
