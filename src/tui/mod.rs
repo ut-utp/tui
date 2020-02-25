@@ -8,8 +8,20 @@ use lc3_shims::peripherals::SourceShim;
 use lc3_traits::control::rpc::{EventFuture, SyncEventFutureSharedState};
 use lc3_traits::control::control::Control;
 
+use tui::backend::Backend;
+use tui::terminal::Terminal;
+
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::time::Duration;
+
+pub mod run;
+pub mod events;
+pub mod widget;
+use widget::Widget;
+
+pub type Res<T> = Result<T, failure::Error>;
+
 pub struct TuiData<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
 where
     C: Control + ?Sized + 'a,

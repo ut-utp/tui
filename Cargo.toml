@@ -35,7 +35,7 @@ lc3-macros = { path = "../macros", version = "0.1.0" }
 lc3-shims = { path = "../shims", version = "0.1.0" }
 lc3-traits = { path = "../traits", version = "0.1.0", default-features = false, features = [] } # Enable std features
 
-crossterm = "^0.10"
+crossterm = "0.16.0"
 failure = "0.1.6"
 log = "0.4.8"
 flexi_logger = { version = "0.14", default_features = false }
@@ -44,7 +44,7 @@ futures-executor = "0.3.4"
 structopt = { version = "0.3", default-features = false }
 
 [dependencies.tui]
-version = "0.6.2"
+version = "0.8.0"
 default-features = false
 features = ["crossterm"]
 
