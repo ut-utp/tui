@@ -10,6 +10,19 @@ use lc3_traits::control::control::Control;
 
 use std::path::PathBuf;
 use std::sync::Mutex;
+pub struct TuiData<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
+where
+    C: Control + ?Sized + 'a,
+    I: InputSink + ?Sized + 'a,
+    O: OutputSource + ?Sized + 'a,
+{
+    pub(in crate) sim: &'a mut C,
+    pub(in crate) input: Option<&'a I>,
+    pub(in crate) output: Option<&'a O>,
+    pub(in crate) shims: Option<Shims<'int>>,
+
+    pub(in crate) program_path: Option<PathBuf>,
+}
 
 pub struct Tui<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
 where
@@ -17,22 +30,26 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
 {
-    pub(in crate::tui) sim: &'a mut C,
-    pub(in crate::tui) input: Option<&'a I>,
-    pub(in crate::tui) output: Option<&'a O>,
-    pub(in crate::tui) shims: Option<Shims<'int>>,
+    pub(in crate::tui) data: TuiData<'i, 'int, C, I, O>,
 
-    pub(in crate::tui) program_path: Option<PathBuf>,
+    pub(in crate::tui) update_period: Duration,
+    // pub(in crate::tui)
+
 }
 
 impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSource + ?Sized + 'a> Tui<'a, 'int, C, I, O> {
     pub fn new(sim: &'a mut C) -> Self {
         Self {
-            sim,
-            input: None,
-            output: None,
-            shims: None,
-            program_path: None,
+            data: TuiData {
+                sim,
+                input: None,
+                output: None,
+                shims: None,
+
+                program_path: None,
+            }
+
+            update_period: Duration::from_ms(250),
         }
     }
 
@@ -44,21 +61,15 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
     // nicer API.
     pub fn attach_shims(mut self, shims: Shims<'int>) -> Self {
         // self.shims = Some(Shims::from_peripheral_set(shims));
-        self.shims = Some(shims);
+        self.data.shims = Some(shims);
         self
     }
 
     pub fn attach_input_output(mut self, input: &'a I, output: &'a O) -> Self {
-        self.input = Some(input);
-        self.output = Some(output);
+        self.data.input = Some(input);
+        self.data.output = Some(output);
         self
     }
-
-    // pub fn run(self) -> Result<(), failure::Error> {
-    //     loop {
-
-    //     }
-    // }
 }
 
 type DynControl<'a> = (dyn Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>> + 'a);
@@ -114,7 +125,13 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a
 {
-    pub fn set_program_path(&mut self, path: PathBuf) {
-        self.program_path = Some(path);
+    pub fn set_program_path(&mut self, path: PathBuf) -> &mut Self {
+        self.data.program_path = Some(path);
+        self
+    }
+
+    pub fn set_update_period(&mut self, period: Duration) -> &mut Self {
+        self.update_period = period;
+        self
     }
 }
