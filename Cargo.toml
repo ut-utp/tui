@@ -16,7 +16,7 @@ keywords = ["lc-3", "cli", "tui", "peripherals", "utp"]
 categories = ["simulation", "command-line-utilities"]
 
 license = "MPL-2.0"
-default-run = "tui-old" # TODO: remove, eventually
+default-run = "tui" # TODO: move this bin target outside of this crate, eventually
 
 [badges]
 github-actions = { repository = "ut-utp/prototype", workflow = "tui" }
@@ -53,11 +53,12 @@ features = ["crossterm"]
 pretty_assertions = "0.6.1"
 
 
+# TODO: move this bin target outside of this crate, eventually
 [[bin]]
 name = "tui"
 path = "bins/tui.rs"
 
 
-[[bin]]
-name = "tui-old"
-path = "bins/main.rs"
+# [[bin]]
+# name = "tui-old"
+# path = "bins/main.rs"

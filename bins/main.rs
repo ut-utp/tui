@@ -321,7 +321,9 @@ fn main() -> Result<(), failure::Error> {
     // thread::sleep(time::Duration::from_millis(100000));
 
     let screen = AlternateScreen::to_alternate(true)?;
-    let backend = CrosstermBackend::with_alternate_screen(screen)?;
+    // let backend = CrosstermBackend::with_alternate_screen(screen)?;
+    // let backend = CrosstermBackend::new(screen)?;
+    let backend = CrosstermBackend::new(screen);
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
