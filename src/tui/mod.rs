@@ -8,9 +8,6 @@ use lc3_shims::peripherals::SourceShim;
 use lc3_traits::control::rpc::{EventFuture, SyncEventFutureSharedState};
 use lc3_traits::control::control::Control;
 
-use tui::backend::Backend;
-use tui::terminal::Terminal;
-
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -42,7 +39,7 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
 {
-    pub(in crate::tui) data: TuiData<'i, 'int, C, I, O>,
+    pub(in crate::tui) data: TuiData<'a, 'int, C, I, O>,
 
     pub(in crate::tui) update_period: Duration,
     // pub(in crate::tui)
@@ -59,9 +56,9 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 shims: None,
 
                 program_path: None,
-            }
+            },
 
-            update_period: Duration::from_ms(250),
+            update_period: Duration::from_millis(250),
         }
     }
 

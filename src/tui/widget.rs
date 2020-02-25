@@ -1,7 +1,7 @@
 //! TODO!
 
 use crate::tui::Tui;
-use crate::tui::events::Event;
+use crate::tui::events::WidgetEvent;
 
 use lc3_application_support::io_peripherals::InputSink;
 use lc3_application_support::io_peripherals::OutputSource;
@@ -17,7 +17,7 @@ pub trait Widget: TuiWidget + Sized {
         self.render(f, area)
     }
 
-    fn update<'a, 'int, C, I, O>(&mut self, event: Event, data: Tui<'a, 'int, C, I, O>)
+    fn update<'a, 'int, C, I, O>(&mut self, event: WidgetEvent, data: Tui<'a, 'int, C, I, O>)
     where
         C: Control + ?Sized + 'a,
         I: InputSink + ?Sized + 'a,

@@ -7,10 +7,12 @@ use super::Res as Result;
 use super::Tui;
 use super::events;
 
-// use crossterm::Crossterm;
 use crossterm::{ExecutableCommand, execute};
+use crossterm::terminal::EnterAlternateScreen;
 use tui::terminal::Terminal;
 use tui::backend::{Backend, CrosstermBackend};
+
+use std::io::Write;
 
 impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSource + ?Sized + 'a> Tui<'a, 'int, C, I, O> {
     // TODO: not sure if this is worth doing
@@ -18,20 +20,12 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
     where
         B: ExecutableCommand<&'static str>
     {
-        let event_recv = events::start_event_threads(term)?;
+        let event_recv = events::start_event_threads(term.backend_mut(), self.update_period)?;
 
         todo!()
     }
 
-    // pub fn run_with_crossterm(self, term: &mut Terminal<CrosstermBackend>) -> Result<()> {
-    //     // start_crossterm_event_thread(terminal.input());
-    //     let event_recv = start_crossterm_event_thread();
-    //     // periodic_event(input());
-
-    //     unimplemented!()
-    // }
-
-    pub fn run_with_crossterm/*_default*/(self) -> Result<()> {
+    pub fn run_with_crossterm(self) -> Result<()> {
         crossterm::terminal::enable_raw_mode()?;
 
         let mut stdout = std::io::stdout();

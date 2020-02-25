@@ -11,21 +11,21 @@ use std::thread::Builder as ThreadBuilder;
 use std::time::Duration;
 use std::sync::mpsc::Sender;
 
-// pub(crate) type Event = CrosstermEvent;
 
-pub(in crate::tui) struct Event {
+/// All events that our event threads produce.
+pub(in crate::tui) enum Event {
     Error(CrosstermError),
     Tick,
     ActualEvent(CrosstermEvent),
 }
 
-// pub(crate) enum WidgetEvent {
-
-// }
-
+/// The only events that actually make their to Widgets.
+///
+/// All other events (i.e. the others in the [`Event`] enum) are handled
+/// "internally".
 pub(crate) type WidgetEvent = crossterm::event::Event;
 
-pub(crate) fn start_event_threads<T>(term: &mut T, tick: Duration) -> Result<Receiver<Event>>
+pub(in crate::tui) fn start_event_threads<T>(term: &mut T, tick: Duration) -> Result<Receiver<Event>>
 where
     T: ExecutableCommand<&'static str>
 {
@@ -43,7 +43,7 @@ fn start_crossterm_event_thread<T>(term: &mut T, tx: Sender<Event>) -> Result<()
 where
     T: ExecutableCommand<&'static str>
 {
-    term.execute(EnableMouseCpture)?;
+    term.execute(EnableMouseCapture)?;
 
     // We could use the async version here (`crossterm::event::EventStream`) but
     // doing so doesn't get us anything other than additional dependencies (it'd
@@ -52,7 +52,7 @@ where
     // anyways).
 
     ThreadBuilder::new()
-        .name("TUI: Crossterm Event Thread")
+        .name("TUI: Crossterm Event Thread".to_string())
         .spawn(move || loop {
             // Note that if we get an error here, we do not crash or end the
             // thread.
@@ -71,34 +71,12 @@ where
         })?;
 
     Ok(())
-
-    // let (tx, rx) = mpsc::channel();
-
-
-    // let tx = tx.clone();
-    // thread::spawn(move || {
-    //     let input = input();
-    //     let reader = input.read_sync();
-    //     for event in reader {
-    //         match event {
-    //             Event::Key(key) => {
-    //                 if let Err(_) = tx.send(Event::Input(key.clone())) {
-    //                     return;
-    //                 }
-    //             }
-    //             _ => {}
-    //         }
-    //     }
-    // });
-
-
-    // todo!()
 }
 
 
-pub(crate) fn start_tick_thread(period: Duration,, tx: Sender<Event>) -> Result<()> {
+fn start_tick_thread(period: Duration, tx: Sender<Event>) -> Result<()> {
     ThreadBuilder::new()
-        .name("TUI: Tick Thread")
+        .name("TUI: Tick Thread".to_string())
         .spawn(move || loop {
             // Same deal here as above; terminate if the channel fails.
             tx.send(Event::Tick).unwrap();
@@ -106,13 +84,4 @@ pub(crate) fn start_tick_thread(period: Duration,, tx: Sender<Event>) -> Result<
         })?;
 
     Ok(())
-
-    // let tx = tx.clone();
-    // thread::spawn(move || {
-    //     let tx = tx.clone();
-    //     loop {
-    //         tx.send(Event::Tick).unwrap();
-    //         thread::sleep(Duration::from_millis(cli.tick_rate));
-    //     }
-    // });
 }
