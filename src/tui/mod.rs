@@ -19,6 +19,7 @@ use widget::Widget;
 
 pub type Res<T> = Result<T, failure::Error>;
 
+#[allow(explicit_outlives_requirements)]
 pub struct TuiData<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
 where
     C: Control + ?Sized + 'a,
@@ -33,6 +34,7 @@ where
     pub(in crate) program_path: Option<PathBuf>,
 }
 
+#[allow(explicit_outlives_requirements)]
 pub struct Tui<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
 where
     C: Control + ?Sized + 'a,
@@ -69,7 +71,6 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
     // But, in reality, I think this is equally likely either way and this is a
     // nicer API.
     pub fn attach_shims(mut self, shims: Shims<'int>) -> Self {
-        // self.shims = Some(Shims::from_peripheral_set(shims));
         self.data.shims = Some(shims);
         self
     }

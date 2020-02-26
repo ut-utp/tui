@@ -32,7 +32,6 @@ impl FromStr for DeviceType {
 }
 
 impl DeviceType {
-    // fn setup<'a>(&self, b: &'a mut BlackBox) -> DynTui<'a, 'static> {
     fn setup<'a, 'b: 'a>(&'a self, b: &'b mut BlackBox) -> DynTui<'b, 'static> {
         use DeviceType::*;
 
@@ -70,7 +69,7 @@ struct Args {
 
     /// Enable logging
     // (TODO!)
-    #[structopt(short, long, help = "TODO")]
+    #[structopt(short = "v", long, help = "TODO")]
     debug: bool,
 
     /// Program file (optional)
