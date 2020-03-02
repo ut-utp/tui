@@ -2,6 +2,8 @@
 
 use crate::tui::TuiData;
 use crate::tui::events::WidgetEvent;
+use super::single::SingleWidget;
+use super::{TuiWidget, Widget};
 
 use lc3_application_support::io_peripherals::InputSink;
 use lc3_application_support::io_peripherals::OutputSource;
@@ -9,94 +11,8 @@ use lc3_traits::control::Control;
 
 use tui::backend::Backend;
 use tui::buffer::Buffer;
-use tui::layout::{Constraint, Layout};
-use tui::Frame;
-use tui::widgets::Widget as TuiWidget;
-use tui::layout::Rect;
-
-use std::marker::PhantomData;
-
-pub trait Widget<'a, 'int, C, I, O, B>: TuiWidget
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    /// For functions that don't hold their own state and need a reference to
-    /// the [`Control`] impl to redraw themselves.
-    ///
-    /// By default, this just ignores the [`Control`] entirely and just calls
-    /// the regular draw function on
-    /// [the `tui` `Widget` trait](tui::widgets::Widget). Functions that don't
-    /// need a [`Control`] instance need not override the default impl.
-    ///
-    /// [`Control`]: `lc3_traits::control::Control`
-    fn draw(&mut self, _sim: &C, rect: Rect, buffer: &mut Buffer) {
-        TuiWidget::draw(self, rect, buffer)
-    }
-
-    fn render<'s>(&'s mut self, sim: &'s C, f: &mut Frame<'_, B>, area: Rect) {
-        // This is tricky.
-        //
-        // We can't just call render on ourself because we can't guarantee that
-        // we're Sized (if we try to, this trait is no longer object safe). So,
-        // we get to do some fun gymnastics.
-        //
-        // What we do is pass ourselves into a wrapper widget that is Sized.
-        // We exploit the fact that `TuiWidget::render` goes and passes
-        // `TuiWidget::draw(self, ...)` the buffer; our impl of `TuiWidget` on
-        // `FakeWidget` goes and passes this buffer to the wrapped widget's
-        // `TuiWidget::draw` function.
-
-        let mut fw = FakeWidget::<'s, 'a, 'int, _, _, _, _, _>(sim, self, PhantomData);
-        <FakeWidget<'s, 'a, 'int, _, _, _, _, _> as TuiWidget>::render::<B>(&mut fw, f, area);
-    }
-
-    // This would be an associated const or a function if we didn't need to care
-    // about object safety.
-    //
-    // Implementors (like Widgets) that contain other widgets should override
-    // this to return false.
-    fn is_single_widget(&self) -> bool { true }
-
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>);
-}
-
-#[allow(explicit_outlives_requirements)]
-struct SingleWidget<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    widget: Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>,
-    constraint: Constraint,
-    // cached_rect: Option<Rect>,
-    rect: Rect,
-}
-
-impl<'a, 'int, C, I, O, B> SingleWidget<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn new(constraint: Constraint, widget: Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>) -> Self {
-        Self {
-            widget,
-            constraint,
-            // cached_rect: None,
-            rect: Rect::default(),
-        }
-    }
-
-    // fn invalidate_cached_rect(&mut self) {
-    //     self.cached_rect = None;
-    // }
-}
+use tui::layout::{Layout, Constraint, Rect};
+use tui::terminal::Frame;
 
 
 #[allow(explicit_outlives_requirements)]
@@ -195,44 +111,7 @@ where
     }
 }
 
-// This exists to circumvent the `Sized` requirement on `TuiWidget::render`.
-#[allow(explicit_outlives_requirements)]
-struct FakeWidget<'s, 'a, 'int, C, I, O, B, W>
-(&'s C, &'s mut W, PhantomData<(&'a I, &'a O, B, &'int ())>)
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-    W: Widget<'a, 'int, C, I, O, B> + ?Sized;
 
-impl<'s, 'a, 'int, C, I, O, B, W> TuiWidget for FakeWidget<'s, 'a, 'int, C, I, O, B, W>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-    W: Widget<'a, 'int, C, I, O, B> + ?Sized
-{
-    fn draw(&mut self, rect: Rect, buffer: &mut Buffer) {
-        Widget::draw(self.1, self.0, rect, buffer)
-    }
-
-    // The default impl is fine; it'll dispatch to `draw`.
-    //
-    // Listed here anyways for clarity.
-    fn render<BB: Backend>(&mut self, f: &mut Frame<'_, BB>, area: Rect) {
-        f.render(self, area);
-
-        // Goes to this:
-        // pub fn render<W>(&mut self, widget: &mut W, area: Rect)
-        // where
-        //     W: Widget,
-        // {
-        //     widget.draw(area, self.terminal.current_buffer_mut());
-        // }
-    }
-}
 
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Widgets<'a, 'int, C, I, O, B>
 where
@@ -287,5 +166,3 @@ where
         // unecessary; we can just always propagate, I think.
     }
 }
-
-// pub type Widgets = Vec<Box<dyn Widget>>;
