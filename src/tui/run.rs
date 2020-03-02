@@ -75,20 +75,29 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
     // Run with crossterm; with or without your own special layout.
     pub fn run_with_crossterm(self, root_widget: Option<Widgets<'a, 'int, C, I, O, CrosstermBackend<Stdout>>>) -> Result<()> {
-        crossterm::terminal::enable_raw_mode()?;
-
         let mut stdout = std::io::stdout();
         execute!(stdout, EnterAlternateScreen)?;
+        crossterm::terminal::enable_raw_mode()?;
 
         let backend = CrosstermBackend::new(stdout);
         let mut terminal = Terminal::new(backend)?;
 
         terminal.hide_cursor()?;
 
-        if let Some(w) = root_widget {
+        let res = if let Some(w) = root_widget {
             self.run_with_custom_layout(&mut terminal, w)
         } else {
             self.run(&mut terminal)
-        }
+        };
+
+        // TODO: v should maybe happen when the Crossterm Event Thread exits, but this
+        // is okay for now.
+        execute!(std::io::stdout(), DisableMouseCapture)?;
+
+        terminal.show_cursor()?;
+        crossterm::terminal::disable_raw_mode()?;
+        execute!(std::io::stdout(), LeaveAlternateScreen)?;
+
+        res
     }
 }
