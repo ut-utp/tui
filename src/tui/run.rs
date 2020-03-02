@@ -25,7 +25,52 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
     {
         let event_recv = events::start_event_threads(term.backend_mut(), self.update_period)?;
 
-        todo!()
+        // TODO: potentially construct this from user configurable options!
+        let backoff = Backoff::default();
+
+        // Focus the root and never unfocus it!
+        root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data);
+
+        backoff.run_tick_with_events(self.data.sim, event_recv, |sim, event| {
+            use Event::*;
+            use CrosstermEvent::*;
+
+            match event {
+                Error(err) => {
+                    // TODO: should we crash here?
+                    log::error!("Got a crossterm error: {:?}.", err)
+                },
+
+                // Currently, we only redraw on ticks (TODO: is this okay or should we
+                // redraw on events too?):
+                // Tick => term.draw(|mut f| root.render(sim, &mut f, f.size())).unwrap(),
+                Tick => term.draw(|mut f| {
+                    let area = f.size();
+                    root.render(sim, &mut f, area)
+                }).unwrap(), // TODO: is unwrapping okay here?
+
+                ActualEvent(e) => match e {
+                    // Capture `ctrl + q`/`alt + f4` and forward everything else:
+                    Key(KeyEvent { code: KeyCode::Char('q'), modifiers: KeyModifiers::CONTROL }) |
+                    Key(KeyEvent { code: KeyCode::F(4), modifiers: KeyModifiers::ALT }) => {
+                        println!("Good bye! 👋");
+                        return false
+                    }
+                    e => root.update(e.into(), &mut self.data),
+                }
+            }
+
+            // onward! (i.e. don't stop)
+            true
+        }).map_err(|_| err_msg("Channel disconnected; maybe something crashed?"))
+    }
+
+    // Run with default layout and a backend of your choosing.
+    pub fn run<B: Backend>(self, term: &mut Terminal<B>) -> Result<()>
+    where
+        B: ExecutableCommand<&'static str>
+    {
+        self.run_with_custom_layout(term, crate::layout::layout())
     }
 
     // Run with crossterm; with or without your own special layout.
