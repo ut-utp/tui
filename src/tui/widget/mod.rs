@@ -61,12 +61,5 @@ where
         <FakeWidget<'s, 'a, 'int, _, _, _, _, _> as TuiWidget>::render::<B>(&mut fw, f, area);
     }
 
-    // This would be an associated const or a function if we didn't need to care
-    // about object safety.
-    //
-    // Implementors (like Widgets) that contain other widgets should override
-    // this to return false.
-    fn is_single_widget(&self) -> bool { true }
-
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>);
 }

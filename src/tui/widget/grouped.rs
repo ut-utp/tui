@@ -111,8 +111,6 @@ where
     }
 }
 
-
-
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Widgets<'a, 'int, C, I, O, B>
 where
     C: Control + ?Sized + 'a,
@@ -128,8 +126,6 @@ where
         }
     }
 
-    fn is_single_widget(&self) -> bool { false } // TODO: remove from trait, probably
-
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) {
         todo!()
 
@@ -143,9 +139,5 @@ where
         // currently focused thing
 
         // dispatch key events to the currently focused thing
-
-        // The intention behind `Widget::is_single_widget` was to know when to
-        // propagate events to the thing under us, but really this is
-        // unnecessary; we can just always propagate, I think.
     }
 }
