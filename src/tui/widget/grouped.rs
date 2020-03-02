@@ -5,8 +5,7 @@ use crate::tui::events::WidgetEvent;
 use super::single::SingleWidget;
 use super::{TuiWidget, Widget};
 
-use lc3_application_support::io_peripherals::InputSink;
-use lc3_application_support::io_peripherals::OutputSource;
+use lc3_application_support::io_peripherals::{InputSink, OutputSource};
 use lc3_traits::control::Control;
 
 use tui::backend::Backend;
@@ -127,7 +126,7 @@ where
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) {
-        todo!()
+        // todo!()
 
         // invalidate (recursively) on resize events (i.e. propagate the resize
         // event)

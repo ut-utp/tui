@@ -40,12 +40,9 @@
 #![doc(test(attr(deny(rust_2018_idioms, warnings))))]
 #![doc(html_logo_url = "")] // TODO!
 
-// Mark the crate as no_std if the `no_std` feature is enabled.
-#![cfg_attr(feature = "no_std", no_std)]
-
 pub mod layout;
 
 pub mod widgets;
 
 mod tui;
-pub use crate::tui::*;
+pub use crate::tui::{DynTui, Tui};

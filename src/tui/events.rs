@@ -68,7 +68,7 @@ fn start_crossterm_event_thread<T>(term: &mut T, tx: Sender<Event>) -> Result<()
 where
     T: ExecutableCommand<&'static str>
 {
-    term.execute(EnableMouseCapture)?;
+    let _ = term.execute(EnableMouseCapture)?;
 
     // We could use the async version here (`crossterm::event::EventStream`) but
     // doing so doesn't get us anything other than additional dependencies (it'd
@@ -76,7 +76,7 @@ where
     // application but we're not and most of our operations are synchronous
     // anyways).
 
-    ThreadBuilder::new()
+    let _ = ThreadBuilder::new()
         .name("TUI: Crossterm Event Thread".to_string())
         .spawn(move || loop {
             // Note that if we get an error here, we do not crash or end the
@@ -100,7 +100,7 @@ where
 
 
 fn start_tick_thread(period: Duration, tx: Sender<Event>) -> Result<()> {
-    ThreadBuilder::new()
+    let _ = ThreadBuilder::new()
         .name("TUI: Tick Thread".to_string())
         .spawn(move || loop {
             // Same deal here as above; terminate if the channel fails.

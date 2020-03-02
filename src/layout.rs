@@ -1,6 +1,7 @@
 //! Module defining the layout of the widgets used by the TUI.
 
-use crate::widget::Widgets;
+use crate::tui::widget::Widgets;
+use crate::widgets::*;
 
 use lc3_application_support::io_peripherals::InputSink;
 use lc3_application_support::io_peripherals::OutputSource;
@@ -8,7 +9,7 @@ use lc3_traits::control::Control;
 
 use tui::backend::Backend;
 use tui::layout::{Layout, Direction, Constraint};
-use tui::widgets::Block;
+use tui::widgets::{Block, Borders};
 use tui::style::{Style, Color};
 
 // Returns the root widget for our layout.
