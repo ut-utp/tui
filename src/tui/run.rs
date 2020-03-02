@@ -31,7 +31,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         // Focus the root and never unfocus it!
         root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data);
 
-        backoff.run_tick_with_events(self.data.sim, event_recv, |sim, event| {
+        backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {
             use Event::*;
             use CrosstermEvent::*;
 
@@ -46,7 +46,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 // Tick => term.draw(|mut f| root.render(sim, &mut f, f.size())).unwrap(),
                 Tick => term.draw(|mut f| {
                     let area = f.size();
-                    root.render(sim, &mut f, area)
+                    root.render(tui.data.sim, &mut f, area)
                 }).unwrap(), // TODO: is unwrapping okay here?
 
                 ActualEvent(e) => match e {
@@ -56,7 +56,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                         println!("Good bye! 👋");
                         return false
                     }
-                    e => root.update(e.into(), &mut self.data),
+                    e => root.update(e.into(), &mut tui.data),
                 }
             }
 

@@ -102,5 +102,5 @@ fn main() -> Result<(), failure::Error> {
     }
 
     tui.set_update_period(options.update_period.into());
-    tui.run_with_crossterm()
+    tui.run_with_crossterm(None)
 }
