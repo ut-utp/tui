@@ -20,7 +20,8 @@ where
     O: OutputSource + ?Sized + 'a,
     B: Backend,
 {
-    fn update(&mut self, _event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn update(&mut self, _event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
         // Do nothing!
+        false
     }
 }

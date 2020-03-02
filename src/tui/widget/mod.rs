@@ -61,5 +61,10 @@ where
         <FakeWidget<'s, 'a, 'int, _, _, _, _, _> as TuiWidget>::render::<B>(&mut fw, f, area);
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>);
+    // Return true or false indicating whether you (a widget) or your children
+    // handled the event.
+    //
+    // This is useful for events that must be handled only once (i.e. changing
+    // which widget is currently focused).
+    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool;
 }
