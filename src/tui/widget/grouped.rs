@@ -154,3 +154,25 @@ where
         // dispatch key events to the currently focused thing
     }
 }
+
+/// `Layout.direction` is private and we'd rather not clutter out API by making
+/// users tell us the [`Direction`] they want _and_ specify a [`Layout`]
+/// (there's still a need to specify a layout because layouts include other
+/// things like margins).
+///
+/// So, we do this trick (leveraging the fact that [`Eq`] is implemented for
+/// [`Layout`]) to extract the direction.
+///
+/// ['Direction`]: tui::layout::Direction
+/// ['Layout`]: tui:layout::Layout
+/// ['Eq`]: std::cmp::Eq
+#[inline]
+fn extract_direction_from_layout(l: &Layout) -> Direction {
+    let guess = l.clone().direction(Direction::Vertical);
+
+    if guess == *l {
+        Direction::Vertical
+    } else {
+        Direction::Horizontal
+    }
+}
