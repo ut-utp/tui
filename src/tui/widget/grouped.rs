@@ -15,6 +15,12 @@ use tui::layout::{Layout, Constraint, Rect};
 use tui::terminal::Frame;
 
 
+/// A bunch of Widgets that split the are they are given in *one* direction. In
+/// other words, a horizontal or vertical set of widgets.
+///
+/// Nest these like you'd nest [`Layout`]s for more complicated arrangements.
+///
+/// [`Layout`]: tui::layout::Layout
 #[allow(explicit_outlives_requirements)]
 pub struct Widgets<'a, 'int, C, I, O, B>
 where
@@ -23,9 +29,14 @@ where
     O: OutputSource + ?Sized + 'a,
     B: Backend,
 {
+    /// The widgets within.
     widgets: Vec<SingleWidget<'a, 'int, C, I, O, B>>,
+    /// Overall `Layout` for the Widgets. This is used to set the margins and
+    /// direction of the Widgets; any constraints given will be ignored.
     layout: Layout,
+    /// Whether or not the cached `Rect` in each `SingleWidget` is still valid.
     rects_valid: bool,
+    /// The index of the widget to dispatch events to.
     focused: Option<usize>,
 }
 
@@ -49,9 +60,8 @@ where
     where
         W: Widget<'a, 'int, C, I, O, B> + 'a
     {
-        // self.widgets.iter_mut().for_each(|w| w.invalidate_cached_rect());
         self.widgets.push(SingleWidget::new(constraint, Box::new(widget)));
-        self.rects_valid = false;
+        self.rects_valid = false; // We need to recalculate positions now!
 
         self
     }
@@ -77,10 +87,6 @@ where
 
             self.rects_valid = true;
         }
-        // if !self.widgets.iter().all(|w| w.cached_rect.is_some()) {
-        //     // If any don't exist, update all:
-
-        // }
     }
 }
 
@@ -93,21 +99,13 @@ where
     B: Backend,
 {
     fn draw(&mut self, _rect: Rect, _buffer: &mut Buffer) {
-        // if !self.widgets.iter().all(|w| w.cached_rect.is_some()) {
-        //     //
-        // }
-
         // self.update_rects(rect);
 
         // for sw in self.widgets {
         //     TuiWidget::draw(&mut *sw.widget, sw.rect, buffer);
         // }
 
-
-        // Widget::draw(self, self.)
-        // unreachable!("This should never be called. Call lc3_tui::Widget::draw instead.")
-
-
+        unreachable!("This should never be called. Call `lc3_tui::Widget::draw` instead.")
     }
 }
 
@@ -120,31 +118,12 @@ where
     O: OutputSource + ?Sized + 'a,
     B: Backend,
 {
-    // fn draw(&mut self, sim: &C, f: &mut Frame<'_, B>, area: Rect) where Self: Sized {
-    //     self.update_rects(area);
-
-    //     for sw in self.widgets {
-    //         Widget::draw(&mut *sw.widget, sim, f, sw.rect)
-    //     }
-    // }
-
     fn draw(&mut self, sim: &C, rect: Rect, buffer: &mut Buffer) {
         self.update_rects(rect);
 
         for sw in self.widgets.iter_mut() {
             Widget::draw(&mut *sw.widget, sim, sw.rect, buffer)
         }
-    }
-
-    fn render(&mut self, _sim: &C, f: &mut Frame<'_, B>, area: Rect) where Self: Sized {
-        // This is tricky.
-        //
-        // We can't just call render on our children widgets because we can't
-        // guarentee that they're Sized. So instead what we go and do is pass
-        // ourselves into a wrapper widget that is Sized that just calls draw
-        // on us with the buffer it gets from We exploit the fact that `TuiWidget::render` goes and
-        // passes `TuiWidget::draw(self, ...)` the buffer
-        TuiWidget::render(self, f, area)
     }
 
     fn is_single_widget(&self) -> bool { false } // TODO: remove from trait, probably
@@ -163,6 +142,6 @@ where
 
         // The intention behind `Widget::is_single_widget` was to know when to
         // propagate events to the thing under us, but really this is
-        // unecessary; we can just always propagate, I think.
+        // unnecessary; we can just always propagate, I think.
     }
 }

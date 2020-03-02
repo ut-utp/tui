@@ -20,7 +20,6 @@ where
 {
     pub(super) widget: Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>,
     pub(super) constraint: Constraint,
-    // cached_rect: Option<Rect>,
     pub(super) rect: Rect,
 }
 
@@ -35,12 +34,7 @@ where
         Self {
             widget,
             constraint,
-            // cached_rect: None,
             rect: Rect::default(),
         }
     }
-
-    // fn invalidate_cached_rect(&mut self) {
-    //     self.cached_rect = None;
-    // }
 }
