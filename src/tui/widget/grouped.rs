@@ -38,6 +38,7 @@ where
     areas_valid: bool,
     /// The index of the widget to dispatch events to.
     focused: Option<usize>,
+    previously_focused: usize,
 }
 
 impl<'a, 'int, C, I, O, B> Widgets<'a, 'int, C, I, O, B>
@@ -53,6 +54,7 @@ where
             widgets: Vec::new(),
             areas_valid: false,
             focused: None,
+            previously_focused: 0,
         }
     }
 
@@ -256,7 +258,10 @@ where
                 self.propagate_to_focused(event, data)
             },
             Focus(FocusEvent::LostFocus) => {
-                drop(self.focused.take());
+                if let Some(idx) = self.focused.take() {
+                    self.previously_focused = idx;
+                }
+
                 self.propagate_to_focused(event, data);
 
                 true
