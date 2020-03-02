@@ -56,7 +56,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                     Key(KeyEvent { code: KeyCode::F(4), modifiers: KeyModifiers::ALT }) => {
                         return false
                     }
-                    e => root.update(e.into(), &mut tui.data),
+                    e => drop(root.update(e.into(), &mut tui.data)),
                 }
             }
 
