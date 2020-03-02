@@ -43,7 +43,9 @@
 // Mark the crate as no_std if the `no_std` feature is enabled.
 #![cfg_attr(feature = "no_std", no_std)]
 
-mod widgets;
+pub mod layout;
+
+pub mod widgets;
 
 mod tui;
 pub use crate::tui::*;
