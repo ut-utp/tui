@@ -96,11 +96,19 @@ where
         }
     }
 
+    // Returns whether *any* widget handled the event.
+    //
+    // With this function it is possible that more than one widget handles the
+    // event.
     fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+        self.widgets.iter_mut().fold(false, |b, w| b | w.widget.update(event, data))
+    }
+
+    // Returns whether *any* widget handled the event.
+    //
+    // With this function at most one widget will handle the event.
+    fn propogate_until_handled(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
         self.widgets.iter_mut().any(|w| w.widget.update(event, data))
-        // for w in self.widgets.iter_mut() {
-        //     w.widget.update(event, data);
-        // }
     }
 }
 
