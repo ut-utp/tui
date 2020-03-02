@@ -77,7 +77,7 @@ struct Args {
     program_file: Option<PathBuf>,
 
     /// Update period
-    #[structopt(short, long, default_value = "250", help = "Update period in milliseconds")]
+    #[structopt(short, long, default_value = "80", help = "Update period in milliseconds")]
     update_period: TimeInMs,
 }
 
