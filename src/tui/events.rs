@@ -14,6 +14,7 @@ use std::sync::mpsc::Sender;
 
 
 /// All events that our event threads produce.
+#[derive(Debug)]
 pub(in crate::tui) enum Event {
     Error(CrosstermError),
     Tick,

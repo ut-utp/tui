@@ -15,7 +15,6 @@ use std::time::Duration;
 pub mod run;
 pub mod events;
 pub mod widget;
-use widget::Widget;
 
 pub type Res<T> = Result<T, failure::Error>;
 
