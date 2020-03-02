@@ -10,8 +10,8 @@ use lc3_application_support::event_loop::Backoff;
 use lc3_application_support::io_peripherals::{InputSink, OutputSource};
 
 use crossterm::{ExecutableCommand, execute};
-use crossterm::terminal::EnterAlternateScreen;
-use crossterm::event::{KeyEvent, KeyCode, KeyModifiers};
+use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::event::{KeyEvent, KeyCode, KeyModifiers, DisableMouseCapture};
 use failure::err_msg;
 use tui::terminal::Terminal;
 use tui::backend::{Backend, CrosstermBackend};
@@ -52,8 +52,8 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 ActualEvent(e) => match e {
                     // Capture `ctrl + q`/`alt + f4` and forward everything else:
                     Key(KeyEvent { code: KeyCode::Char('q'), modifiers: KeyModifiers::CONTROL }) |
+                    Key(KeyEvent { code: KeyCode::Char('w'), modifiers: KeyModifiers::CONTROL }) |
                     Key(KeyEvent { code: KeyCode::F(4), modifiers: KeyModifiers::ALT }) => {
-                        println!("Good bye! 👋");
                         return false
                     }
                     e => root.update(e.into(), &mut tui.data),
