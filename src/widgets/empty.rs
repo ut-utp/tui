@@ -4,7 +4,25 @@
 
 use super::widget_impl_support::*;
 
-pub struct Empty;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Empty {
+    pub focusable: bool,
+}
+
+impl Default for Empty {
+    fn default() -> Self {
+        Self {
+            focusable: false,
+        }
+    }
+}
+
+impl Empty {
+    pub fn focusable(mut self, focusable: bool) -> Self {
+        self.focusable = focusable;
+        self
+    }
+}
 
 impl TuiWidget for Empty {
 
@@ -20,8 +38,10 @@ where
     O: OutputSource + ?Sized + 'a,
     B: Backend,
 {
-    fn update(&mut self, _event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
-        // Do nothing!
-        false
+    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+        match event {
+            WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
+            _ => false,
+        }
     }
 }
