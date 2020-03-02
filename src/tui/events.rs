@@ -2,9 +2,10 @@
 
 use super::Res as Result;
 
-use crossterm::event::{EnableMouseCapture, Event as CrosstermEvent};
+use crossterm::event::EnableMouseCapture;
 use crossterm::ExecutableCommand;
 use crossterm::ErrorKind as CrosstermError;
+pub use crossterm::event::{Event as CrosstermEvent, KeyEvent, MouseEvent};
 
 use std::sync::mpsc::{self, Receiver};
 use std::thread::Builder as ThreadBuilder;
@@ -23,7 +24,30 @@ pub(in crate::tui) enum Event {
 ///
 /// All other events (i.e. the others in the [`Event`] enum) are handled
 /// "internally".
-pub(crate) type WidgetEvent = crossterm::event::Event;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+pub enum WidgetEvent {
+    Key(KeyEvent),
+    Mouse(MouseEvent),
+    Resize(u16, u16),
+    Focus(FocusEvent),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum FocusEvent {
+    GotFocus,
+    LostFocus
+}
+
+impl From<CrosstermEvent> for WidgetEvent {
+    fn from(event: CrosstermEvent) -> Self {
+        use CrosstermEvent::*;
+        match event {
+            Key(k) => WidgetEvent::Key(k),
+            Mouse(m) => WidgetEvent::Mouse(m),
+            Resize(x, y) => WidgetEvent::Resize(x, y),
+        }
+    }
+}
 
 pub(in crate::tui) fn start_event_threads<T>(term: &mut T, tick: Duration) -> Result<Receiver<Event>>
 where

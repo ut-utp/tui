@@ -12,7 +12,7 @@ use lc3_traits::control::Control;
 use tui::backend::Backend;
 use tui::buffer::Buffer;
 use tui::layout::{Layout, Constraint, Rect};
-use tui::terminal::Frame;
+use tui::widgets::Block;
 
 
 /// A bunch of Widgets that split the are they are given in *one* direction. In
@@ -35,7 +35,7 @@ where
     /// direction of the Widgets; any constraints given will be ignored.
     layout: Layout,
     /// Whether or not the cached `Rect` in each `SingleWidget` is still valid.
-    rects_valid: bool,
+    areas_valid: bool,
     /// The index of the widget to dispatch events to.
     focused: Option<usize>,
 }
@@ -51,23 +51,31 @@ where
         Self {
             layout,
             widgets: Vec::new(),
-            rects_valid: false,
+            areas_valid: false,
             focused: None,
         }
     }
 
-    pub fn add_widget<W>(&mut self, constraint: Constraint, widget: W) -> &mut Self
+    // `block` is optional; widgets that wish to manage their block themselves
+    // (or don't want a `Block`) are free to not use this.
+    //
+    // Blocks that we manage will have their borders change color when focused.
+    //
+    // We also send the appropriate event when widgets are focused so widgets
+    // that choose to manage their own `Block` can provide similar
+    // functionality.
+    pub fn add_widget<W>(&mut self, constraint: Constraint, widget: W, block: Option<Block<'a>>) -> &mut Self
     where
         W: Widget<'a, 'int, C, I, O, B> + 'a
     {
-        self.widgets.push(SingleWidget::new(constraint, Box::new(widget)));
-        self.rects_valid = false; // We need to recalculate positions now!
+        self.widgets.push(SingleWidget::new(constraint, Box::new(widget), block));
+        self.areas_valid = false; // We need to recalculate positions now!
 
         self
     }
 
-    fn update_rects(&mut self, area: Rect) {
-        if !self.rects_valid {
+    fn update_areas(&mut self, area: Rect) {
+        if !self.areas_valid {
             let layout = self.layout.clone();
 
             let constraints: Vec<_> = self.widgets
@@ -82,10 +90,10 @@ where
             assert_eq!(self.widgets.len(), rects.len());
 
             for (idx, rect) in rects.iter().enumerate() {
-                self.widgets[idx].rect = *rect;
+                self.widgets[idx].area = *rect;
             }
 
-            self.rects_valid = true;
+            self.areas_valid = true;
         }
     }
 }
@@ -99,12 +107,6 @@ where
     B: Backend,
 {
     fn draw(&mut self, _rect: Rect, _buffer: &mut Buffer) {
-        // self.update_rects(rect);
-
-        // for sw in self.widgets {
-        //     TuiWidget::draw(&mut *sw.widget, sw.rect, buffer);
-        // }
-
         unreachable!("This should never be called. Call `lc3_tui::Widget::draw` instead.")
     }
 }
@@ -118,11 +120,11 @@ where
     O: OutputSource + ?Sized + 'a,
     B: Backend,
 {
-    fn draw(&mut self, sim: &C, rect: Rect, buffer: &mut Buffer) {
-        self.update_rects(rect);
+    fn draw(&mut self, sim: &C, rect: Rect, buf: &mut Buffer) {
+        self.update_areas(rect);
 
-        for sw in self.widgets.iter_mut() {
-            Widget::draw(&mut *sw.widget, sim, sw.rect, buffer)
+        for (idx, sw) in self.widgets.iter_mut().enumerate() {
+            sw.draw(sim, buf, self.focused.map(|f| f == idx).unwrap_or(false))
         }
     }
 
@@ -137,6 +139,8 @@ where
         // use clicked events to update the currently focused thing
         // (propagate these as well since what's under us might not be a single
         // widget)
+        // additionally, send out focused/lost focus events on changes to the
+        // currently focused thing
 
         // dispatch key events to the currently focused thing
 
