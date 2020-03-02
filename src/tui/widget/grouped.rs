@@ -95,8 +95,14 @@ where
             self.areas_valid = true;
         }
     }
-}
 
+    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+        self.widgets.iter_mut().any(|w| w.widget.update(event, data))
+        // for w in self.widgets.iter_mut() {
+        //     w.widget.update(event, data);
+        // }
+    }
+}
 
 impl<'a, 'int, C, I, O, B> TuiWidget for Widgets<'a, 'int, C, I, O, B>
 where
