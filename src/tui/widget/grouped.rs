@@ -164,32 +164,42 @@ where
                 } else {
                     // If it couldn't, we're up:
 
-                    // (Note: we do nothing if we don't have a currently focused
-                    // widget; because of the handling of FocusEvent::GotFocus
-                    // we take that to mean that we just don't have any widgets)
-                    if let Some(focused_idx) = self.focused {
-                        if let Some(new_idx) = match event {
-                            UP | LEFT => focused_idx.checked_sub(1),
-                            DOWN | RIGHT => focused_idx.checked_add(1),
-                            _ => unreachable!(), // Obvious to us; not rustc :-/
-                        }
-                        .filter(|i| (0..self.widgets.len()).contains(i)) {
-                            // If we can handle the event (i.e. if we're not
-                            // already at an edge), do so:
-                            self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
-                            self.focused = Some(new_idx);
-                            self.propagate_to_focused(Focus(FocusEvent::GotFocus), data);
-                            true
-                        } else {
-                            false
-                        }
-                    } else {
-                        // Test our assumption:
-                        assert!(self.widgets.is_empty());
+                    // Try to settle on a child that accepts focus:
+                    loop {
+                        // (Note: we do nothing if we don't have a currently focused
+                        // widget; because of the handling of FocusEvent::GotFocus
+                        // we take that to mean that we just don't have any widgets)
+                        if let Some(focused_idx) = self.focused {
+                            if let Some(new_idx) = match event {
+                                UP | LEFT => focused_idx.checked_sub(1),
+                                DOWN | RIGHT => focused_idx.checked_add(1),
+                                _ => unreachable!(), // Obvious to us; not rustc :-/
+                            }
+                            .filter(|i| (0..self.widgets.len()).contains(i)) {
+                                // If we can handle the event (i.e. if we're not already
+                                // at an edge), do so:
+                                let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
+                                self.focused = Some(new_idx);
+                                if self.propagate_to_focused(Focus(FocusEvent::GotFocus), data) {
+                                    // If the child accepted focus, we're done.
+                                    break true
+                                }
 
-                        // Parents should actually handle the event, so we
-                        // return false.
-                        false
+                                // If not, we've got to try again..
+                            } else {
+                                // If we get here, we can't accept focus (either because
+                                // we hit an edge or because we exhausted all our
+                                // options).
+                                break false
+                            }
+                        } else {
+                            // Test our assumption:
+                            assert!(self.widgets.is_empty());
+
+                            // Parents should actually handle the event, so we
+                            // return false.
+                            break false
+                        }
                     }
                 }
             },
@@ -250,6 +260,8 @@ where
                 // first time we're focused. In this case if we have elements,
                 // we'll set our first one as focused:
                 self.focused = if !self.widgets.is_empty() {
+                    // TODO: is this more or less confusing to users (than just
+                    // starting at 0)?
                     Some(self.previously_focused)
                 } else {
                     None
