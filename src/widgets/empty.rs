@@ -40,7 +40,7 @@ where
 {
     fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
         match event {
-            WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
+            WidgetEvent::Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
             _ => false,
         }
     }
