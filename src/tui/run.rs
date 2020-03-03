@@ -9,6 +9,7 @@ use lc3_traits::control::Control;
 use lc3_application_support::event_loop::Backoff;
 use lc3_application_support::io_peripherals::{InputSink, OutputSource};
 
+use chrono::{DateTime, offset::Local};
 use crossterm::{ExecutableCommand, execute};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::event::{KeyEvent, KeyCode, KeyModifiers, DisableMouseCapture};
@@ -40,7 +41,9 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
             log::trace!("Event: {:?}", event);
 
             if let Some(ref mut s) = tui.data.log {
-                s.push_str(format!("[EVENT] @ {:?}: {:?}\n", std::time::SystemTime::now(), event).as_ref())
+                let time = std::time::SystemTime::now();
+                let time: DateTime<Local> = time.into();
+                s.push_str(format!("[EVENT] @ {}: {:?}\n", time.format("%d/%m/%Y %T%.6f"), event).as_ref())
             }
 
             match event {

@@ -61,7 +61,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 program_path: None,
 
                 log: if crate::debug::in_debug_mode() {
-                    Some(String::new())
+                    Some(String::with_capacity(128 * 1024 * 1024))
                 } else {
                     None
                 },
