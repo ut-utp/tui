@@ -270,7 +270,7 @@ where
                 self.propagate_to_focused(event, data)
             },
             Focus(FocusEvent::LostFocus) => {
-                self.propagate_to_focused(event, data);
+                let _ = self.propagate_to_focused(event, data);
 
                 if let Some(idx) = self.focused.take() {
                     self.previously_focused = idx;

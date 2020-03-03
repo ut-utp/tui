@@ -29,11 +29,15 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         let backoff = Backoff::default();
 
         // Focus the root and never unfocus it!
+        // (The root widget really should accept focus but we don't check that it does
+        // here; if we're told to run with an empty widget tree we shall.)
         root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data);
 
         backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {
             use Event::*;
             use CrosstermEvent::*;
+
+            log::trace!("Event: {:?}", event);
 
             match event {
                 Error(err) => {
@@ -43,7 +47,6 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
                 // Currently, we only redraw on ticks (TODO: is this okay or should we
                 // redraw on events too?):
-                // Tick => term.draw(|mut f| root.render(sim, &mut f, f.size())).unwrap(),
                 Tick => term.draw(|mut f| {
                     let area = f.size();
                     root.render(tui.data.sim, &mut f, area)
@@ -60,7 +63,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 }
             }
 
-            // onward! (i.e. don't stop)
+            // onwards! (i.e. don't stop)
             true
         }).map_err(|_| err_msg("Channel disconnected; maybe something crashed?"))
     }
