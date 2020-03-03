@@ -35,6 +35,7 @@ lc3-macros = { path = "../macros", version = "0.1.0" }
 lc3-shims = { path = "../shims", version = "0.1.0" }
 lc3-traits = { path = "../traits", version = "0.1.0", default-features = false, features = [] } # Enable std features
 
+chrono = "0.4"
 crossterm = "0.16.0"
 failure = "0.1.6"
 log = "0.4.8"
