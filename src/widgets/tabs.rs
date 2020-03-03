@@ -168,7 +168,8 @@ where
                 _ => self.propagate(event, data),
             }
 
-            // TODO: handle mouse events!
+            // TODO: pick a style for the tabs!
+            // TODO: handle mouse events! (blocked on the above)
 
             // Resize all the tabs!
             Resize(_, _) => self.propagate_to_all(event, data),
