@@ -182,7 +182,7 @@ where
                                 if accepted {
                                     break Some(n)
                                 } else {
-                                    self.widgets[n].widget.update(Focus(FocusEvent::LostFocus), data);
+                                    let _ = self.widgets[n].widget.update(Focus(FocusEvent::LostFocus), data);
                                     continue; // try again
                                 }
                             } else {
@@ -193,7 +193,7 @@ where
 
                         match new_idx {
                             Some(i) => {
-                                self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
+                                let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
                                 // Already focused so no need to sent the focused
                                 // event.
                                 self.focused = Some(i);
@@ -363,17 +363,6 @@ where
                 _ => self.propagate_to_focused(event, data),
             }
         }
-
-        // invalidate (recursively) on resize events (i.e. propagate the resize
-        // event)
-
-        // use clicked events to update the currently focused thing
-        // (propagate these as well since what's under us might not be a single
-        // widget)
-        // additionally, send out focused/lost focus events on changes to the
-        // currently focused thing
-
-        // dispatch key events to the currently focused thing
     }
 }
 

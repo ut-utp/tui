@@ -31,7 +31,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         // Focus the root and never unfocus it!
         // (The root widget really should accept focus but we don't check that it does
         // here; if we're told to run with an empty widget tree we shall.)
-        root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data);
+        let _ = root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data);
 
         backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {
             use Event::*;
