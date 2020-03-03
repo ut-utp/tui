@@ -50,11 +50,11 @@ where
 
     let _ = top_left
         .add_widget(Constraint::Percentage(33), empty.focusable(true), Some(b.clone().title("Top Left One")))
-        .add_widget(Constraint::Percentage(33), empty.focusable(false), Some(b.clone().title("Top Left Two")))
+        .add_widget(Constraint::Percentage(33), empty.focusable(false), Some(b.clone().title("Top Left Two -- Unfocusable")))
         .add_widget(Constraint::Percentage(34), empty.focusable(true), Some(b.clone().title("Top Left Three")));
 
     let _ = left.add_widget(Constraint::Percentage(50), top_left, Some(b.clone().title("Top Left")))
-        .add_widget(Constraint::Percentage(50), empty.focusable(false), Some(b.clone().title("Bottom Left")));
+        .add_widget(Constraint::Percentage(50), empty.focusable(false), Some(b.clone().title("Bottom Left -- Unfocusable")));
 
     let mut right = Widgets::new(vert.clone());
     let _ = right.add_widget(Constraint::Percentage(50), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Top Right")))
