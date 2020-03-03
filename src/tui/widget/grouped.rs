@@ -242,11 +242,11 @@ where
     O: OutputSource + ?Sized + 'a,
     B: Backend,
 {
-    fn draw(&mut self, sim: &C, rect: Rect, buf: &mut Buffer) {
+    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, rect: Rect, buf: &mut Buffer) {
         self.update_areas(rect);
 
         for (idx, sw) in self.widgets.iter_mut().enumerate() {
-            sw.draw(sim, buf, self.focused.map(|f| f == idx).unwrap_or(false))
+            sw.draw(data, buf, self.focused.map(|f| f == idx).unwrap_or(false))
         }
     }
 

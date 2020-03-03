@@ -1,6 +1,7 @@
 //! TODO!
 
 use super::{Widget, TuiWidget};
+use crate::tui::TuiData;
 
 use lc3_application_support::io_peripherals::InputSink;
 use lc3_application_support::io_peripherals::OutputSource;
@@ -43,7 +44,7 @@ where
         }
     }
 
-    pub(super) fn draw(&mut self, sim: &C, buf: &mut Buffer, focused: bool) {
+    pub(super) fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, buf: &mut Buffer, focused: bool) {
         // If we have a block, draw it.
         let area = if let Some(ref mut block) = self.block {
             // Change the border colour of the block if we're focused.
@@ -62,6 +63,6 @@ where
             self.area
         };
 
-        Widget::draw(&mut *self.widget, sim, area, buf)
+        Widget::draw(&mut *self.widget, data, area, buf)
     }
 }

@@ -1,6 +1,7 @@
 //! Home of [`FakeWidget`]: a trick.
 
 use super::{Widget, TuiWidget};
+use crate::tui::TuiData;
 
 use lc3_application_support::io_peripherals::InputSink;
 use lc3_application_support::io_peripherals::OutputSource;
@@ -16,7 +17,7 @@ use std::marker::PhantomData;
 #[allow(explicit_outlives_requirements)]
 // This exists to circumvent the `Sized` requirement on `TuiWidget::render`.
 pub(in super) struct FakeWidget<'s, 'a, 'int, C, I, O, B, W>
-(pub(super)&'s C, pub(super)&'s mut W, pub(super)PhantomData<(&'a I, &'a O, B, &'int ())>)
+(pub(super)&'s TuiData<'a, 'int, C, I, O>, pub(super)&'s mut W, pub(super)PhantomData<(&'a I, &'a O, B, &'int ())>)
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,

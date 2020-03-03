@@ -130,11 +130,11 @@ where
     B: Backend,
     F: Fn() -> TabsBar<'a, String>,
 {
-    fn draw(&mut self, sim: &C, area: Rect, buf: &mut Buffer) {
+    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let (bar, rest) = self.area_split(area);
 
         self.tabs_bar().draw(bar, buf);
-        Widget::draw(&mut *self.tabs[self.current_tab], sim, rest, buf)
+        Widget::draw(&mut *self.tabs[self.current_tab], data, rest, buf)
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {

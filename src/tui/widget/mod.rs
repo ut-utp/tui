@@ -40,11 +40,11 @@ where
     /// need a [`Control`] instance need not override the default impl.
     ///
     /// [`Control`]: `lc3_traits::control::Control`
-    fn draw(&mut self, _sim: &C, area: Rect, buf: &mut Buffer) {
+    fn draw(&mut self, _data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         TuiWidget::draw(self, area, buf)
     }
 
-    fn render<'s>(&'s mut self, sim: &'s C, f: &mut Frame<'_, B>, area: Rect) {
+    fn render<'s>(&'s mut self, data: &'s TuiData<'a, 'int, C, I, O>, f: &mut Frame<'_, B>, area: Rect) {
         // This is tricky.
         //
         // We can't just call render on ourself because we can't guarantee that
@@ -57,7 +57,7 @@ where
         // `FakeWidget` goes and passes this buffer to the wrapped widget's
         // `TuiWidget::draw` function.
 
-        let mut fw = FakeWidget::<'s, 'a, 'int, _, _, _, _, _>(sim, self, PhantomData);
+        let mut fw = FakeWidget::<'s, 'a, 'int, _, _, _, _, _>(data, self, PhantomData);
         <FakeWidget<'s, 'a, 'int, _, _, _, _, _> as TuiWidget>::render::<B>(&mut fw, f, area);
     }
 

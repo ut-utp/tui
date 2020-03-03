@@ -49,7 +49,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 // redraw on events too?):
                 Tick => term.draw(|mut f| {
                     let area = f.size();
-                    Widget::render(&mut root, tui.data.sim, &mut f, area)
+                    Widget::render(&mut root, &tui.data, &mut f, area)
                 }).unwrap(), // TODO: is unwrapping okay here?
 
                 ActualEvent(e) => match e {
