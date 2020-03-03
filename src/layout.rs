@@ -1,6 +1,6 @@
 //! Module defining the layout of the widgets used by the TUI.
 
-use crate::tui::widget::Widgets;
+use crate::tui::widget::{Widgets, Widget};
 use crate::widgets::*;
 
 use lc3_application_support::io_peripherals::InputSink;
@@ -17,7 +17,7 @@ use tui::style::{Style, Color};
 // This is currently 'static' (i.e. doesn't change based on the inputs given)
 // but that could change in the future.
 // TODO: potentially parameterize this from with user configurable options!
-pub fn layout<'a, 'int: 'a, C, I, O, B: 'a>() -> Widgets<'a, 'int, C, I, O, B>
+pub fn layout<'a, 'int: 'a, C, I, O, B: 'a>() -> impl Widget<'a, 'int, C, I, O, B>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,

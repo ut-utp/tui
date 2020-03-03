@@ -19,7 +19,7 @@ use tui::backend::{Backend, CrosstermBackend};
 use std::io::{Stdout, Write};
 
 impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSource + ?Sized + 'a> Tui<'a, 'int, C, I, O> {
-    pub fn run_with_custom_layout<B: Backend>(mut self, term: &mut Terminal<B>, mut root: Widgets<'a, 'int, C, I, O, B>) -> Result<()>
+    pub fn run_with_custom_layout<B: Backend>(mut self, term: &mut Terminal<B>, mut root: impl Widget<'a, 'int, C, I, O, B>) -> Result<()>
     where
         B: ExecutableCommand<&'static str>
     {
@@ -49,7 +49,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 // redraw on events too?):
                 Tick => term.draw(|mut f| {
                     let area = f.size();
-                    root.render(tui.data.sim, &mut f, area)
+                    Widget::render(&mut root, tui.data.sim, &mut f, area)
                 }).unwrap(), // TODO: is unwrapping okay here?
 
                 ActualEvent(e) => match e {

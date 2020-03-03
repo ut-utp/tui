@@ -25,7 +25,6 @@ impl Empty {
 }
 
 impl TuiWidget for Empty {
-
     fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
         // Do nothing!
     }
