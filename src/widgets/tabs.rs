@@ -153,6 +153,24 @@ where
                     self.switch_to_tab(n as usize - 1)
                 }
 
+                KeyEvent { code: KeyCode::BackTab, modifiers: KeyModifiers::CONTROL /*| KeyModifiers::SHIFT*/ } => {
+                    self.switch_to_tab(self.current_tab.checked_sub(1).unwrap_or(self.tabs.len()))
+                }
+                KeyEvent { code: KeyCode::Tab, modifiers: KeyModifiers::CONTROL } => {
+                    // let idx = if let Some(idx) = self.current_tab.checked_add(1) {
+                    //     if idx >= self.tabs.len() {
+                    //         0
+                    //     } else {
+                    //         idx
+                    //     }
+                    // } else {
+                    //     0
+                    // };
+
+                    // self.switch_to_tab(idx)
+
+                    self.switch_to_tab(self.current_tab.checked_add(1).filter(|i| *i < self.tabs.len()).unwrap_or(0))
+                }
 
                 _ => self.propagate(event, data),
             }
