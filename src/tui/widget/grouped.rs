@@ -38,7 +38,7 @@ where
     areas_valid: bool,
     /// The index of the widget to dispatch events to.
     focused: Option<usize>,
-    previously_focused: usize,
+    previously_focused: Option<usize>,
 }
 
 impl<'a, 'int, C, I, O, B> Widgets<'a, 'int, C, I, O, B>
@@ -54,7 +54,7 @@ where
             widgets: Vec::new(),
             areas_valid: false,
             focused: None,
-            previously_focused: 0,
+            previously_focused: None,
         }
     }
 
@@ -164,42 +164,50 @@ where
                 } else {
                     // If it couldn't, we're up:
 
-                    // Try to settle on a child that accepts focus:
-                    loop {
-                        // (Note: we do nothing if we don't have a currently focused
-                        // widget; because of the handling of FocusEvent::GotFocus
-                        // we take that to mean that we just don't have any widgets)
-                        if let Some(focused_idx) = self.focused {
-                            if let Some(new_idx) = match event {
+                    // (Note: we do nothing if we don't have a currently focused
+                    // widget; because of the handling of FocusEvent::GotFocus
+                    // we take that to mean that we just don't have any widgets)
+                    if let Some(focused_idx) = self.focused {
+                        let mut focused_idx = focused_idx;
+                        let new_idx = loop {
+                            if let Some(n) = match event {
                                 UP | LEFT => focused_idx.checked_sub(1),
                                 DOWN | RIGHT => focused_idx.checked_add(1),
                                 _ => unreachable!(), // Obvious to us; not rustc :-/
                             }
                             .filter(|i| (0..self.widgets.len()).contains(i)) {
-                                // If we can handle the event (i.e. if we're not already
-                                // at an edge), do so:
-                                let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
-                                self.focused = Some(new_idx);
-                                if self.propagate_to_focused(Focus(FocusEvent::GotFocus), data) {
-                                    // If the child accepted focus, we're done.
-                                    break true
+                                focused_idx = n;
+
+                                let accepted = self.widgets[n].widget.update(Focus(FocusEvent::GotFocus), data);
+                                if accepted {
+                                    break Some(n)
+                                } else {
+                                    self.widgets[n].widget.update(Focus(FocusEvent::LostFocus), data);
+                                    continue; // try again
                                 }
-
-                                // If not, we've got to try again..
                             } else {
-                                // If we get here, we can't accept focus (either because
-                                // we hit an edge or because we exhausted all our
-                                // options).
-                                break false
+                                // Out of bounds? We've run out.
+                                break None
                             }
-                        } else {
-                            // Test our assumption:
-                            assert!(self.widgets.is_empty());
+                        };
 
-                            // Parents should actually handle the event, so we
-                            // return false.
-                            break false
+                        match new_idx {
+                            Some(i) => {
+                                self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
+                                // Already focused so no need to sent the focused
+                                // event.
+                                self.focused = Some(i);
+                                self.propagate_to_focused(Key(event), data)
+                            }
+                            None => false,
                         }
+                    } else {
+                        // Test our assumption:
+                        assert!(self.widgets.is_empty());
+
+                        // Parents should actually handle the event, so we
+                        // return false.
+                        false
                     }
                 }
             },
@@ -272,7 +280,7 @@ where
                 let _ = self.propagate_to_focused(event, data);
 
                 if let Some(idx) = self.focused.take() {
-                    self.previously_focused = idx;
+                    self.previously_focused = Some(idx);
                 }
 
                 true
