@@ -321,19 +321,21 @@ where
                             // event and carry on.
                             self.propagate_to_focused(event, data)
                         } else {
-                            if let Some(idx) = new_focused_idx {
-                                if self.widgets[idx].widget.update(Focus(FocusEvent::GotFocus), data) {
-                                    // If the widget accepted focus, it's now our
-                                    // focused widget:
-                                    let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
-                                    self.focused = new_focused_idx;
+                            if let Some(_) = new_focused_idx {
+                                let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
+                                self.focused = new_focused_idx;
 
-                                    // Give it the event:
-                                    self.propagate_to_focused(event, data)
-                                } else {
-                                    // The widget did not accept focus, so let's
-                                    // return false (and drop the event).
+                                // As a compromise, we'll clear the currently
+                                // focused thing if the user tries to focus on
+                                // a widget that doesn't accept it (and only
+                                // send the widget the event if it accepts).
+                                if !self.propagate_to_focused(Focus(FocusEvent::GotFocus), data) {
+                                    let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
                                     false
+                                } else {
+                                    // Give it the event:
+                                    let _ = self.propagate_to_focused(event, data);
+                                    true
                                 }
                             } else {
                                 // If we don't have a focused valid new focused
