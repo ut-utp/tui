@@ -215,7 +215,6 @@ where
     }
 }
 
-
 impl<'a, 'int, C, I, O, B> TuiWidget for Widgets<'a, 'int, C, I, O, B>
 where
     C: Control + ?Sized + 'a,
@@ -279,13 +278,62 @@ where
                 true
             },
 
+            // TODO: should we allow us to 'focus' on things that don't actually
+            // accept focus when clicking on them? For now, let's say no.
             Mouse(e) => {
                 use MouseEvent::*;
                 use MouseButton::*;
-                // match e {
 
-                // }
-                todo!()
+                match e {
+                    // We don't care about buttons, up or down, or modifiers for
+                    // focus purposes; all can change the currently focused
+                    // widget.
+                    Down(_, col, row, _) | Up(_, col, row, _) => {
+                        // It's possible that we use an outdated area set here
+                        // (as in, we don't call `update_areas` here), which is
+                        // actually fine: we assume that the user choose a place
+                        // to click based on the last drawn frame anyways.
+                        let new_focused_idx = self.widgets.iter()
+                            .enumerate()
+                            .filter(|(_, w)| w.area.contains(col, row))
+                            .map(|(idx, _)| idx)
+                            .next();
+
+                        if self.focused == new_focused_idx {
+                            // If there isn't a change in focus, propagate the
+                            // event and carry on.
+                            eprintln!("no change in focus!");
+                            self.propagate_to_focused(event, data)
+                        } else {
+                            eprintln!("change in focus from {:?} to {:?}", self.focused, new_focused_idx);
+                            if let Some(idx) = new_focused_idx {
+                                if self.widgets[idx].widget.update(Focus(FocusEvent::GotFocus), data) {
+                                    // If the widget accepted focus, it's now our
+                                    // focused widget:
+                                    let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
+                                    self.focused = new_focused_idx;
+
+                                    // Give it the event:
+                                    self.propagate_to_focused(event, data)
+                                } else {
+                                    // The widget did not accept focus, so let's
+                                    // return false (and drop the event).
+                                    false
+                                }
+                            } else {
+                                // If we don't have a focused valid new focused
+                                // widget, keep the current focused widget and
+                                // drop the event.
+                                false
+                            }
+                        }
+                    },
+                    Drag(_, _, _, _) => { /* ignore drag events! */ false },
+                    ScrollDown(_, _, _) | ScrollUp(_, _, _) => {
+                        // Just propagate scroll events:
+                        self.propagate_to_focused(event, data)
+                    }
+                }
             }
 
             Key(e) => match e {
@@ -328,5 +376,16 @@ fn extract_direction_from_layout(l: &Layout) -> Direction {
         Direction::Vertical
     } else {
         Direction::Horizontal
+    }
+}
+
+trait Contains {
+    fn contains(&self, col: u16, row: u16) -> bool;
+}
+
+impl Contains for Rect {
+    fn contains(&self, col: u16, row: u16) -> bool {
+        (self.left()..=self.right()).contains(&col) &&
+        (self.top()..=self.bottom()).contains(&row)
     }
 }
