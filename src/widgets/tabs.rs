@@ -146,6 +146,9 @@ where
 
             // TODO: handle mouse events!
 
+            // Resize all the tabs!
+            Resize(_, _) => self.propagate_to_all(event, data),
+
             _ => self.propagate(event, data)
         }
     }
