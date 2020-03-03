@@ -67,7 +67,7 @@ where
     fn area_split(&self, area: Rect) -> (Rect, Rect) {
         if let [bar, rest] = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Length(4), Constraint::Min(1)].as_ref())
+            .constraints([Constraint::Length(3), Constraint::Min(1)].as_ref())
             .split(area)
             [..] {
             return (bar, rest)
@@ -88,6 +88,19 @@ where
 
     fn propagate(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
         self.tabs[self.current_tab].update(event, data)
+    }
+
+    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+        self.tabs.iter_mut().fold(false, |b, w| b | w.update(event, data))
+    }
+
+    fn switch_to_tab(&mut self, idx: usize) -> bool {
+        if idx < self.tabs.len() {
+            self.current_tab = idx;
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -126,21 +139,21 @@ where
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
         use WidgetEvent::*;
+        const EMPTY: KeyModifiers = KeyModifiers::empty();
 
         match event {
             Key(e) => match e {
                 KeyEvent { code: KeyCode::Char(n @ '1'..='9'), modifiers: KeyModifiers::CONTROL } |
                 KeyEvent { code: KeyCode::Char(n @ '1'..='9'), modifiers: KeyModifiers::ALT } => {
                     // Switch to 0 indexing:
-                    let idx = n as usize - '1' as usize;
-
-                    if idx < self.tabs.len() {
-                        self.current_tab = idx;
-                        true
-                    } else {
-                        false
-                    }
+                    self.switch_to_tab(n as usize - '1' as usize)
                 },
+                KeyEvent { code: KeyCode::F(n), modifiers: EMPTY } => {
+                    // Switch to 0 indexing:
+                    self.switch_to_tab(n as usize - 1)
+                }
+
+
                 _ => self.propagate(event, data),
             }
 
