@@ -47,7 +47,7 @@ where
         .add_widget(Constraint::Percentage(50), empty.focusable(false), Some(b.clone().title("Bottom Left")));
 
     let mut right = Widgets::new(vert.clone());
-    let _ = right.add_widget(Constraint::Percentage(50), empty.focusable(false), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Top Right")))
+    let _ = right.add_widget(Constraint::Percentage(50), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Top Right")))
         .add_widget(Constraint::Percentage(50), empty.focusable(true), Some(b.clone().title("Bottom Right")));
 
     let _ = root.add_widget(Constraint::Percentage(40), left, None)
@@ -55,5 +55,15 @@ where
         .add_widget(Constraint::Percentage(10), empty, None)
         .add_widget(Constraint::Percentage(40), right, None);
 
-    root
+    Tabs::new(root, "ROOT")
+        .add(empty, "foo")
+        .add(empty, "bar")
+        .add(empty, "bazzzzz")
+        .with_tabs_bar(|| {
+            TabsBar::default()
+                .block(Block::default().title("Tabs").borders(Borders::ALL).border_style(Style::default().fg(Color::Blue)))
+                .style(Style::default().fg(Color::White))
+                .highlight_style(Style::default().fg(Color::Cyan))
+                // .divider(tui::symbols::DOT)
+        })
 }
