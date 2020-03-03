@@ -265,7 +265,7 @@ where
                 self.focused = if !self.widgets.is_empty() {
                     'outer: loop {
                         // First try the last focused index (if we have one):
-                        if let Some(idx) = self.previously_focused {
+                        if let Some(idx) = self.previously_focused.take() {
                             if self.widgets[idx].widget.update(event, data) {
                                 break Some(idx);
                             }
