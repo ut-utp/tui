@@ -3,7 +3,7 @@
 use super::Res as Result;
 use super::Tui;
 use super::events::{self, Event, WidgetEvent, FocusEvent, CrosstermEvent};
-use super::widget::{Widget, Widgets};
+use super::widget::Widget;
 
 use lc3_traits::control::Control;
 use lc3_application_support::event_loop::Backoff;
@@ -77,7 +77,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
     }
 
     // Run with crossterm; with or without your own special layout.
-    pub fn run_with_crossterm(self, root_widget: Option<Widgets<'a, 'int, C, I, O, CrosstermBackend<Stdout>>>) -> Result<()> {
+    pub fn run_with_crossterm(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, CrosstermBackend<Stdout>>>) -> Result<()> {
         let mut stdout = std::io::stdout();
         execute!(stdout, EnterAlternateScreen)?;
         crossterm::terminal::enable_raw_mode()?;

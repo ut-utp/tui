@@ -1,4 +1,5 @@
 use lc3_tui::DynTui;
+use lc3_tui::layout;
 use lc3_application_support::init::{BlackBox, SimDevice, SimWithRpcDevice};
 
 use structopt::StructOpt;
@@ -101,8 +102,11 @@ fn main() -> Result<(), failure::Error> {
         tui.set_program_path(p);
     }
 
+
+    let layout = layout::layout_tabs();
+
     tui.set_update_period(options.update_period.into());
-    tui.run_with_crossterm(None)?;
+    tui.run_with_crossterm(Some(layout))?;
 
     println!("Good bye! 👋");
     Ok(())

@@ -24,6 +24,16 @@ where
     O: OutputSource + ?Sized + 'a,
     B: Backend,
 {
+    layout_tabs()
+}
+
+pub fn layout_tabs<'a, 'int: 'a, C, I, O, B: 'a>() -> Tabs<'a, 'int, C, I, O, B, impl Fn() -> TabsBar<'a, String>>
+where
+    C: Control + ?Sized + 'a,
+    I: InputSink + ?Sized + 'a,
+    O: OutputSource + ?Sized + 'a,
+    B: Backend,
+{
     let horz = Layout::default().direction(Direction::Horizontal);
     let vert = Layout::default().direction(Direction::Vertical);
     let b = Block::default()
