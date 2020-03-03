@@ -2,14 +2,14 @@
 
 use super::widget_impl_support::*;
 
-use tui::widgets::{Text, Paragraph};
+use tui::widgets::{Text as TuiText, Paragraph};
 use tui::style::{Color, Style};
 use tui::layout::Alignment;
 
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TextBlock<'a, 'int, C, I, O, F>
+pub struct Text<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -21,7 +21,7 @@ where
     _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
 }
 
-impl<'a, 'int, C, I, O, F> TextBlock<'a, 'int, C, I, O, F>
+impl<'a, 'int, C, I, O, F> Text<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -37,19 +37,19 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, F> TuiWidget for TextBlock<'a, 'int, C, I, O, F>
+impl<'a, 'int, C, I, O, F> TuiWidget for Text<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r String,
 {
-    fn draw(&mut self, area: Rect, buf: &mut Buffer) {
+    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
         unimplemented!("Don't call this! We need TuiData to draw!")
     }
 }
 
-impl<'a, 'int, C, I, O, F, B> Widget<'a, 'int, C, I, O, B> for TextBlock<'a, 'int, C, I, O, F>
+impl<'a, 'int, C, I, O, F, B> Widget<'a, 'int, C, I, O, B> for Text<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -59,7 +59,7 @@ where
 {
 
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-        let text = [Text::raw((self.func)(data))];
+        let text = [TuiText::raw((self.func)(data))];
 
         // TODO: allow parameterization of this in the usual way.
         let para = Paragraph::new(text.iter())

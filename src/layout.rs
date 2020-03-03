@@ -65,15 +65,28 @@ where
         .add_widget(Constraint::Percentage(10), empty, None)
         .add_widget(Constraint::Percentage(40), right, None);
 
-    Tabs::new(root, "ROOT")
-        .add(empty, "foo")
-        .add(empty, "bar")
-        .add(empty, "bazzzzz")
+    let mut tabs = Tabs::new(root, "Root")
+        .add(empty, "Foo")
+        .add(empty, "Bar")
+        .add(empty, "Baz")
         .with_tabs_bar(|| {
             TabsBar::default()
                 .block(Block::default().title("Tabs").borders(Borders::ALL).border_style(Style::default().fg(Color::Blue)))
                 .style(Style::default().fg(Color::White))
                 .highlight_style(Style::default().fg(Color::Cyan))
                 // .divider(tui::symbols::DOT)
-        })
+        });
+
+    if crate::debug::in_debug_mode() {
+        let events = Text::new(|t| t.log.as_ref().unwrap());
+
+        let mut debug = Widgets::new(vert.clone());
+        let _ = debug
+            .add_widget(Constraint::Percentage(100), events, Some(b.clone().border_style(Style::default().fg(Color::Green)).title("Event Log")));
+
+        tabs = tabs
+            .add(debug, "Debug Info");
+    }
+
+    tabs
 }

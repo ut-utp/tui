@@ -22,3 +22,6 @@ pub use empty::*;
 
 mod tabs;
 pub use tabs::*;
+
+mod text;
+pub use text::*;
