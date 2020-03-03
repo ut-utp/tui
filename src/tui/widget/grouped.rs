@@ -279,10 +279,9 @@ where
             },
 
             // TODO: should we allow us to 'focus' on things that don't actually
-            // accept focus when clicking on them? For now, let's say no.
+            // accept focus when clicking on them? For now, let's say yes.
             Mouse(e) => {
                 use MouseEvent::*;
-                use MouseButton::*;
 
                 match e {
                     // We don't care about buttons, up or down, or modifiers for
@@ -302,24 +301,15 @@ where
                         if self.focused == new_focused_idx {
                             // If there isn't a change in focus, propagate the
                             // event and carry on.
-                            eprintln!("no change in focus!");
                             self.propagate_to_focused(event, data)
                         } else {
-                            eprintln!("change in focus from {:?} to {:?}", self.focused, new_focused_idx);
-                            if let Some(idx) = new_focused_idx {
-                                if self.widgets[idx].widget.update(Focus(FocusEvent::GotFocus), data) {
-                                    // If the widget accepted focus, it's now our
-                                    // focused widget:
-                                    let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
-                                    self.focused = new_focused_idx;
+                            if let Some(_) = new_focused_idx {
+                                let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
 
-                                    // Give it the event:
-                                    self.propagate_to_focused(event, data)
-                                } else {
-                                    // The widget did not accept focus, so let's
-                                    // return false (and drop the event).
-                                    false
-                                }
+                                // Switch the focused widget and give it the event:
+                                self.focused = new_focused_idx;
+                                let _ = self.propagate_to_focused(Focus(FocusEvent::GotFocus), data);
+                                self.propagate_to_focused(event, data)
                             } else {
                                 // If we don't have a focused valid new focused
                                 // widget, keep the current focused widget and
