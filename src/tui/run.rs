@@ -39,6 +39,10 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
             log::trace!("Event: {:?}", event);
 
+            if let Some(ref mut s) = tui.data.log {
+                s.push_str(format!("[EVENT] @ {:?}: {:?}\n", std::time::SystemTime::now(), event).as_ref())
+            }
+
             match event {
                 Error(err) => {
                     // TODO: should we crash here?

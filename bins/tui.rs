@@ -71,7 +71,7 @@ struct Args {
     /// Enable logging
     // (TODO!)
     #[structopt(short = "v", long, help = "TODO")]
-    debug: bool,
+    logging: bool,
 
     /// Program file (optional)
     #[structopt(parse(from_os_str), help = "TODO")]
@@ -86,7 +86,7 @@ fn main() -> Result<(), failure::Error> {
     let options = Args::from_args();
 
     // TODO!
-    if options.debug {
+    if options.logging {
         Logger::with_env_or_str("loggy=trace")
             .log_to_file()
             .directory("log_files")

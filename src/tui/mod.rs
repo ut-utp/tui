@@ -31,6 +31,8 @@ where
     pub(in crate) shims: Option<Shims<'int>>,
 
     pub(in crate) program_path: Option<PathBuf>,
+
+    pub(in crate) log: Option<String>,
 }
 
 #[allow(explicit_outlives_requirements)]
@@ -57,6 +59,12 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 shims: None,
 
                 program_path: None,
+
+                log: if crate::debug::in_debug_mode() {
+                    Some(String::new())
+                } else {
+                    None
+                },
             },
 
             update_period: Duration::from_millis(250),
