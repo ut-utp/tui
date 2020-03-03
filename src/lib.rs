@@ -40,8 +40,8 @@
 #![doc(test(attr(deny(rust_2018_idioms, warnings))))]
 #![doc(html_logo_url = "")] // TODO!
 
+pub mod debug;
 pub mod layout;
-
 pub mod widgets;
 
 mod tui;
