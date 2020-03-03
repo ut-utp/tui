@@ -62,9 +62,9 @@ where
         let text = [TuiText::raw((self.func)(data))];
 
         // TODO: allow parameterization of this in the usual way.
-        let para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Black))
-            .alignment(Alignment::Center)
+        let mut para = Paragraph::new(text.iter())
+            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .alignment(Alignment::Left)
             .scroll(self.offset)
             .wrap(true);
 
@@ -73,13 +73,14 @@ where
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
         use WidgetEvent::*;
+        const EMPTY: KeyModifiers = KeyModifiers::empty();
 
         match event {
             // Accept focus!
             Focus(FocusEvent::GotFocus) => true,
             Focus(FocusEvent::LostFocus) => true,
-            // Mouse(MouseEvent::Up(_, _, _, _)) => true,
-            // Mouse(MouseEvent::Down(_, _, _, _)) => true,
+            Mouse(MouseEvent::Up(_, _, _, _)) => true,
+            Mouse(MouseEvent::Down(_, _, _, _)) => true,
 
             Mouse(MouseEvent::ScrollUp(_, _, _)) => {
                 self.offset = self.offset.saturating_sub(1);
@@ -87,6 +88,24 @@ where
             }
             Mouse(MouseEvent::ScrollDown(_, _, _)) => {
                 self.offset = self.offset.saturating_add(1);
+                true
+            }
+
+            Key(KeyEvent { code: KeyCode::PageUp, modifiers: EMPTY }) => {
+                self.offset = self.offset.saturating_sub(50);
+                true
+            }
+            Key(KeyEvent { code: KeyCode::PageDown, modifiers: EMPTY }) => {
+                self.offset = self.offset.saturating_add(50);
+                true
+            }
+
+            Key(KeyEvent { code: KeyCode::Home, modifiers: EMPTY }) => {
+                self.offset = 0;
+                true
+            }
+            Key(KeyEvent { code: KeyCode::End, modifiers: EMPTY }) => {
+                self.offset = (self.func)(data).lines().count() as u16;
                 true
             }
 
