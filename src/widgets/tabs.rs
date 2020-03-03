@@ -94,9 +94,10 @@ where
         self.tabs.iter_mut().fold(false, |b, w| b | w.update(event, data))
     }
 
-    fn switch_to_tab(&mut self, idx: usize) -> bool {
+    fn switch_to_tab(&mut self, data: &mut TuiData<'a, 'int, C, I, O>, idx: usize) -> bool {
         if idx < self.tabs.len() {
             self.current_tab = idx;
+            let _ = self.propagate(WidgetEvent::Focus(FocusEvent::GotFocus), data);
             true
         } else {
             false
@@ -146,23 +147,23 @@ where
                 KeyEvent { code: KeyCode::Char(n @ '1'..='9'), modifiers: KeyModifiers::CONTROL } |
                 KeyEvent { code: KeyCode::Char(n @ '1'..='9'), modifiers: KeyModifiers::ALT } => {
                     // Switch to 0 indexing:
-                    self.switch_to_tab(n as usize - '1' as usize)
+                    self.switch_to_tab(data, n as usize - '1' as usize)
                 },
                 KeyEvent { code: KeyCode::F(n), modifiers: EMPTY } => {
                     // Switch to 0 indexing:
-                    self.switch_to_tab(n as usize - 1)
+                    self.switch_to_tab(data, n as usize - 1)
                 }
 
                 // Crossterm seems to drop `ctrl` so we'll compromise with this for now (TODO):
                 KeyEvent { code: KeyCode::BackTab, modifiers: EMPTY } |
                 KeyEvent { code: KeyCode::BackTab, modifiers: KeyModifiers::CONTROL } => {
-                    self.switch_to_tab(self.current_tab.checked_sub(1).unwrap_or(self.tabs.len() - 1))
+                    self.switch_to_tab(data, self.current_tab.checked_sub(1).unwrap_or(self.tabs.len() - 1))
                 }
 
                 // Crossterm seems to drop `ctrl` so we'll compromise with this for now (TODO):
                 KeyEvent { code: KeyCode::Tab, modifiers: EMPTY } |
                 KeyEvent { code: KeyCode::Tab, modifiers: KeyModifiers::CONTROL } => {
-                    self.switch_to_tab(self.current_tab.checked_add(1).filter(|i| *i < self.tabs.len()).unwrap_or(0))
+                    self.switch_to_tab(data, self.current_tab.checked_add(1).filter(|i| *i < self.tabs.len()).unwrap_or(0))
                 }
 
                 _ => self.propagate(event, data),
