@@ -262,14 +262,24 @@ where
             },
 
             Focus(FocusEvent::GotFocus) => {
-                // The only time we should be told that we've gotten focus
-                // without getting key or mouse events that confirm this is the
-                // first time we're focused. In this case if we have elements,
-                // we'll set our first one as focused:
                 self.focused = if !self.widgets.is_empty() {
-                    // TODO: is this more or less confusing to users (than just
-                    // starting at 0)?
-                    Some(self.previously_focused)
+                    'outer: loop {
+                        // First try the last focused index (if we have one):
+                        if let Some(idx) = self.previously_focused {
+                            if self.widgets[idx].widget.update(event, data) {
+                                break Some(idx);
+                            }
+                        } else {
+                            // If we don't cycle through what we've got:
+                            for (idx, w) in self.widgets.iter_mut().enumerate() {
+                                if w.widget.update(event, data) {
+                                    break 'outer Some(idx)
+                                }
+                            }
+
+                            break None
+                        }
+                    }
                 } else {
                     None
                 };
@@ -311,13 +321,20 @@ where
                             // event and carry on.
                             self.propagate_to_focused(event, data)
                         } else {
-                            if let Some(_) = new_focused_idx {
-                                let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
+                            if let Some(idx) = new_focused_idx {
+                                if self.widgets[idx].widget.update(Focus(FocusEvent::GotFocus), data) {
+                                    // If the widget accepted focus, it's now our
+                                    // focused widget:
+                                    let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
+                                    self.focused = new_focused_idx;
 
-                                // Switch the focused widget and give it the event:
-                                self.focused = new_focused_idx;
-                                let _ = self.propagate_to_focused(Focus(FocusEvent::GotFocus), data);
-                                self.propagate_to_focused(event, data)
+                                    // Give it the event:
+                                    self.propagate_to_focused(event, data)
+                                } else {
+                                    // The widget did not accept focus, so let's
+                                    // return false (and drop the event).
+                                    false
+                                }
                             } else {
                                 // If we don't have a focused valid new focused
                                 // widget, keep the current focused widget and
