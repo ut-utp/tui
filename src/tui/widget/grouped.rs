@@ -322,19 +322,22 @@ where
                             self.propagate_to_focused(event, data)
                         } else {
                             if let Some(idx) = new_focused_idx {
-                                if self.widgets[idx].widget.update(event, data) /*&& self.widgets[idx].widget.update(Focus(FocusEvent::GotFocus), data)*/ {
+                                if self.widgets[idx].widget.update(event, data) {
                                     // If the widget accepted focus, it's now our
                                     // focused widget:
                                     let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
                                     self.focused = new_focused_idx;
 
-                                    // Give it the event:
-                                    // self.propagate_to_focused(event, data)
+                                    // TODO: this might makes it impossible
+                                    // for widgets that want to keep track of
+                                    // their focus themselves to actually do so.
+                                    // let _ = self.propagate_to_focused(Focus(FocusEvent::GotFocus), data);
+
                                     true
                                 } else {
                                     // The widget did not accept focus, so let's
                                     // return false (and drop the event).
-                                    self.widgets[idx].widget.update(Focus(FocusEvent::LostFocus), data);
+                                    let _ = self.widgets[idx].widget.update(Focus(FocusEvent::LostFocus), data);
                                     false
                                 }
                             } else {
