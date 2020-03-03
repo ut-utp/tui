@@ -11,17 +11,19 @@
 
 use super::widget_impl_support::*;
 
-use tui::widgets::Tabs as TabsBar;
+pub use tui::widgets::Tabs as TabsBar;
 
-pub struct Tabs<'a, 'int, C, I, O, B>
+pub struct Tabs<'a, 'int, C, I, O, B, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     B: Backend,
+    F: Fn() -> TabsBar<'a, String>,
 {
-    /// Template `TabsBar` instance that gives us styling and dividers and such.
-    tabs_bar: TabsBar<'a, String>,
+    /// Function that produces a template `TabsBar` instance that gives us
+    /// styling and dividers and such.
+    tabs_bar_func: Option<F>,
     /// The titles of the tabs.
     titles: Vec<String>,
     /// The actual tabs.
@@ -30,18 +32,19 @@ where
     current_tab: usize,
 }
 
-impl<'a, 'int, C, I, O, B> Tabs<'a, 'int, C, I, O, B>
+impl<'a, 'int, C, I, O, B, F> Tabs<'a, 'int, C, I, O, B, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     B: Backend,
+    F: Fn() -> TabsBar<'a, String>,
 {
     // This style of constructor is there to ensure that there's at least one
     // tab.
     pub fn new<W: Widget<'a, 'int, C, I, O, B> + 'a, S: ToString>(first_tab: W, title: S) -> Self {
         Self {
-            tabs_bar: TabsBar::default(),
+            tabs_bar_func: None,
             titles: vec![title.to_string()],
             tabs: vec![Box::new(first_tab)],
             current_tab: 0,
@@ -55,8 +58,8 @@ where
         self
     }
 
-    pub fn with_tabs_bar(mut self, bar: TabsBar<'a, String>) -> Self {
-        self.tabs_bar = bar;
+    pub fn with_tabs_bar(mut self, func: F) -> Self {
+        self.tabs_bar_func = Some(func);
         self
     }
 
@@ -73,44 +76,51 @@ where
         }
     }
 
+    fn tabs_bar(&self) -> TabsBar<'_, String> {
+        if let Some(ref f) = self.tabs_bar_func {
+            f()
+        } else {
+            TabsBar::default()
+        }
+        .titles(self.titles.as_ref())
+        .select(self.current_tab)
+    }
+
     fn propagate(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
         self.tabs[self.current_tab].update(event, data)
     }
 }
 
-impl<'a, 'int, C, I, O, B> TuiWidget for Tabs<'a, 'int, C, I, O, B>
+impl<'a, 'int, C, I, O, B, F> TuiWidget for Tabs<'a, 'int, C, I, O, B, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     B: Backend,
+    F: Fn() -> TabsBar<'a, String>,
 {
     fn draw(&mut self, area: Rect, buf: &mut Buffer) {
         // Shouldn't actually be called, but just in case:
         // (note: if there are Widgets within our tabs this will be A Problem)
         let (bar, rest) = self.area_split(area);
 
-        self.tabs_bar.draw(bar, buf);
+        self.tabs_bar().draw(bar, buf);
         TuiWidget::draw(&mut *self.tabs[self.current_tab], rest, buf);
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Tabs<'a, 'int, C, I, O, B>
+impl<'a, 'int, C, I, O, B, F> Widget<'a, 'int, C, I, O, B> for Tabs<'a, 'int, C, I, O, B, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     B: Backend,
+    F: Fn() -> TabsBar<'a, String>,
 {
     fn draw(&mut self, sim: &C, area: Rect, buf: &mut Buffer) {
         let (bar, rest) = self.area_split(area);
 
-        self.tabs_bar
-            .clone()
-            .titles(self.titles.as_ref())
-            .select(self.current_tab)
-            .draw(bar, buf);
-
+        self.tabs_bar().draw(bar, buf);
         Widget::draw(&mut *self.tabs[self.current_tab], sim, rest, buf)
     }
 
