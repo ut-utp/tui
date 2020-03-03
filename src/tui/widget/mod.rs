@@ -40,8 +40,8 @@ where
     /// need a [`Control`] instance need not override the default impl.
     ///
     /// [`Control`]: `lc3_traits::control::Control`
-    fn draw(&mut self, _sim: &C, rect: Rect, buffer: &mut Buffer) {
-        TuiWidget::draw(self, rect, buffer)
+    fn draw(&mut self, _sim: &C, area: Rect, buf: &mut Buffer) {
+        TuiWidget::draw(self, area, buf)
     }
 
     fn render<'s>(&'s mut self, sim: &'s C, f: &mut Frame<'_, B>, area: Rect) {

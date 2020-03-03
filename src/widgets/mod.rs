@@ -12,8 +12,12 @@ pub(in self) mod widget_impl_support {
 
     pub use tui::backend::Backend;
     pub use tui::buffer::Buffer;
-    pub use tui::layout::Rect;
+    pub use tui::layout::{Rect, Layout, Direction, Constraint};
+    pub use crossterm::event::{KeyEvent, KeyCode, KeyModifiers, MouseEvent, MouseButton};
 }
 
 mod empty;
 pub use empty::*;
+
+mod tabs;
+pub use tabs::*;
