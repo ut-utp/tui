@@ -96,8 +96,12 @@ where
 
     fn switch_to_tab(&mut self, data: &mut TuiData<'a, 'int, C, I, O>, idx: usize) -> bool {
         if idx < self.tabs.len() {
-            self.current_tab = idx;
-            let _ = self.propagate(WidgetEvent::Focus(FocusEvent::GotFocus), data);
+            // Only send a focus event if we are actually switching to this tab:
+            if self.current_tab != idx {
+                self.current_tab = idx;
+                let _ = self.propagate(WidgetEvent::Focus(FocusEvent::GotFocus), data);
+            }
+
             true
         } else {
             false
