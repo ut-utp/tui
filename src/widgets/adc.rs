@@ -6,14 +6,14 @@ use super::widget_impl_support::*;
 use tui::widgets::{Text as TuiText, Paragraph};
 use tui::style::{Color, Style};
 use tui::layout::Alignment;
-use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
+use lc3_traits::peripherals::adc::{AdcPin, AdcState};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Gpio {
+pub struct Adc {
     pub focusable: bool,
 }
 
-impl Default for Gpio {
+impl Default for Adc {
     fn default() -> Self {
         Self {
             focusable: false,
@@ -21,20 +21,20 @@ impl Default for Gpio {
     }
 }
 
-impl Gpio {
+impl Adc {
     pub fn focusable(mut self, focusable: bool) -> Self {
         self.focusable = focusable;
         self
     }
 }
 
-impl TuiWidget for Gpio {
+impl TuiWidget for Adc {
     fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
         unimplemented!("Don't call this! We need TuiData to draw!")
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Gpio
+impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Adc
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -43,12 +43,12 @@ where
 {
 
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-        let gpio_states = data.sim.get_gpio_states();
-        let gpioin = data.sim.get_gpio_readings(); 
+        let adc_states = data.sim.get_adc_states();
+        let adcin = data.sim.get_adc_readings(); 
 
 
         let text = [
-            TuiText::styled("GPIO 0: \nGPIO 1: \nGPIO 2: \nGPIO 3: \n", Style::default().fg(Color::Gray)),
+            TuiText::styled("ADC 0: \nADC 1: \nADC 2: \n", Style::default().fg(Color::Gray)),
         ];
 
         let mut para = Paragraph::new(text.iter())
@@ -61,18 +61,17 @@ where
 
         let mut s1 = String::from("");
 
-        let gpio_pins_1 = [GpioPin::G0, GpioPin::G1, GpioPin::G2, GpioPin::G3];
-        let gpio_pins_2 = [GpioPin::G4, GpioPin::G5, GpioPin::G6, GpioPin::G7];
-        //let gpio_pins_2 = [GpioPin::G0, GpioPin::G1, GpioPin::G2, GpioPin::G3, GpioPin::G4, GpioPin::G5, GpioPin::G6, GpioPin::G7];
-        for i in 0..4 {
-            match gpio_states[gpio_pins_1[i]]{
-                GpioState::Disabled => {
+        let adc_pins_1 = [AdcPin::A0, AdcPin::A1, AdcPin::A2];
+        let adc_pins_2 = [AdcPin::A3, AdcPin::A4, AdcPin::A5];
+        for i in 0..3 {
+            match adc_states[adc_pins_1[i]]{
+                AdcState::Disabled => {
                     let disabled_string = "Disabled";
                     s1.push_str(&format!("{}\n", 
                     disabled_string, ));
                 }
                 _ => {
-                    match gpioin[gpio_pins_1[i]] {
+                    match adcin[adc_pins_1[i]] {
                         Ok(val) => {
                                 s1.push_str(&format!(
                                 "{}\n",
@@ -104,7 +103,7 @@ where
 
         
         let text = [
-            TuiText::styled("GPIO 4: \nGPIO 5: \nGPIO 6: \nGPIO 7: \n", Style::default().fg(Color::Gray)),
+            TuiText::styled("ADC 3: \nADC 4: \nADC 5: \n", Style::default().fg(Color::Gray)),
             ];
         
         let mut para = Paragraph::new(text.iter())
@@ -118,15 +117,15 @@ where
 
 
 
-            for i in 0..4 {
-                match gpio_states[gpio_pins_2[i]]{
-                    GpioState::Disabled => {
+            for i in 0..3 {
+                match adc_states[adc_pins_2[i]]{
+                    AdcState::Disabled => {
                         let disabled_string = "Disabled";
                         s2.push_str(&format!("{}\n", 
                         disabled_string, ));
                     }
                     _ => {
-                        match gpioin[gpio_pins_2[i]] {
+                        match adcin[adc_pins_2[i]] {
                             Ok(val) => {
                                     s2.push_str(&format!(
                                     "{}\n",
@@ -159,7 +158,6 @@ where
 
     }
 
-    
 
 
     fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {

@@ -44,5 +44,15 @@ pub use console::*;
 mod gpio;
 pub use gpio::*;
 
+mod adc;
+pub use adc::*;
+
+mod pwm;
+pub use pwm::*;
+
+mod timers;
+pub use timers::*;
+
+
 use tui::layout::Rect;
 
