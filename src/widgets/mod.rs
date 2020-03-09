@@ -3,7 +3,7 @@
 //! [`Widget`]: crate::tui::widget::Widget
 
 pub(in self) mod widget_impl_support {
-    pub use crate::tui::widget::{TuiWidget, Widget};
+    pub use crate::tui::widget::{TuiWidget, Widget, increment, Axis};
     pub use crate::tui::TuiData;
     pub use crate::tui::events::{WidgetEvent, FocusEvent};
     pub use crate::debug::in_debug_mode;
@@ -25,3 +25,24 @@ pub use tabs::*;
 
 mod text;
 pub use text::*;
+
+mod footer;
+pub use footer::*;
+
+mod help;
+pub use help::*;
+
+mod mem;
+pub use mem::*;
+
+mod regs;
+pub use regs::*;
+
+mod console;
+pub use console::*;
+
+mod gpio;
+pub use gpio::*;
+
+use tui::layout::Rect;
+

@@ -24,6 +24,12 @@ mod single;
 mod grouped;
 pub use grouped::Widgets;
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Axis {
+    X,
+    Y,
+}
+
 pub trait Widget<'a, 'int, C, I, O, B>: TuiWidget
 where
     C: Control + ?Sized + 'a,
@@ -67,4 +73,18 @@ where
     // This is useful for events that must be handled only once (i.e. changing
     // which widget is currently focused).
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool;
+}
+
+pub fn increment(offset: u16, axis: Axis, area: Rect) -> Rect {
+    if axis == Axis::X {
+        if offset > area.width {
+            let offset = area.width-1;
+        }
+        return Rect::new(area.x+offset, area.y, area.width.saturating_sub(offset), area.height);
+    } else {
+        if offset > area.height {
+            let offset = area.height-1;
+        }
+        return Rect::new(area.x, area.y+offset, area.width, area.height.saturating_sub(offset));
+    }   
 }

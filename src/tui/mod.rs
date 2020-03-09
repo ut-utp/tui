@@ -8,9 +8,12 @@ use lc3_shims::peripherals::SourceShim;
 use lc3_traits::control::rpc::{EventFuture, SyncEventFutureSharedState};
 use lc3_traits::control::control::Control;
 
+use lc3_isa::Addr;
+
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::Duration;
+use std::collections::HashMap;
 
 pub mod run;
 pub mod events;
@@ -33,6 +36,8 @@ where
     pub(in crate) program_path: Option<PathBuf>,
 
     pub(in crate) log: Option<String>,
+    pub(in crate) bp: HashMap<Addr, usize>,
+    pub(in crate) wp: HashMap<Addr, usize>,
 }
 
 #[allow(explicit_outlives_requirements)]
@@ -65,6 +70,9 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 } else {
                     None
                 },
+
+                bp: HashMap::new(),
+                wp: HashMap::new(),
             },
 
             update_period: Duration::from_millis(250),

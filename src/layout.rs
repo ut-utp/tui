@@ -42,33 +42,55 @@ where
         .border_style(Style::default().fg(Color::White))
         .style(Style::default().bg(Color::Reset));
     let empty = Empty::default();
-
-    let mut root = Widgets::new(horz.clone());
+    
+    let mut root = Widgets::new(vert.clone());
+    let mut top = Widgets::new(horz.clone());
 
     let mut left = Widgets::new(vert.clone());
-    let mut top_left = Widgets::new(vert.clone());
+    let footer = Footer::default();
+    let mem = Mem::default();
+    let regs = Regs::default();
+    let console = Console::default();
+    let mut io = Widgets::new(vert.clone());
+    //let mut top_left = Widgets::new(vert.clone());
 
-    let _ = top_left
-        .add_widget(Constraint::Percentage(33), empty.focusable(true), Some(b.clone().title("Top Left One")))
-        .add_widget(Constraint::Percentage(33), empty.focusable(false), Some(b.clone().title("Top Left Two -- Unfocusable")))
-        .add_widget(Constraint::Percentage(34), empty.focusable(true), Some(b.clone().title("Top Left Three")));
-
-    let _ = left.add_widget(Constraint::Percentage(50), top_left, Some(b.clone().title("Top Left")))
-        .add_widget(Constraint::Percentage(50), empty.focusable(false), Some(b.clone().title("Bottom Left -- Unfocusable")));
+    let _ = left.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory")))
+        .add_widget(Constraint::Percentage(20), regs, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Registers + PC+ PSR").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
 
     let mut right = Widgets::new(vert.clone());
-    let _ = right.add_widget(Constraint::Percentage(50), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Top Right")))
-        .add_widget(Constraint::Percentage(50), empty.focusable(true), Some(b.clone().title("Bottom Right")));
 
-    let _ = root.add_widget(Constraint::Percentage(40), left, None)
-        .add_widget(Constraint::Percentage(10), empty, None)
-        .add_widget(Constraint::Percentage(10), empty, None)
-        .add_widget(Constraint::Percentage(40), right, None);
+    let _ = io.add_widget(Constraint::Percentage(44), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))).title("GPIO")))
+        .add_widget(Constraint::Percentage(22), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))).title("ADC")))
+        .add_widget(Constraint::Percentage(12), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))).title("PWM")))
+        .add_widget(Constraint::Percentage(22), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))).title("Timers")));
+
+    let _ = right.add_widget(Constraint::Percentage(60), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console")))
+        .add_widget(Constraint::Percentage(40), io, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("IO")));
+
+    let _ = top.add_widget(Constraint::Percentage(50), left, None)
+        .add_widget(Constraint::Percentage(50), right, None);
+
+    let _ = root.add_widget(Constraint::Percentage(80), top, None)
+        .add_widget(Constraint::Percentage(5), empty, None)
+        .add_widget(Constraint::Percentage(15), footer, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")));
+
+    let mut help = Widgets::new(horz.clone());
+    let mut middle = Widgets::new(vert.clone());
+    let help_text = Help::default();
+
+    let _ = middle.add_widget(Constraint::Percentage(20), empty.focusable(false), None)
+        .add_widget(Constraint::Percentage(60), help_text, Some(b.clone().border_style(Style::default().fg(Color::Yellow)).title("Help")))
+        .add_widget(Constraint::Percentage(20), empty.focusable(false), None);
+
+    let _ = help.add_widget(Constraint::Percentage(20), empty.focusable(false), None)
+        .add_widget(Constraint::Percentage(60), middle, None)
+        .add_widget(Constraint::Percentage(20), empty.focusable(false), None);
 
     let mut tabs = Tabs::new(root, "Root")
         .add(empty, "Foo")
         .add(empty, "Bar")
         .add(empty, "Baz")
+        .add(help, "Help")
         .with_tabs_bar(|| {
             TabsBar::default()
                 .block(Block::default().title("Tabs").borders(Borders::ALL).border_style(Style::default().fg(Color::Blue)))
