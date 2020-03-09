@@ -5933,9 +5933,9 @@ warning: unused imports: `Addr`, `Instruction`, `Reg`, `Word`
    |               ^^^^  ^^^^^^^^^^^  ^^^  ^^^^
 
 warning: unused import: `tui::layout::Rect`
-  --> tui/src/widgets/mod.rs:57:5
+  --> tui/src/widgets/mod.rs:60:5
    |
-57 | use tui::layout::Rect;
+60 | use tui::layout::Rect;
    |     ^^^^^^^^^^^^^^^^^
 
 warning: unused import: `MouseButton`
@@ -5992,13 +5992,6 @@ warning: unused variable: `p0`
    |
 63 |         let p0 = match pwm_state[PwmPin::P0]{
    |             ^^ help: consider prefixing with an underscore: `_p0`
-   |
-note: the lint level is defined here
-  --> tui/src/lib.rs:19:5
-   |
-19 |     unused,
-   |     ^^^^^^
-   = note: `#[warn(unused_variables)]` implied by `#[warn(unused)]`
 
 warning: unused variable: `time`
   --> tui/src/widgets/pwm.rs:68:31
@@ -6093,8 +6086,8 @@ warning: missing documentation for a function
 32  | |     C: Control + ?Sized + 'a,
 33  | |     I: InputSink + ?Sized + 'a,
 ...   |
-119 | |     tabs
-120 | | }
+122 | |     tabs
+123 | | }
     | |_^
 
 warning: missing documentation for a struct
@@ -6287,6 +6280,24 @@ warning: missing documentation for a method
   --> tui/src/widgets/timers.rs:25:5
    |
 25 |     pub fn focusable(mut self, focusable: bool) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/clock.rs:10:1
+   |
+10 | pub struct Clock {
+   | ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> tui/src/widgets/clock.rs:11:5
+   |
+11 |     pub focusable: bool,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/clock.rs:23:5
+   |
+23 |     pub fn focusable(mut self, focusable: bool) -> Self {
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: missing documentation for a method
@@ -6521,7 +6532,7 @@ warning: variable `Console` should have a snake case name
 47 |         let (Console, psr, pc) = Console_psr_pc;
    |              ^^^^^^^ help: convert the identifier to snake case (notice the capitalization): `console`
 
-    Finished dev [unoptimized + debuginfo] target(s) in 8.16s
+    Finished dev [unoptimized + debuginfo] target(s) in 5.20s
      Running `/Users/davidrollins/SrDesign/prototype/target/debug/tui`
 Focus(GotFocus)
 Focus(GotFocus)
@@ -6531,43 +6542,4 @@ Focus(GotFocus)
 Focus(GotFocus)
 Focus(GotFocus)
 Focus(GotFocus)
-Key(KeyEvent { code: Char(' '), modifiers: (empty) })
-Key(KeyEvent { code: Char(' '), modifiers: (empty) })
-Key(KeyEvent { code: Char(' '), modifiers: (empty) })
-Key(KeyEvent { code: Char(' '), modifiers: (empty) })
-Key(KeyEvent { code: Char(' '), modifiers: (empty) })
-Key(KeyEvent { code: Char('r'), modifiers: (empty) })
-Key(KeyEvent { code: Char('r'), modifiers: (empty) })
-Key(KeyEvent { code: Char('r'), modifiers: (empty) })
-Key(KeyEvent { code: Char(' '), modifiers: (empty) })
-Mouse(Down(Left, 45, 35, (empty)))
-Mouse(Up(Left, 45, 35, (empty)))
-Mouse(Down(Left, 49, 30, (empty)))
-Mouse(Up(Left, 49, 30, (empty)))
-Mouse(Down(Left, 49, 30, (empty)))
-Focus(LostFocus)
-Mouse(Down(Left, 40, 20, (empty)))
-Mouse(Up(Left, 40, 20, (empty)))
-Mouse(Down(Left, 40, 20, (empty)))
-Mouse(Up(Left, 40, 20, (empty)))
-Mouse(Down(Left, 83, 18, (empty)))
-Mouse(Up(Left, 83, 18, (empty)))
-Focus(LostFocus)
-Mouse(Down(Left, 73, 28, (empty)))
-Mouse(Up(Left, 73, 28, (empty)))
-Mouse(Down(Left, 73, 28, (empty)))
-Mouse(Up(Left, 73, 28, (empty)))
-Focus(LostFocus)
-Mouse(Down(Left, 47, 35, (empty)))
-Mouse(Up(Left, 47, 35, (empty)))
-Mouse(Down(Left, 51, 26, (empty)))
-Mouse(Up(Left, 51, 26, (empty)))
-Key(KeyEvent { code: Char('s'), modifiers: (empty) })
-Key(KeyEvent { code: Char('s'), modifiers: (empty) })
-Key(KeyEvent { code: Char('s'), modifiers: (empty) })
-Key(KeyEvent { code: Char('s'), modifiers: (empty) })
-Key(KeyEvent { code: Char('s'), modifiers: (empty) })
-Key(KeyEvent { code: Char('q'), modifiers: (empty) })
-Key(KeyEvent { code: Char('q'), modifiers: (empty) })
-Key(KeyEvent { code: Char('q'), modifiers: (empty) })
-Key(KeyEvent { code: Char('q'), modifiers: (empty) })
+Key(KeyEvent { code: Char('c'), modifiers: CONTROL })

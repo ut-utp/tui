@@ -53,6 +53,9 @@ pub use pwm::*;
 mod timers;
 pub use timers::*;
 
+mod clock;
+pub use clock::*;
+
 
 use tui::layout::Rect;
 
