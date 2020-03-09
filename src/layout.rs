@@ -59,10 +59,10 @@ where
 
     let mut right = Widgets::new(vert.clone());
 
-    let _ = io.add_widget(Constraint::Percentage(44), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))).title("GPIO")))
-        .add_widget(Constraint::Percentage(22), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))).title("ADC")))
-        .add_widget(Constraint::Percentage(12), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))).title("PWM")))
-        .add_widget(Constraint::Percentage(22), empty.focusable(true), Some(b.clone().border_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))).title("Timers")));
+    let _ = io.add_widget(Constraint::Percentage(45), empty.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("GPIO").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(20), empty.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("ADC").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(15), empty.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("PWM").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(20), empty.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Timers").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
 
     let _ = right.add_widget(Constraint::Percentage(60), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console")))
         .add_widget(Constraint::Percentage(40), io, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("IO")));
@@ -70,8 +70,7 @@ where
     let _ = top.add_widget(Constraint::Percentage(50), left, None)
         .add_widget(Constraint::Percentage(50), right, None);
 
-    let _ = root.add_widget(Constraint::Percentage(80), top, None)
-        .add_widget(Constraint::Percentage(5), empty, None)
+    let _ = root.add_widget(Constraint::Percentage(85), top, None)
         .add_widget(Constraint::Percentage(15), footer, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")));
 
     let mut help = Widgets::new(horz.clone());

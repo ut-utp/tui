@@ -76,14 +76,15 @@ where
 }
 
 pub fn increment(offset: u16, axis: Axis, area: Rect) -> Rect {
+    let mut offset = offset;
     if axis == Axis::X {
         if offset > area.width {
-            let offset = area.width-1;
+            offset = area.width;
         }
         return Rect::new(area.x+offset, area.y, area.width.saturating_sub(offset), area.height);
     } else {
         if offset > area.height {
-            let offset = area.height-1;
+            offset = area.height;
         }
         return Rect::new(area.x, area.y+offset, area.width, area.height.saturating_sub(offset));
     }   

@@ -11,20 +11,18 @@ use tui::layout::Alignment;
 use lc3_isa::{Addr, Instruction, Reg, Word};
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Console 
 {
-    pub focusable: bool,
-    //history: String,
-    //input: String,
+    history: String,
+    input: String,
 }
 
 impl Default for Console {
     fn default() -> Self {
         Self {
-            focusable: true,
-            //history: String::from(""),
-            //input: String::from(""),
+            history: String::from(""),
+            input: String::from(""),
         }
     }
 }
@@ -67,8 +65,15 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
-        para.draw(area, buf);
+        if area.height <= 1 {
+            para.draw(area, buf);
+        } else if area.height <= 4{
+            let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
+            para.draw(area, buf);
+        } else {
+            let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
+            para.draw(area, buf);
+        }
 
         
     }
@@ -78,9 +83,12 @@ where
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
         match event {
-            Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
+            Focus(FocusEvent::GotFocus) => true,
+            Focus(FocusEvent::LostFocus) => true,
+            Mouse(MouseEvent::Up(_, _, _, _)) => true,
+            Mouse(MouseEvent::Down(_, _, _, _)) => true,
 
-            Key(KeyEvent { code: KeyCode::Char(_), modifiers: EMPTY }) => {
+            Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
                 //self.input.push_str("a");
                 true
             }

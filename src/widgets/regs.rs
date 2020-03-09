@@ -11,16 +11,14 @@ use tui::layout::Alignment;
 use lc3_isa::{Addr, Instruction, Reg, Word};
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Regs 
 {
-    pub focusable: bool,
 }
 
 impl Default for Regs {
     fn default() -> Self {
         Self {
-            focusable: true,
         }
     }
 }
@@ -114,7 +112,10 @@ where
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
         match event {
-            Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
+            Focus(FocusEvent::GotFocus) => true,
+            Focus(FocusEvent::LostFocus) => true,
+            Mouse(MouseEvent::Up(_, _, _, _)) => true,
+            Mouse(MouseEvent::Down(_, _, _, _)) => true,
             _ => false,
         }
     }

@@ -11,13 +11,11 @@ use tui::layout::Alignment;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Footer 
 {
-    pub focusable: bool,
 }
 
 impl Default for Footer {
     fn default() -> Self {
         Self {
-            focusable: true,
         }
     }
 }
@@ -80,8 +78,13 @@ where
     }
 
     fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+        use WidgetEvent::*;
+        
         match event {
-            WidgetEvent::Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
+            Focus(FocusEvent::GotFocus) => true,
+            Focus(FocusEvent::LostFocus) => true,
+            Mouse(MouseEvent::Up(_, _, _, _)) => true,
+            Mouse(MouseEvent::Down(_, _, _, _)) => true,
             _ => false,
         }
     }
