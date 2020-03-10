@@ -111,7 +111,7 @@ where
             TabsBar::default()
                 .block(Block::default().title("Tabs").borders(Borders::ALL).border_style(Style::default().fg(Color::Blue)))
                 .style(Style::default().fg(Color::White))
-                .highlight_style(Style::default().fg(Color::Cyan))
+                .highlight_style(Style::default().fg(Color::LightCyan))
                 // .divider(tui::symbols::DOT)
         });
 
@@ -123,7 +123,7 @@ where
             .add_widget(Constraint::Percentage(100), events, Some(b.clone().border_style(Style::default().fg(Color::Green)).title("Event Log")));
 
         tabs = tabs
-            .add(debug, "Debug Info");
+            .add(debug, "🐛 Debug Info");
     }
 
 

@@ -2,9 +2,7 @@
 
 use super::widget_impl_support::*;
 
-use tui::widgets::{Text as TuiText, Paragraph};
-use tui::style::{Color, Style};
-use tui::layout::Alignment;
+use tui::style::Color; // TODO: coloUr
 
 use std::convert::TryInto;
 
@@ -79,7 +77,7 @@ where
                 loc_arrow.push_str("-->\n");
             } else {
                 loc_arrow.push_str("\n");
-            } 
+            }
 
             if x == self.offset.wrapping_add(self.focus) {
                 pc_arrow.push_str("-->\n");

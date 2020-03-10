@@ -12,6 +12,7 @@ use tui::backend::Backend;
 use tui::buffer::Buffer;
 use tui::layout::{Layout, Direction, Constraint, Rect};
 use tui::widgets::Block;
+use tui::terminal::Terminal;
 use crossterm::event::{MouseEvent, MouseButton, KeyEvent, KeyCode, KeyModifiers};
 
 
@@ -103,23 +104,23 @@ where
     //
     // With this function it is possible that more than one widget handles the
     // event.
-    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
-        self.widgets.iter_mut().fold(false, |b, w| b | w.widget.update(event, data))
+    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+        self.widgets.iter_mut().fold(false, |b, w| b | w.widget.update(event, data, terminal))
     }
 
     // Returns whether *any* widget handled the event.
     //
     // With this function at most one widget will handle the event.
-    fn propagate_until_handled(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
-        self.widgets.iter_mut().any(|w| w.widget.update(event, data))
+    fn propagate_until_handled(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+        self.widgets.iter_mut().any(|w| w.widget.update(event, data, terminal))
     }
 
     // Returns whether or not the focused Widget handled the event.
     //
     // If there is no focused widget, this returns false.
-    fn propagate_to_focused(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+    fn propagate_to_focused(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
         if let Some(idx) = self.focused {
-            self.widgets[idx].widget.update(event, data)
+            self.widgets[idx].widget.update(event, data, terminal)
         } else {
             false
         }
@@ -142,7 +143,7 @@ where
     O: OutputSource + ?Sized + 'a,
     B: Backend,
 {
-    fn handle_focus_key_event(&mut self, event: KeyEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+    fn handle_focus_key_event(&mut self, event: KeyEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
         use WidgetEvent::{Focus, Key};
 
         if let UP | DOWN | LEFT | RIGHT = event { } else {
@@ -159,7 +160,7 @@ where
             (Vertical, UP) | (Vertical, DOWN) |
             (Horizontal, LEFT) | (Horizontal, RIGHT) => {
                 // First let's check if our focused thing can handle this:
-                if self.propagate_to_focused(Key(event), data) {
+                if self.propagate_to_focused(Key(event), data, terminal) {
                     true
                 } else {
                     // If it couldn't, we're up:
@@ -178,11 +179,11 @@ where
                             .filter(|i| (0..self.widgets.len()).contains(i)) {
                                 focused_idx = n;
 
-                                let accepted = self.widgets[n].widget.update(Focus(FocusEvent::GotFocus), data);
+                                let accepted = self.widgets[n].widget.update(Focus(FocusEvent::GotFocus), data, terminal);
                                 if accepted {
                                     break Some(n)
                                 } else {
-                                    let _ = self.widgets[n].widget.update(Focus(FocusEvent::LostFocus), data);
+                                    let _ = self.widgets[n].widget.update(Focus(FocusEvent::LostFocus), data, terminal);
                                     continue; // try again
                                 }
                             } else {
@@ -193,11 +194,11 @@ where
 
                         match new_idx {
                             Some(i) => {
-                                let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
+                                let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data, terminal);
                                 // Already focused so no need to sent the focused
                                 // event.
                                 self.focused = Some(i);
-                                self.propagate_to_focused(Key(event), data)
+                                self.propagate_to_focused(Key(event), data, terminal)
                             }
                             None => false,
                         }
@@ -216,7 +217,7 @@ where
             // and return.
             (Vertical, LEFT) | (Vertical, RIGHT) |
             (Horizontal, UP) | (Horizontal, DOWN) => {
-                self.propagate_to_focused(Key(event), data)
+                self.propagate_to_focused(Key(event), data, terminal)
             }
             _ => unreachable!(), // Unnamed union types.. we long for ye
         }
@@ -250,7 +251,7 @@ where
         }
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
         // todo!()
 
         use WidgetEvent::*;
@@ -258,7 +259,7 @@ where
         match event {
             r @ Resize(_, _) => {
                 self.areas_valid = false;
-                self.propagate_to_all(r, data)
+                self.propagate_to_all(r, data, terminal)
             },
 
             Focus(FocusEvent::GotFocus) => {
@@ -266,13 +267,13 @@ where
                     'outer: loop {
                         // First try the last focused index (if we have one):
                         if let Some(idx) = self.previously_focused.take() {
-                            if self.widgets[idx].widget.update(event, data) {
+                            if self.widgets[idx].widget.update(event, data, terminal) {
                                 break Some(idx);
                             }
                         } else {
                             // If we don't cycle through what we've got:
                             for (idx, w) in self.widgets.iter_mut().enumerate() {
-                                if w.widget.update(event, data) {
+                                if w.widget.update(event, data, terminal) {
                                     break 'outer Some(idx)
                                 }
                             }
@@ -284,10 +285,10 @@ where
                     None
                 };
 
-                self.propagate_to_focused(event, data)
+                self.propagate_to_focused(event, data, terminal)
             },
             Focus(FocusEvent::LostFocus) => {
-                let _ = self.propagate_to_focused(event, data);
+                let _ = self.propagate_to_focused(event, data, terminal);
 
                 if let Some(idx) = self.focused.take() {
                     self.previously_focused = Some(idx);
@@ -319,13 +320,13 @@ where
                         if self.focused == new_focused_idx {
                             // If there isn't a change in focus, propagate the
                             // event and carry on.
-                            self.propagate_to_focused(event, data)
+                            self.propagate_to_focused(event, data, terminal)
                         } else {
                             if let Some(idx) = new_focused_idx {
-                                if self.widgets[idx].widget.update(event, data) {
+                                if self.widgets[idx].widget.update(event, data, terminal) {
                                     // If the widget accepted focus, it's now our
                                     // focused widget:
-                                    let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data);
+                                    let _ = self.propagate_to_focused(Focus(FocusEvent::LostFocus), data, terminal);
                                     self.focused = new_focused_idx;
 
                                     // TODO: this might makes it impossible
@@ -337,7 +338,7 @@ where
                                 } else {
                                     // The widget did not accept focus, so let's
                                     // return false (and drop the event).
-                                    let _ = self.widgets[idx].widget.update(Focus(FocusEvent::LostFocus), data);
+                                    let _ = self.widgets[idx].widget.update(Focus(FocusEvent::LostFocus), data, terminal);
                                     false
                                 }
                             } else {
@@ -351,16 +352,16 @@ where
                     Drag(_, _, _, _) => { /* ignore drag events! */ false },
                     ScrollDown(_, _, _) | ScrollUp(_, _, _) => {
                         // Just propagate scroll events:
-                        self.propagate_to_focused(event, data)
+                        self.propagate_to_focused(event, data, terminal)
                     }
                 }
             }
 
             Key(e) => match e {
-                UP | DOWN | LEFT | RIGHT => self.handle_focus_key_event(e, data),
+                UP | DOWN | LEFT | RIGHT => self.handle_focus_key_event(e, data, terminal),
 
                 // For events that don't change the focus, just propagate:
-                _ => self.propagate_to_focused(event, data),
+                _ => self.propagate_to_focused(event, data, terminal),
             }
         }
     }
