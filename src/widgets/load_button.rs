@@ -2,10 +2,13 @@
 
 use super::widget_impl_support::*;
 
-use lc3_traits::control::load::{load_whole_memory_dump, Progress};
+use lc3_traits::control::load::{load_whole_memory_dump, Progress, LoadMemoryProgress};
 
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
+use std::sync::mpsc;
+
+use crossbeam::thread::scope;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum Attempt {
@@ -52,6 +55,18 @@ impl LoadButton {
         }
     }
 
+    fn split_for_text_and_gauge(area: Rect) -> (Rect, Rect) {
+        if let [text, gauge] = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(66), Constraint::Percentage(34)].as_ref())
+            .split(area)
+            [..] {
+            (text, gauge)
+        } else {
+            unreachable!()
+        }
+    }
+
     fn load<'a, C, B>(&self, sim: &mut C, terminal: &mut Terminal<B>, path: &PathBuf) -> Result<String, String>
     where
         C: Control + ?Sized + 'a,
@@ -67,15 +82,71 @@ impl LoadButton {
             .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", p, e))?;
 
 
-        // TODO: scoped thread to display progress!
-        let progress = Progress::new();
-        let _ = load_whole_memory_dump(sim, &shim.into(), Some(&progress))
-            .map_err(|e| format!("Error during load: {:?}", e))?;
-            // .map(|()| format!("Successful Load (`{}`)!", p))
+        // // TODO: scoped thread to display progress!
+        // let _ = load_whole_memory_dump(sim, &shim.into(), Some(&progress))
+        //     .map_err(|e| format!("Error during load: {:?}", e))?;
 
 
+        scope(|s| {
+            let (send, recv) = mpsc::channel();
+            let progress = Progress::new();
 
-        Ok(format!("Successful Load (`{}`)!", p))
+            let handle = s.spawn(move |_| {
+                let res = load_whole_memory_dump(sim, &shim.into(), Some(&progress));
+
+                send.send(()).unwrap();
+                res
+            });
+
+            loop {
+                match recv.try_recv() {
+                    Ok(()) => break handle.join().unwrap(),
+                    Err(mpsc::TryRecvError::Empty) => {
+                        // Update our progress bar:
+                        if let Some(area) = self.area {
+                            let (_, area) = Self::split_for_text_and_gauge(area);
+
+                            let chunks = Layout::default()
+                                .direction(Direction::Vertical)
+                                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                                .split(area);
+
+                            let (gauge, info) = (chunks[0], chunks[1]);
+
+                            terminal.draw(|f| {
+                                Gauge::default()
+                                    // .block(Block::default().borders(Borders::ALL).title("Progress"))
+                                    .style(Style::default().fg(Colour::Green).bg(Colour::Black).modifier(Modifier::ITALIC | Modifier::BOLD))
+                                    .ratio(progress.progress().into())
+                                    .render(&mut f, gauge);
+
+                                let success_rate = format!("{:.2}%", progress.success_rate());
+                                let time_remaining = progress
+                                    .estimate_time_remaining()
+                                    .and_then(|d| chrono::Duration::from_std(d).ok())
+                                    .map(|d| format!("{}", d))
+                                    .unwrap_or("Unknown".to_string());
+
+                                Paragraph::new([
+                                        TuiText::styled(format!("{} remaining", time_remaining), Style::default().fg(Colour::Green)),
+                                        TuiText::styled(format!(" // "), Style::default().fg(Colour::Gray)),
+                                        TuiText::styled(format!("{} success", success_rate), Style::default().fg(Colour::Magenta)),
+                                    ].iter())
+                                    .style(Style::default().fg(Colour::White))
+                                    .alignment(Alignment::Center)
+                                    .wrap(true)
+                                    .render(&mut f, info);
+                            }).unwrap();
+                        }
+
+                        std::thread::sleep(Duration::from_millis(30))
+                    },
+                    Err(mpsc::TryRecvError::Disconnected) => panic!(),
+                }
+            }
+        }).unwrap()
+        .map_err(|e| format!("Error during load: {:?}", e))
+        .map(|_| format!("Successful Load (`{}`)!", p))
     }
 }
 
@@ -120,29 +191,26 @@ where
                 let msg1 = TuiText::styled("Load Program\n", Style::default().fg(Colour::Cyan));
                 let msg2 = TuiText::styled(format!("(from: `{}`)", file_name), Style::default().fg(Colour::Gray));
 
-                let chunks = Layout::default()
-                    .direction(Direction::Vertical)
-                    .constraints([Constraint::Percentage(66), Constraint::Percentage(34)].as_ref())
-                    .split(area);
+                let (text, gauge) = Self::split_for_text_and_gauge(area);
 
                 Paragraph::new([msg1, msg2].iter())
                     .style(Style::default().fg(Colour::White))
                     .alignment(Alignment::Center)
                     .wrap(true)
-                    .draw(chunks[0], buf);
+                    .draw(text, buf);
 
                 match &self.attempt {
                     Some(attempt) => Paragraph::new([attempt.message()].iter())
                         .style(Style::default())
                         .alignment(Alignment::Center)
                         .wrap(true)
-                        .draw(chunks[1], buf),
+                        .draw(gauge, buf),
 
                     None => Gauge::default()
                         // .block(Block::default().borders(Borders::ALL))
                         .style(Style::default().fg(Colour::Cyan).modifier(Modifier::ITALIC | Modifier::DIM))
                         .percent(0)
-                        .draw(chunks[1], buf)
+                        .draw(gauge, buf)
                 }
             }
         }
