@@ -92,10 +92,12 @@ where
             }
 
             Key(KeyEvent { code: KeyCode::PageUp, modifiers: EMPTY }) => {
+                // TODO: actually use the current page size (i.e. height) for this
                 self.offset = self.offset.saturating_sub(50);
                 true
             }
             Key(KeyEvent { code: KeyCode::PageDown, modifiers: EMPTY }) => {
+                // TODO: actually use the current page size (i.e. height) for this
                 self.offset = self.offset.saturating_add(50);
                 true
             }
