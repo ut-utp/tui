@@ -82,15 +82,10 @@ impl LoadButton {
         let shim = lc3_shims::memory::FileBackedMemoryShim::from_existing_file(path)
             .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", p, e))?;
 
-
-        // // TODO: scoped thread to display progress!
-        // let _ = load_whole_memory_dump(sim, &shim.into(), Some(&progress))
-        //     .map_err(|e| format!("Error during load: {:?}", e))?;
-
+        let progress = Progress::new_with_time().unwrap();
 
         scope(|s| {
             let (send, recv) = mpsc::channel();
-            let progress = Progress::new();
 
             let handle = s.spawn(|_| {
 
@@ -123,7 +118,7 @@ impl LoadButton {
                                         .ratio(progress.progress().max(0.0f32).into())
                                         .render(&mut f, gauge);
 
-                                    let success_rate = format!("{:.2}%", progress.success_rate());
+                                    let success_rate = format!("{:.2}%", progress.success_rate() * 100.0);
 
                                     let time_remaining = progress
                                         .estimate_time_remaining()
@@ -132,7 +127,7 @@ impl LoadButton {
                                         .unwrap_or("Unknown".to_string());
 
                                     Paragraph::new([
-                                            TuiText::styled(format!("{} remaining", time_remaining), Style::default().fg(Colour::Green)),
+                                            TuiText::styled(format!("{}", time_remaining), Style::default().fg(Colour::Green)),
                                             TuiText::styled(format!(" // "), Style::default().fg(Colour::Gray)),
                                             TuiText::styled(format!("{} success", success_rate), Style::default().fg(Colour::Magenta)),
                                         ].iter())
