@@ -245,21 +245,58 @@ where
 
     fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
         use WidgetEvent::*;
+
+        fn set_bp<'a, 'int, C, I, O>(offset: u16, _data: &mut TuiData<'a, 'int, C, I, O>)
+        where
+            C: Control + ?Sized + 'a,
+            I: InputSink + ?Sized + 'a,
+            O: OutputSource + ?Sized + 'a,  
+        {
+            let cur_addr = _data.sim.get_pc().wrapping_sub(offset);
+            match _data.bp.remove(&cur_addr) {
+                Some(val) => {_data.sim.unset_breakpoint(val);},
+                None => {match _data.sim.set_breakpoint(cur_addr) {
+                    Ok(val) => {_data.bp.insert(cur_addr, val);},
+                    Err(_e) => {},
+                }},
+            };
+        }
+
+        fn set_wp<'a, 'int, C, I, O>(offset: u16, _data: &mut TuiData<'a, 'int, C, I, O>)
+        where
+            C: Control + ?Sized + 'a,
+            I: InputSink + ?Sized + 'a,
+            O: OutputSource + ?Sized + 'a,  
+        {
+            let cur_addr = _data.sim.get_pc().wrapping_sub(offset);
+            match _data.wp.remove(&cur_addr) {
+                Some(val) => {_data.sim.unset_memory_watchpoint(val);},
+                None => {match _data.sim.set_memory_watchpoint(cur_addr) {
+                    Ok(val) => {_data.wp.insert(cur_addr, val);},
+                    Err(_e) => {},
+                }},
+            };
+        }
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
         match event {
             Focus(FocusEvent::GotFocus) => true,
             Focus(FocusEvent::LostFocus) => true,
             Mouse(MouseEvent::Up(button, x, y, _)) => {
-                let x = x.wrapping_sub(self.position.x);
-                let y = y.wrapping_sub(self.position.y).wrapping_sub(2);
-                if (15 <= x) && (x <= 55) {
-                    self.offset = self.offset.wrapping_sub(y);
-                }
-                eprintln!("{}", y);
                 true
             }
+
             Mouse(MouseEvent::Down(button, x, y, _)) => {
+                let x = x.wrapping_sub(self.position.x);
+                let y = y.wrapping_sub(self.position.y);
+                if (4 <= x) && (x <= 8) {
+                    set_bp(self.focus.wrapping_sub(y).wrapping_add(self.offset), _data);
+                } else if (9 <= x) && (x <= 13) {
+                    set_wp(self.focus.wrapping_sub(y).wrapping_add(self.offset), _data)
+                } else if (15 <= x) && (x <= 55) {
+                    self.focus = self.focus.wrapping_add(self.offset).wrapping_sub(y);
+                    self.offset = y;
+                }
                 true
             }
 
@@ -312,27 +349,12 @@ where
             Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
                 match c {
                     'w' => {
-                        let cur_addr = _data.sim.get_pc().wrapping_sub(self.offset).wrapping_add(2);
-                        match _data.wp.remove(&cur_addr) {
-                            Some(val) => {_data.sim.unset_memory_watchpoint(val);},
-                            None => {match _data.sim.set_memory_watchpoint(cur_addr) {
-                                Ok(val) => {_data.wp.insert(cur_addr, val);},
-                                Err(_e) => {},
-                            }},
-                        };
+                        set_wp(self.focus, _data);
                         true
                     }
 
                     'b' => {
-                        let cur_addr = _data.sim.get_pc().wrapping_sub(self.offset).wrapping_add(2);
-                        match _data.bp.remove(&cur_addr) {
-                            Some(val) => {_data.sim.unset_breakpoint(val);},
-                            None => {match _data.sim.set_breakpoint(cur_addr) {
-                                Ok(val) => {_data.bp.insert(cur_addr, val);},
-                                Err(_e) => {},
-                            }},
-                        };
-                        self.offset = _data.sim.get_pc().wrapping_sub(cur_addr - 2);
+                        set_bp(self.focus, _data);
                         true
                     }
 

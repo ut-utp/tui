@@ -56,6 +56,8 @@ pub use timers::*;
 mod clock;
 pub use clock::*;
 
+mod button;
+pub use button::*;
 
 use tui::layout::Rect;
 
