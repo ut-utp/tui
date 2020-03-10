@@ -24,7 +24,8 @@ use std::io::{Stdout, Write};
 impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSource + ?Sized + 'a> Tui<'a, 'int, C, I, O> {
     pub fn run_with_custom_layout<B: Backend>(mut self, term: &mut Terminal<B>, mut root: impl Widget<'a, 'int, C, I, O, B>) -> Result<()>
     where
-        B: ExecutableCommand<&'static str>
+        B: ExecutableCommand<&'static str>,
+        Terminal<B>: Send,
     {
         let event_recv = events::start_event_threads(term.backend_mut(), self.update_period)?;
 
@@ -86,7 +87,8 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
     // Run with default layout and a backend of your choosing.
     pub fn run<B: Backend>(self, term: &mut Terminal<B>) -> Result<()>
     where
-        B: ExecutableCommand<&'static str>
+        B: ExecutableCommand<&'static str>,
+        Terminal<B>: Send,
     {
         self.run_with_custom_layout(term, crate::layout::layout())
     }

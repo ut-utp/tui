@@ -71,6 +71,7 @@ impl LoadButton {
     where
         C: Control + ?Sized + 'a,
         B: Backend,
+        Terminal<B>: Send,
     {
         let p = format!("{}", path.display());
 
@@ -91,59 +92,69 @@ impl LoadButton {
             let (send, recv) = mpsc::channel();
             let progress = Progress::new();
 
-            let handle = s.spawn(move |_| {
-                let res = load_whole_memory_dump(sim, &shim.into(), Some(&progress));
+            let handle = s.spawn(|_| {
 
-                send.send(()).unwrap();
-                res
+                let recv = (move || recv)();
+
+                loop {
+                    match recv.try_recv() {
+                        Ok(()) => break (),
+                        Err(mpsc::TryRecvError::Empty) => {
+                            // Update our progress bar:
+                            if let Some(area) = self.area {
+
+                                let (_, area) = Self::split_for_text_and_gauge(area);
+
+                                let chunks = Layout::default()
+                                    .direction(Direction::Vertical)
+                                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                                    .split(area);
+
+                                let (gauge, info) = (chunks[0], chunks[1]);
+
+                                terminal.draw(|mut f| {
+                                    if !f.size().intersects(area) {
+                                        return;
+                                    }
+
+                                    Gauge::default()
+                                        // .block(Block::default().borders(Borders::ALL).title("Progress"))
+                                        .style(Style::default().fg(Colour::Green).bg(Colour::Black).modifier(Modifier::ITALIC | Modifier::BOLD))
+                                        .ratio(progress.progress().max(0.0f32).into())
+                                        .render(&mut f, gauge);
+
+                                    let success_rate = format!("{:.2}%", progress.success_rate());
+
+                                    let time_remaining = progress
+                                        .estimate_time_remaining()
+                                        .and_then(|d| chrono::Duration::from_std(d).ok())
+                                        .map(|d| format!("{}", d))
+                                        .unwrap_or("Unknown".to_string());
+
+                                    Paragraph::new([
+                                            TuiText::styled(format!("{} remaining", time_remaining), Style::default().fg(Colour::Green)),
+                                            TuiText::styled(format!(" // "), Style::default().fg(Colour::Gray)),
+                                            TuiText::styled(format!("{} success", success_rate), Style::default().fg(Colour::Magenta)),
+                                        ].iter())
+                                        .style(Style::default().fg(Colour::White))
+                                        .alignment(Alignment::Center)
+                                        .wrap(true)
+                                        .render(&mut f, info);
+                                }).unwrap();
+                            }
+
+                            std::thread::sleep(Duration::from_millis(30))
+                        },
+                        Err(mpsc::TryRecvError::Disconnected) => panic!(),
+                    }
+                }
             });
 
-            loop {
-                match recv.try_recv() {
-                    Ok(()) => break handle.join().unwrap(),
-                    Err(mpsc::TryRecvError::Empty) => {
-                        // Update our progress bar:
-                        if let Some(area) = self.area {
-                            let (_, area) = Self::split_for_text_and_gauge(area);
+            let res = load_whole_memory_dump(sim, &shim.into(), Some(&progress));
 
-                            let chunks = Layout::default()
-                                .direction(Direction::Vertical)
-                                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                                .split(area);
-
-                            let (gauge, info) = (chunks[0], chunks[1]);
-
-                            terminal.draw(|f| {
-                                Gauge::default()
-                                    // .block(Block::default().borders(Borders::ALL).title("Progress"))
-                                    .style(Style::default().fg(Colour::Green).bg(Colour::Black).modifier(Modifier::ITALIC | Modifier::BOLD))
-                                    .ratio(progress.progress().into())
-                                    .render(&mut f, gauge);
-
-                                let success_rate = format!("{:.2}%", progress.success_rate());
-                                let time_remaining = progress
-                                    .estimate_time_remaining()
-                                    .and_then(|d| chrono::Duration::from_std(d).ok())
-                                    .map(|d| format!("{}", d))
-                                    .unwrap_or("Unknown".to_string());
-
-                                Paragraph::new([
-                                        TuiText::styled(format!("{} remaining", time_remaining), Style::default().fg(Colour::Green)),
-                                        TuiText::styled(format!(" // "), Style::default().fg(Colour::Gray)),
-                                        TuiText::styled(format!("{} success", success_rate), Style::default().fg(Colour::Magenta)),
-                                    ].iter())
-                                    .style(Style::default().fg(Colour::White))
-                                    .alignment(Alignment::Center)
-                                    .wrap(true)
-                                    .render(&mut f, info);
-                            }).unwrap();
-                        }
-
-                        std::thread::sleep(Duration::from_millis(30))
-                    },
-                    Err(mpsc::TryRecvError::Disconnected) => panic!(),
-                }
-            }
+            send.send(()).unwrap();
+            handle.join().unwrap();
+            res
         }).unwrap()
         .map_err(|e| format!("Error during load: {:?}", e))
         .map(|_| format!("Successful Load (`{}`)!", p))
@@ -162,6 +173,7 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     B: Backend,
+    Terminal<B>: Send,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         self.area = Some(area);

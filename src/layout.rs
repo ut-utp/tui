@@ -10,6 +10,7 @@ use lc3_traits::control::Control;
 use tui::backend::Backend;
 use tui::layout::{Layout, Direction, Constraint};
 use tui::widgets::{Block, Borders};
+use tui::terminal::Terminal;
 use tui::style::{Style, Color};
 
 // Returns the root widget for our layout.
@@ -23,6 +24,7 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     B: Backend,
+    Terminal<B>: Send,
 {
     layout_tabs()
 }
@@ -33,6 +35,7 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     B: Backend,
+    Terminal<B>: Send,
 {
     let horz = Layout::default().direction(Direction::Horizontal);
     let vert = Layout::default().direction(Direction::Vertical);
