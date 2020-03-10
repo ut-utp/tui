@@ -123,11 +123,17 @@ impl LoadButton {
                                     let time_remaining = progress
                                         .estimate_time_remaining()
                                         .and_then(|d| chrono::Duration::from_std(d).ok())
-                                        .map(|d| format!("{}", d))
+                                        .map(|d| {
+                                            if d.num_seconds() > 60 {
+                                                format!("{}m {}.{:03}s", d.num_minutes(), d.num_seconds() % 60, d.num_milliseconds() % 1000)
+                                            } else {
+                                                format!("{}.{:03}s", d.num_seconds(), d.num_milliseconds() % 1000)
+                                            }
+                                        })
                                         .unwrap_or("Unknown".to_string());
 
                                     Paragraph::new([
-                                            TuiText::styled(format!("{}", time_remaining), Style::default().fg(Colour::Green)),
+                                            TuiText::styled(format!("~{}", time_remaining), Style::default().fg(Colour::Green)),
                                             TuiText::styled(format!(" // "), Style::default().fg(Colour::Gray)),
                                             TuiText::styled(format!("{} success", success_rate), Style::default().fg(Colour::Magenta)),
                                         ].iter())
@@ -152,7 +158,7 @@ impl LoadButton {
             res
         }).unwrap()
         .map_err(|e| format!("Error during load: {:?}", e))
-        .map(|_| format!("Successful Load (`{}`)!", p))
+        .map(|_| format!("Successful Load (`{}`)! Finished in {}.", p, chrono::Duration::from_std(progress.time_elapsed().unwrap()).unwrap()))
     }
 }
 
@@ -231,7 +237,13 @@ where
             Focus(FocusEvent::LostFocus) => false,
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
 
-            Mouse(MouseEvent::Down(_, _, _, _)) => {
+            Key(KeyEvent { code: KeyCode::Enter, .. } ) | Mouse(MouseEvent::Down(_, _, _, _)) => {
+                // Timeout so we don't repeated try again on key mashes / accidental
+                // double clicks
+                if self.attempt.is_some() {
+                    return false
+                }
+
                 match data.program_path {
                     Some(ref p) => {
                         match self.load(data.sim, terminal, p) {
