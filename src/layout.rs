@@ -100,6 +100,13 @@ where
     let log_window = Text::new(|t| t.log.as_ref());
     let _ = log.add_widget(Constraint::Percentage(100), log_window, Some(b.clone().border_style(Style::default().fg(Color::Green)).title("Global Program Log")));
 
+    let mut tabs = Tabs::new(root, "🌴 Root")
+        .add(empty, "🎛️  Peripherals")
+        .add(empty, "😀 Foo")
+        .add(empty, "😲 Bar")
+        .add(empty, "😉 Baz")
+        .add(help, "ℹ️  Help")
+        .add(log, "📜 Log")
         .with_tabs_bar(|| {
             TabsBar::default()
                 .block(Block::default().title("Tabs").borders(Borders::ALL).border_style(Style::default().fg(Color::Blue)))
