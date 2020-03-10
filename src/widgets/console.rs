@@ -65,15 +65,44 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
+
         if area.height <= 1 {
             para.draw(area, buf);
-        } else if area.height <= 4{
+        } else if area.height <= 4 {
             let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
             para.draw(area, buf);
+            
+            let text = [TuiText::styled(self.input.clone(), Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))];
+            para = Paragraph::new(text.iter())
+                .style(Style::default().fg(Color::White).bg(Color::Reset))
+                .alignment(Alignment::Left)
+                .wrap(true);
+
+            let area = increment(1, Axis::Y, area);
+            if area.height < 2 {
+                return;
+            }
+            para.draw(area,buf);
         } else {
             let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
             para.draw(area, buf);
+
+            let text = [TuiText::styled(self.input.clone(), Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))];
+            para = Paragraph::new(text.iter())
+                .style(Style::default().fg(Color::White).bg(Color::Reset))
+                .alignment(Alignment::Left)
+                .wrap(true);
+
+            let area = increment(1, Axis::Y, area);
+            if area.height < 2 {
+                return;
+            }
+            para.draw(area,buf);
         }
+
+
+        
+
 
         
     }
@@ -89,7 +118,13 @@ where
             Mouse(MouseEvent::Down(_, _, _, _)) => true,
 
             Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
-                //self.input.push_str("a");
+                let x = format!("{}", c);
+                self.input.push_str(&x);
+                true
+            }
+
+            Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
+                self.input = String::from("");
                 true
             }
              _ => false,

@@ -17,12 +17,16 @@ use lc3_isa::{Addr, Instruction, Reg, Word};
 pub struct Mem 
 {
     offset: u16,
+    focus: u16,
+    position: Rect,
 }
 
 impl Default for Mem {
     fn default() -> Self {
         Self {
             offset: 2,
+            focus: 0,
+            position: Rect::new(0,0,0,0),
         }
     }
 }
@@ -43,6 +47,12 @@ where
     B: Backend,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+        self.position = area;
+
+        if self.offset > area.height.saturating_sub(1) {
+            self.offset = area.height.saturating_sub(1);
+        }
+
         let pc = data.sim.get_pc();
         let mut mem: [Word; 50] = [0; 50];
         let mut x: u16 = 0;
@@ -52,6 +62,7 @@ where
         }
 
         let mut pc_arrow = String::from("");
+        let mut loc_arrow = String::from("");
         let mut bp_locs = String::from("");
         let mut wp_locs = String::from("");
         let mut addresses = String::from("");
@@ -65,8 +76,14 @@ where
             let inst: Instruction = mem[x as usize].try_into().unwrap();
             //let inst = "TODO";
 
-            let addr = pc.wrapping_sub(self.offset).wrapping_add(x);
+            let addr = pc.wrapping_sub(self.offset).wrapping_add(x).wrapping_sub(self.focus);
             if x == self.offset {
+                loc_arrow.push_str("-->\n");
+            } else {
+                loc_arrow.push_str("\n");
+            } 
+
+            if x == self.offset.wrapping_add(self.focus) {
                 pc_arrow.push_str("-->\n");
             } else {
                 pc_arrow.push_str("\n");
@@ -107,7 +124,7 @@ where
         }
 
         let text = [TuiText::styled(
-            "\n\n-->",
+            loc_arrow,
             Style::default().fg(Color::Rgb(0x73, 0xB7, 0xE8)),
         )];
 
@@ -232,53 +249,65 @@ where
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
-        eprintln!("{:?}", event);
         match event {
             Focus(FocusEvent::GotFocus) => true,
             Focus(FocusEvent::LostFocus) => true,
-            Mouse(MouseEvent::Up(_, _, _, _)) => true,
-            Mouse(MouseEvent::Down(_, _, _, _)) => true,
+            Mouse(MouseEvent::Up(button, x, y, _)) => {
+                let x = x.wrapping_sub(self.position.x);
+                let y = y.wrapping_sub(self.position.y).wrapping_sub(2);
+                if (15 <= x) && (x <= 55) {
+                    self.offset = self.offset.wrapping_sub(y);
+                }
+                eprintln!("{}", y);
+                true
+            }
+            Mouse(MouseEvent::Down(button, x, y, _)) => {
+                true
+            }
 
             Mouse(MouseEvent::ScrollUp(_, _, _)) => {
-                eprintln!("HELLLLLO\n\n");
                 self.offset = self.offset.wrapping_add(1);
                 true
             }
             Mouse(MouseEvent::ScrollDown(_, _, _)) => {
-                eprintln!("HELLLLLO\n\n");
                 self.offset = self.offset.wrapping_sub(1);
                 true
             }
 
             Key(KeyEvent { code: KeyCode::Up, modifiers: EMPTY }) => {
-                self.offset = self.offset.wrapping_sub(1);
+                self.offset = self.offset.saturating_sub(1);
+                self.focus = self.focus.wrapping_add(1);
                 true
             }
             Key(KeyEvent { code: KeyCode::Down, modifiers: EMPTY }) => {
                 self.offset = self.offset.wrapping_add(1);
+                self.focus = self.focus.wrapping_sub(1);
                 true
             }
 
             Key(KeyEvent { code: KeyCode::Up, modifiers: KeyModifiers::SHIFT }) => {
-                self.offset = self.offset.wrapping_sub(10);
+                self.offset = self.offset.saturating_sub(10);
+                self.focus = self.focus.wrapping_add(10);
                 true
             }
             Key(KeyEvent { code: KeyCode::Down, modifiers: KeyModifiers::SHIFT }) => {
                 self.offset = self.offset.wrapping_add(10);
+                self.focus = self.focus.wrapping_sub(10);
                 true
             }
 
             Key(KeyEvent { code: KeyCode::PageUp, modifiers: EMPTY }) => {
-                self.offset = self.offset.wrapping_sub(50);
+                self.focus = self.focus.wrapping_add(self.position.height).wrapping_sub(1);
                 true
             }
             Key(KeyEvent { code: KeyCode::PageDown, modifiers: EMPTY }) => {
-                self.offset = self.offset.wrapping_add(50);
+                self.focus = self.focus.wrapping_sub(self.position.height).wrapping_add(1);
                 true
             }
 
             Key(KeyEvent { code: KeyCode::Home, modifiers: EMPTY }) => {
                 self.offset = 2;
+                self.focus = 0;
                 true
             }
 
@@ -306,6 +335,12 @@ where
                             }},
                         };
                         self.offset = _data.sim.get_pc().wrapping_sub(cur_addr - 2);
+                        true
+                    }
+
+                    'h' => {
+                        self.offset = 2;
+                        self.focus = 0;
                         true
                     }
 
