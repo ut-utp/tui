@@ -15,6 +15,8 @@ use std::sync::Mutex;
 use std::time::Duration;
 use std::collections::HashMap;
 
+use tui::widgets::Text as TuiText;
+
 pub mod run;
 pub mod events;
 pub mod widget;
@@ -35,7 +37,7 @@ where
 
     pub(in crate) program_path: Option<PathBuf>,
 
-    pub(in crate) log: Option<String>,
+    pub(in crate) log: Option<Vec<TuiText<'a>>>,
     pub(in crate) bp: HashMap<Addr, usize>,
     pub(in crate) wp: HashMap<Addr, usize>,
 }
@@ -66,7 +68,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 program_path: None,
 
                 log: if crate::debug::in_debug_mode() {
-                    Some(String::with_capacity(128 * 1024 * 1024))
+                    Some(Vec::with_capacity(128 * 1024 * 1024))
                 } else {
                     None
                 },

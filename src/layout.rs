@@ -42,7 +42,7 @@ where
         .border_style(Style::default().fg(Color::White))
         .style(Style::default().bg(Color::Reset));
     let empty = Empty::default();
-    
+
     let mut root = Widgets::new(vert.clone());
     let mut top = Widgets::new(horz.clone());
 
@@ -72,7 +72,7 @@ where
         .add_widget(Constraint::Percentage(13), timers.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Timers").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
         .add_widget(Constraint::Percentage(14), pwm.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("PWM").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
         .add_widget(Constraint::Percentage(13), clock.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Clock").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
-     
+
     let _ = right.add_widget(Constraint::Percentage(60), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console")))
         .add_widget(Constraint::Percentage(40), io, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("IO")));
 

@@ -8,13 +8,14 @@ use tui::layout::Alignment;
 
 use std::marker::PhantomData;
 
+#[allow(explicit_outlives_requirements)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Text<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r String,
+    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r [TuiText<'r>],
 {
     func: F,
     offset: u16,
@@ -26,7 +27,7 @@ where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r String,
+    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r [TuiText<'r>],
 {
     pub fn new(func: F) -> Self {
         Self {
@@ -42,7 +43,7 @@ where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r String,
+    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r [TuiText<'r>],
 {
     fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
         unimplemented!("Don't call this! We need TuiData to draw!")
@@ -54,12 +55,12 @@ where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r String,
+    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r [TuiText<'r>],
     B: Backend,
 {
 
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-        let text = [TuiText::raw((self.func)(data))];
+        let text = (self.func)(data);
 
         // TODO: allow parameterization of this in the usual way.
         let mut para = Paragraph::new(text.iter())
@@ -107,7 +108,7 @@ where
                 true
             }
             Key(KeyEvent { code: KeyCode::End, modifiers: EMPTY }) => {
-                self.offset = (self.func)(data).lines().count() as u16;
+                self.offset = (self.func)(data).len() as u16;
                 true
             }
 

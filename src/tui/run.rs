@@ -16,6 +16,8 @@ use crossterm::event::{KeyEvent, KeyCode, KeyModifiers, DisableMouseCapture};
 use failure::err_msg;
 use tui::terminal::Terminal;
 use tui::backend::{Backend, CrosstermBackend};
+use tui::widgets::Text as TuiText;
+use tui::style::{Color, Style};
 
 use std::io::{Stdout, Write};
 
@@ -40,10 +42,13 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
             log::trace!("Event: {:?}", event);
 
-            if let Some(ref mut s) = tui.data.log {
+            if let Some(ref mut v) = tui.data.log {
                 let time = std::time::SystemTime::now();
                 let time: DateTime<Local> = time.into();
-                s.push_str(format!("[EVENT] @ {}: {:?}\n", time.format("%d/%m/%Y %T%.6f"), event).as_ref())
+                let line = format!("[EVENT] @ {}: {:?}\n", time.format("%d/%m/%Y %T%.6f"), event);
+
+                let text = TuiText::styled(line, Style::default().fg(Color::Green));
+                v.push(text);
             }
 
             match event {

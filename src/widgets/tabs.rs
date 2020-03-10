@@ -13,6 +13,7 @@ use super::widget_impl_support::*;
 
 pub use tui::widgets::Tabs as TabsBar;
 
+#[allow(explicit_outlives_requirements)]
 pub struct Tabs<'a, 'int, C, I, O, B, F>
 where
     C: Control + ?Sized + 'a,
