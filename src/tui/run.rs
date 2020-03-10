@@ -36,13 +36,16 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         // here; if we're told to run with an empty widget tree we shall.)
         let _ = root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data);
 
+        self.data.log("Hello! 👋\n", Color::Cyan);
+        self.data.log("We're up! 🚀\n", Color::Magenta);
+
         backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {
             use Event::*;
             use CrosstermEvent::*;
 
             log::trace!("Event: {:?}", event);
 
-            if let Some(ref mut v) = tui.data.log {
+            if let Some(ref mut v) = tui.data.debug_log {
                 let time = std::time::SystemTime::now();
                 let time: DateTime<Local> = time.into();
                 let line = format!("[EVENT] @ {}: {:?}\n", time.format("%d/%m/%Y %T%.6f"), event);

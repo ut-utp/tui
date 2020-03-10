@@ -14,8 +14,10 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::Duration;
 use std::collections::HashMap;
+use std::string::ToString;
 
 use tui::widgets::Text as TuiText;
+use tui::style::{Style, Color};
 
 pub mod run;
 pub mod events;
@@ -37,10 +39,28 @@ where
 
     pub(in crate) program_path: Option<PathBuf>,
 
-    pub(in crate) log: Option<Vec<TuiText<'a>>>,
+    pub(in crate) debug_log: Option<Vec<TuiText<'a>>>,
+    pub(in crate) log: Vec<TuiText<'a>>,
     pub(in crate) bp: HashMap<Addr, usize>,
     pub(in crate) wp: HashMap<Addr, usize>,
 }
+
+#[allow(explicit_outlives_requirements)]
+impl<'a, 'int, C, I, O> TuiData<'a, 'int, C, I, O>
+where
+    C: Control + ?Sized + 'a,
+    I: InputSink + ?Sized + 'a,
+    O: OutputSource + ?Sized + 'a,
+{
+    pub(in crate) fn log<L: ToString>(&mut self, line: L, colour: Color) {
+        self.log.push(TuiText::styled(line.to_string(), Style::default().fg(colour)))
+    }
+
+    pub(in crate) fn log_raw<L: ToString>(&mut self, line: L) {
+        self.log.push(TuiText::raw(line.to_string()))
+    }
+}
+
 
 #[allow(explicit_outlives_requirements)]
 pub struct Tui<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
@@ -67,11 +87,13 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
                 program_path: None,
 
-                log: if crate::debug::in_debug_mode() {
+                debug_log: if crate::debug::in_debug_mode() {
                     Some(Vec::with_capacity(128 * 1024 * 1024))
                 } else {
                     None
                 },
+
+                log: Vec::with_capacity(16 * 1024 * 1024),
 
                 bp: HashMap::new(),
                 wp: HashMap::new(),

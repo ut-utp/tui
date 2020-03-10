@@ -94,12 +94,12 @@ where
         .add_widget(Constraint::Percentage(60), middle, None)
         .add_widget(Constraint::Percentage(20), empty.focusable(false), None);
 
-    let mut tabs = Tabs::new(root, "Root")
-        .add(empty, "Peripherals")
-        .add(empty, "Foo")
-        .add(empty, "Bar")
-        .add(empty, "Baz")
-        .add(help, "Help")
+
+    let mut log = Widgets::new(horz.clone());
+
+    let log_window = Text::new(|t| t.log.as_ref());
+    let _ = log.add_widget(Constraint::Percentage(100), log_window, Some(b.clone().border_style(Style::default().fg(Color::Green)).title("Global Program Log")));
+
         .with_tabs_bar(|| {
             TabsBar::default()
                 .block(Block::default().title("Tabs").borders(Borders::ALL).border_style(Style::default().fg(Color::Blue)))
@@ -109,7 +109,7 @@ where
         });
 
     if crate::debug::in_debug_mode() {
-        let events = Text::new(|t| t.log.as_ref().unwrap());
+        let events = Text::new(|t| t.debug_log.as_ref().unwrap());
 
         let mut debug = Widgets::new(vert.clone());
         let _ = debug
@@ -118,6 +118,7 @@ where
         tabs = tabs
             .add(debug, "Debug Info");
     }
+
 
     tabs
 }

@@ -8,6 +8,10 @@ use tui::layout::Alignment;
 
 use std::marker::PhantomData;
 
+// TODO: handle lines properly...
+// right now we assume each Text element is its own line which is Not True (for
+// good reasons too).
+
 #[allow(explicit_outlives_requirements)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Text<'a, 'int, C, I, O, F>
