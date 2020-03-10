@@ -19,6 +19,7 @@ where
 {
     func: F,
     offset: u16,
+    follow: bool,
     _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
 }
 
@@ -33,6 +34,7 @@ where
         Self {
             func,
             offset: 0,
+            follow: false,
             _p: PhantomData,
         }
     }
@@ -62,6 +64,11 @@ where
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let text = (self.func)(data);
 
+        if self.follow {
+            self.offset = (self.func)(data).len() as u16;
+            self.offset = self.offset.saturating_sub(area.height - 1);
+        }
+
         // TODO: allow parameterization of this in the usual way.
         let mut para = Paragraph::new(text.iter())
             .style(Style::default().fg(Color::White).bg(Color::Reset))
@@ -84,30 +91,36 @@ where
             Mouse(MouseEvent::Down(_, _, _, _)) => true,
 
             Mouse(MouseEvent::ScrollUp(_, _, _)) => {
+                self.follow = false;
                 self.offset = self.offset.saturating_sub(1);
                 true
             }
             Mouse(MouseEvent::ScrollDown(_, _, _)) => {
+                self.follow = false;
                 self.offset = self.offset.saturating_add(1);
                 true
             }
 
             Key(KeyEvent { code: KeyCode::PageUp, modifiers: EMPTY }) => {
                 // TODO: actually use the current page size (i.e. height) for this
+                self.follow = false;
                 self.offset = self.offset.saturating_sub(50);
                 true
             }
             Key(KeyEvent { code: KeyCode::PageDown, modifiers: EMPTY }) => {
                 // TODO: actually use the current page size (i.e. height) for this
+                self.follow = false;
                 self.offset = self.offset.saturating_add(50);
                 true
             }
 
             Key(KeyEvent { code: KeyCode::Home, modifiers: EMPTY }) => {
+                self.follow = false;
                 self.offset = 0;
                 true
             }
             Key(KeyEvent { code: KeyCode::End, modifiers: EMPTY }) => {
+                self.follow = true;
                 self.offset = (self.func)(data).len() as u16;
                 true
             }
