@@ -95,6 +95,12 @@ where
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         self.area = Some(area);
 
+        if let Some(ref a) = self.attempt {
+            if a.expired(Duration::from_secs(3)) {
+                drop(self.attempt.take());
+            }
+        }
+
         match &data.program_path {
             None => {
                 let msg = TuiText::styled("No Program File!\n", Style::default().fg(Colour::Red));
@@ -114,12 +120,31 @@ where
                 let msg1 = TuiText::styled("Load Program\n", Style::default().fg(Colour::Cyan));
                 let msg2 = TuiText::styled(format!("(from: `{}`)", file_name), Style::default().fg(Colour::Gray));
 
+                let chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([Constraint::Percentage(66), Constraint::Percentage(34)].as_ref())
+                    .split(area);
+
                 Paragraph::new([msg1, msg2].iter())
                     .style(Style::default().fg(Colour::White))
                     .alignment(Alignment::Center)
                     .wrap(true)
-                    .draw(area, buf)
-            },
+                    .draw(chunks[0], buf);
+
+                match &self.attempt {
+                    Some(attempt) => Paragraph::new([attempt.message()].iter())
+                        .style(Style::default())
+                        .alignment(Alignment::Center)
+                        .wrap(true)
+                        .draw(chunks[1], buf),
+
+                    None => Gauge::default()
+                        // .block(Block::default().borders(Borders::ALL))
+                        .style(Style::default().fg(Colour::Cyan).modifier(Modifier::ITALIC | Modifier::DIM))
+                        .percent(0)
+                        .draw(chunks[1], buf)
+                }
+            }
         }
     }
 
@@ -131,29 +156,18 @@ where
             Focus(FocusEvent::LostFocus) => false,
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
 
-            // TODO: make this a function! stomach the trait bounds
             Mouse(MouseEvent::Down(_, _, _, _)) => {
                 match data.program_path {
                     Some(ref p) => {
-                        let path = format!("{}", p.display());
-                        if p.exists() {
-                            match lc3_shims::memory::FileBackedMemoryShim::from_existing_file(p) {
-                                Ok(mem) => {
-                                    // TODO: scoped thread to display progress!
-                                    let p = Progress::new();
-
-                                    match load_whole_memory_dump(data.sim, &mem.into(), Some(&p)) {
-                                        Ok(()) => data.log(format!("[Load] Successful Load (`{}`)!\n", path), Colour::Green),
-                                        Err(e) => data.log(format!("[Load] Error during load: {:?}\n", e), Colour::Red),
-
-                                    }
-                                }
-                                Err(e) => {
-                                    data.log(format!("[Load] Failed to load `{}` as a MemoryDump; got: {:?}\n", path, e), Colour::Red)
-                                }
-                            }
-                        } else {
-                            data.log(format!("[Load] `{}` does not exist!\n", path), Colour::Red)
+                        match self.load(data.sim, terminal, p) {
+                            Ok(msg) => {
+                                self.attempt = Attempt::succeeded();
+                                data.log(format!("[Load] {}\n", msg), Colour::Green)
+                            },
+                            Err(msg) => {
+                                self.attempt = Attempt::failed();
+                                data.log(format!("[Load] {}\n", msg), Colour::Red)
+                            },
                         }
 
                         true
@@ -161,6 +175,7 @@ where
                     None => false,
                 }
             }
+
             _ => false,
         }
     }
