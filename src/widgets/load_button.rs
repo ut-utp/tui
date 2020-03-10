@@ -4,17 +4,78 @@ use super::widget_impl_support::*;
 
 use lc3_traits::control::load::{load_whole_memory_dump, Progress};
 
+use std::path::PathBuf;
+use std::time::{Duration, Instant};
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum Attempt {
+    Success(Instant),
+    Failure(Instant),
+}
+
+impl Attempt {
+    fn failed() -> Option<Attempt> {
+        Some(Self::Failure(Instant::now()))
+    }
+
+    fn succeeded() -> Option<Attempt> {
+        Some(Self::Success(Instant::now()))
+    }
+
+    fn expired(&self, dur: Duration) -> bool {
+        Instant::now().duration_since(match self {
+            Self::Success(i) => *i,
+            Self::Failure(i) => *i,
+        }) >= dur
+    }
+
+    fn message(&self) -> TuiText<'static> {
+        match self {
+            Self::Failure(_) => TuiText::styled("Failed to Load!", Style::default().fg(Colour::Red)),
+            Self::Success(_) => TuiText::styled("Successfully Loaded!", Style::default().fg(Colour::Green)),
+        }
+    }
+}
+
 // No block!
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LoadButton {
     area: Option<Rect>,
+    attempt: Option<Attempt>
 }
 
 impl LoadButton {
     pub fn new() -> Self {
         Self {
             area: None,
+            attempt: None,
         }
+    }
+
+    fn load<'a, C, B>(&self, sim: &mut C, terminal: &mut Terminal<B>, path: &PathBuf) -> Result<String, String>
+    where
+        C: Control + ?Sized + 'a,
+        B: Backend,
+    {
+        let p = format!("{}", path.display());
+
+        if !path.exists() {
+            return Err(format!("`{}` does not exist!", p))
+        }
+
+        let shim = lc3_shims::memory::FileBackedMemoryShim::from_existing_file(path)
+            .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", p, e))?;
+
+
+        // TODO: scoped thread to display progress!
+        let progress = Progress::new();
+        let _ = load_whole_memory_dump(sim, &shim.into(), Some(&progress))
+            .map_err(|e| format!("Error during load: {:?}", e))?;
+            // .map(|()| format!("Successful Load (`{}`)!", p))
+
+
+
+        Ok(format!("Successful Load (`{}`)!", p))
     }
 }
 
