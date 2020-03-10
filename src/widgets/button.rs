@@ -111,7 +111,10 @@ where
             Focus(FocusEvent::GotFocus) => true,
             Focus(FocusEvent::LostFocus) => true,
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
-            Mouse(MouseEvent::Down(_, _, _, _)) => true,
+            Mouse(MouseEvent::Down(_, _, _, _)) => {
+                (self.func)(_data);
+                true
+            }
             _ => false,
         }
     }
