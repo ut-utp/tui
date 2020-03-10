@@ -82,6 +82,16 @@ struct Args {
     update_period: TimeInMs,
 }
 
+pub fn with_stack_size<R: Send + 'static, F: FnOnce() -> R + Send + 'static>(ss: usize, f: F) -> R {
+    let child = std::thread::Builder::new()
+        .stack_size(ss)
+        .spawn(f)
+        .unwrap();
+
+    child.join().unwrap()
+}
+
+
 fn main() -> Result<(), failure::Error> {
     let options = Args::from_args();
 
@@ -95,19 +105,21 @@ fn main() -> Result<(), failure::Error> {
             .unwrap();
     }
 
-    let mut b = BlackBox::new();
-    let mut tui = options.device.setup(&mut b);
+    with_stack_size(1024 * 1024 * 16, move || {
+        let mut b = BlackBox::new();
+        let mut tui = options.device.setup(&mut b);
 
-    if let Some(p) = options.program_file {
-        tui.set_program_path(p);
-    }
+        if let Some(p) = options.program_file {
+            tui.set_program_path(p);
+        }
 
 
-    let layout = layout::layout_tabs();
+        let layout = layout::layout_tabs();
 
-    tui.set_update_period(options.update_period.into());
-    tui.run_with_crossterm(Some(layout))?;
+        tui.set_update_period(options.update_period.into());
+        tui.run_with_crossterm(Some(layout))?;
 
-    println!("Good bye! 👋");
-    Ok(())
+        println!("Good bye! 👋");
+        Ok(())
+    })
 }
