@@ -47,7 +47,7 @@ where
     let mut top = Widgets::new(horz.clone());
 
     let mut left = Widgets::new(vert.clone());
-    let footer = Footer::default();
+    let mut footer = Widgets::new(horz.clone());
     let mem = Mem::default();
     let regs = Regs::default();
     let console = Console::default();
@@ -79,8 +79,17 @@ where
     let _ = top.add_widget(Constraint::Percentage(50), left, None)
         .add_widget(Constraint::Percentage(50), right, None);
 
+    let mut buttons = Widgets::new(horz.clone());
+
+    let _ = buttons.add_widget(Constraint::Percentage(33), empty.focusable(false), None)
+        .add_widget(Constraint::Percentage(33), empty.focusable(false), None)
+        .add_widget(Constraint::Percentage(34), LoadButton::new(), Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow))));
+
+    let _ = footer.add_widget(Constraint::Percentage(50), Footer::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")))
+        .add_widget(Constraint::Percentage(50), buttons, None);
+
     let _ = root.add_widget(Constraint::Percentage(85), top, None)
-        .add_widget(Constraint::Percentage(15), footer, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")));
+        .add_widget(Constraint::Percentage(15), footer, None);
 
     let mut help = Widgets::new(horz.clone());
     let mut middle = Widgets::new(vert.clone());
