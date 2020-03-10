@@ -43,6 +43,14 @@ where
     pub(in crate) log: Vec<TuiText<'a>>,
     pub(in crate) bp: HashMap<Addr, usize>,
     pub(in crate) wp: HashMap<Addr, usize>,
+
+    pub(in crate) flush_all_events: Option<Flush>,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub(in super) enum Flush {
+    Requested(u8),
+    Acknowledged(u8),
 }
 
 #[allow(explicit_outlives_requirements)]
@@ -58,6 +66,14 @@ where
 
     pub(in crate) fn log_raw<L: ToString>(&mut self, line: L) {
         self.log.push(TuiText::raw(line.to_string()))
+    }
+
+    pub(in crate) fn flush_events(&mut self) {
+        self.flush_all_events = Some(match self.flush_all_events {
+            Some(Flush::Requested(i)) => Flush::Requested(i + 1),
+            Some(Flush::Acknowledged(i)) => Flush::Acknowledged(i + 1),
+            None => Flush::Requested(0),
+        })
     }
 }
 
@@ -97,6 +113,8 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
                 bp: HashMap::new(),
                 wp: HashMap::new(),
+
+                flush_all_events: None,
             },
 
             update_period: Duration::from_millis(250),

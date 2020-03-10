@@ -17,6 +17,7 @@ use failure::err_msg;
 use tui::terminal::Terminal;
 use tui::backend::{Backend, CrosstermBackend};
 use tui::widgets::Text as TuiText;
+use tui::layout::Rect;
 use tui::style::{Color, Style};
 
 use std::io::{Stdout, Write};
@@ -27,7 +28,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         B: ExecutableCommand<&'static str>,
         Terminal<B>: Send,
     {
-        let event_recv = events::start_event_threads(term.backend_mut(), self.update_period)?;
+        let (event_recv, tx) = events::start_event_threads(term.backend_mut(), self.update_period)?;
 
         // TODO: potentially construct this from user configurable options!
         let backoff = Backoff::default();
@@ -43,6 +44,32 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {
             use Event::*;
             use CrosstermEvent::*;
+
+            // Empty the queue if we're told to. This should handle nested requests
+            // (i.e. if we're told to empty the queue while we're already doing so).
+            if let Some(f) = tui.data.flush_all_events {
+                use super::Flush::*;
+
+                match f {
+                    Requested(i) => {
+                        tx.send(FlushEventsBarrier(i)).unwrap();
+                        tui.data.flush_all_events = Some(Acknowledged(i));
+                    }
+                    Acknowledged(c) => {
+                        match event {
+                            FlushEventsBarrier(i) => {
+                                // If its count matches us, we're done clearing.
+                                if c == i {
+                                    drop(tui.data.flush_all_events.take());
+                                    let Rect { width, height, .. } = term.size().unwrap();
+                                    tx.send(ActualEvent(Resize(width, height))).unwrap();
+                                }
+                            }
+                            _ => { /* Otherwise, continue discarding events. */ }
+                        }
+                    }
+                }
+            }
 
             log::trace!("Event: {:?}", event);
 
@@ -77,6 +104,8 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                     }
                     e => drop(root.update(e.into(), &mut tui.data, term)),
                 }
+
+                _ => unreachable!(),
             }
 
             // onwards! (i.e. don't stop)
