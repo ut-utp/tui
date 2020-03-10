@@ -1,6 +1,4 @@
-//! A widget that does nothing but occupy space.
-//!
-//! Useful for testing and for blank spaces.
+//! TODO!
 
 use super::widget_impl_support::*;
 
@@ -9,7 +7,7 @@ use tui::style::{Color, Style};
 use tui::layout::Alignment;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Footer 
+pub struct Footer
 {
 }
 
@@ -79,7 +77,7 @@ where
 
     fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
         use WidgetEvent::*;
-        
+
         match event {
             Focus(FocusEvent::GotFocus) => true,
             Focus(FocusEvent::LostFocus) => true,

@@ -1,6 +1,4 @@
-//! A widget that does nothing but occupy space.
-//!
-//! Useful for testing and for blank spaces.
+//! TODO!
 
 use super::widget_impl_support::*;
 
@@ -14,7 +12,7 @@ use lc3_isa::{Addr, Instruction, Reg, Word};
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Mem 
+pub struct Mem
 {
     offset: u16,
     focus: u16,
@@ -87,7 +85,7 @@ where
                 pc_arrow.push_str("-->\n");
             } else {
                 pc_arrow.push_str("\n");
-            } 
+            }
 
             if data.bp.contains_key(&addr) {
                 bp_locs.push_str("<b>\n");
@@ -132,8 +130,8 @@ where
                 .style(Style::default().fg(Color::White).bg(Color::Reset))
                 .alignment(Alignment::Left)
                 .wrap(true);
-        
-        para.draw(area, buf);  
+
+        para.draw(area, buf);
 
         let text = [TuiText::styled(
             pc_arrow,
@@ -144,7 +142,7 @@ where
                 .style(Style::default().fg(Color::White).bg(Color::Reset))
                 .alignment(Alignment::Left)
                 .wrap(true);
-        
+
         para.draw(area, buf);
 
         let text = [TuiText::styled(
@@ -346,7 +344,7 @@ where
 
                     _ => false
                 }
-                
+
             }
 
             _ => false,

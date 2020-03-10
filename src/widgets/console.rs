@@ -1,6 +1,4 @@
-//! A widget that does nothing but occupy space.
-//!
-//! Useful for testing and for blank spaces.
+//! TODO!
 
 use super::widget_impl_support::*;
 
@@ -12,7 +10,7 @@ use lc3_isa::{Addr, Instruction, Reg, Word};
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Console 
+pub struct Console
 {
     history: String,
     input: String,
@@ -71,7 +69,7 @@ where
         } else if area.height <= 4 {
             let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
             para.draw(area, buf);
-            
+
             let text = [TuiText::styled(self.input.clone(), Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))];
             para = Paragraph::new(text.iter())
                 .style(Style::default().fg(Color::White).bg(Color::Reset))
@@ -100,11 +98,6 @@ where
             para.draw(area,buf);
         }
 
-
-        
-
-
-        
     }
 
     fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {

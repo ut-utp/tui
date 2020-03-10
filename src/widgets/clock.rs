@@ -1,6 +1,4 @@
-//! A widget that does nothing but occupy space.
-//!
-//! Useful for testing and for blank spaces.
+//! TODO!
 
 use super::widget_impl_support::*;
 use tui::widgets::{Text as TuiText, Paragraph};
@@ -41,7 +39,7 @@ where
 {
 
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-       
+
         let text = [
             TuiText::styled("Clock: \n", Style::default().fg(Color::Gray)),
         ];

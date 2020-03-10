@@ -1,6 +1,4 @@
-//! A widget that does nothing but occupy space.
-//!
-//! Useful for testing and for blank spaces.
+//! TODO!
 
 use super::widget_impl_support::*;
 
@@ -12,7 +10,7 @@ use lc3_isa::{Addr, Instruction, Reg, Word};
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Regs 
+pub struct Regs
 {
 }
 
@@ -104,7 +102,7 @@ where
 
         let area = increment(5, Axis::X, area);
         para.draw(area, buf);
-        
+
     }
 
     fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {

@@ -1,6 +1,4 @@
-//! A widget that does nothing but occupy space.
-//!
-//! Useful for testing and for blank spaces.
+//! TODO!
 
 use super::widget_impl_support::*;
 use tui::widgets::{Text as TuiText, Paragraph};
@@ -44,7 +42,7 @@ where
 
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let gpio_states = data.sim.get_gpio_states();
-        let gpioin = data.sim.get_gpio_readings(); 
+        let gpioin = data.sim.get_gpio_readings();
 
 
         let text = [
@@ -57,7 +55,7 @@ where
             .wrap(true);
 
         para.draw(area, buf);
-        
+
 
         let mut s1 = String::from("");
 
@@ -68,7 +66,7 @@ where
             match gpio_states[gpio_pins_1[i]]{
                 GpioState::Disabled => {
                     let disabled_string = "Disabled";
-                    s1.push_str(&format!("{}\n", 
+                    s1.push_str(&format!("{}\n",
                     disabled_string, ));
                 }
                 _ => {
@@ -76,8 +74,8 @@ where
                         Ok(val) => {
                                 s1.push_str(&format!(
                                 "{}\n",
-                                val, 
-                                
+                                val,
+
                                 ));
                             }
                         _ => {
@@ -85,11 +83,11 @@ where
                             s1.push_str(&format!(
                                 "{}\n",
                                 err_string,
-                                
+
                                 ));
                         }
                         }
-                }         
+                }
             }
         }
 
@@ -102,18 +100,18 @@ where
         para.draw(area, buf);
 
 
-        
+
         let text = [
             TuiText::styled("GPIO 4: \nGPIO 5: \nGPIO 6: \nGPIO 7: \n", Style::default().fg(Color::Gray)),
             ];
-        
+
         let mut para = Paragraph::new(text.iter())
         .style(Style::default().fg(Color::White).bg(Color::Reset))
         .alignment(Alignment::Left)
         .wrap(true);
         let area = increment(40, Axis::X, area);
         para.draw(area, buf);
-        
+
         let mut s2 = String::from("");
 
 
@@ -122,7 +120,7 @@ where
                 match gpio_states[gpio_pins_2[i]]{
                     GpioState::Disabled => {
                         let disabled_string = "Disabled";
-                        s2.push_str(&format!("{}\n", 
+                        s2.push_str(&format!("{}\n",
                         disabled_string, ));
                     }
                     _ => {
@@ -130,8 +128,8 @@ where
                             Ok(val) => {
                                     s2.push_str(&format!(
                                     "{}\n",
-                                    val, 
-                                    
+                                    val,
+
                                     ));
                                 }
                             _ => {
@@ -139,11 +137,11 @@ where
                                 s2.push_str(&format!(
                                     "{}\n",
                                     err_string,
-                                    
+
                                     ));
                             }
                             }
-                    }         
+                    }
                 }
             }
 
@@ -155,11 +153,11 @@ where
 
             let area = increment(10, Axis::X, area);
             para.draw(area, buf);
-        
+
 
     }
 
-    
+
 
 
     fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {

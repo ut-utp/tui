@@ -1,6 +1,4 @@
-//! A widget that does nothing but occupy space.
-//!
-//! Useful for testing and for blank spaces.
+//! TODO!
 
 use super::widget_impl_support::*;
 use tui::widgets::{Text as TuiText, Paragraph};
@@ -44,7 +42,7 @@ where
 
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let adc_states = data.sim.get_adc_states();
-        let adcin = data.sim.get_adc_readings(); 
+        let adcin = data.sim.get_adc_readings();
 
 
         let text = [
@@ -57,7 +55,7 @@ where
             .wrap(true);
 
         para.draw(area, buf);
-        
+
 
         let mut s1 = String::from("");
 
@@ -67,7 +65,7 @@ where
             match adc_states[adc_pins_1[i]]{
                 AdcState::Disabled => {
                     let disabled_string = "Disabled";
-                    s1.push_str(&format!("{}\n", 
+                    s1.push_str(&format!("{}\n",
                     disabled_string, ));
                 }
                 _ => {
@@ -75,8 +73,8 @@ where
                         Ok(val) => {
                                 s1.push_str(&format!(
                                 "{}\n",
-                                val, 
-                                
+                                val,
+
                                 ));
                             }
                         _ => {
@@ -84,11 +82,11 @@ where
                             s1.push_str(&format!(
                                 "{}\n",
                                 err_string,
-                                
+
                                 ));
                         }
                         }
-                }         
+                }
             }
         }
 
@@ -101,18 +99,18 @@ where
         para.draw(area, buf);
 
 
-        
+
         let text = [
             TuiText::styled("ADC 3: \nADC 4: \nADC 5: \n", Style::default().fg(Color::Gray)),
             ];
-        
+
         let mut para = Paragraph::new(text.iter())
         .style(Style::default().fg(Color::White).bg(Color::Reset))
         .alignment(Alignment::Left)
         .wrap(true);
         let area = increment(40, Axis::X, area);
         para.draw(area, buf);
-        
+
         let mut s2 = String::from("");
 
 
@@ -121,7 +119,7 @@ where
                 match adc_states[adc_pins_2[i]]{
                     AdcState::Disabled => {
                         let disabled_string = "Disabled";
-                        s2.push_str(&format!("{}\n", 
+                        s2.push_str(&format!("{}\n",
                         disabled_string, ));
                     }
                     _ => {
@@ -129,8 +127,8 @@ where
                             Ok(val) => {
                                     s2.push_str(&format!(
                                     "{}\n",
-                                    val, 
-                                    
+                                    val,
+
                                     ));
                                 }
                             _ => {
@@ -138,11 +136,11 @@ where
                                 s2.push_str(&format!(
                                     "{}\n",
                                     err_string,
-                                    
+
                                     ));
                             }
                             }
-                    }         
+                    }
                 }
             }
 
@@ -154,7 +152,7 @@ where
 
             let area = increment(10, Axis::X, area);
             para.draw(area, buf);
-        
+
 
     }
 

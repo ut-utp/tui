@@ -1,6 +1,4 @@
-//! A widget that does nothing but occupy space.
-//!
-//! Useful for testing and for blank spaces.
+//! TODO!
 
 use super::widget_impl_support::*;
 use tui::widgets::{Text as TuiText, Paragraph};
@@ -44,7 +42,7 @@ where
 
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let pwm_state = data.sim.get_pwm_states();
-        let pwm_configs = data.sim.get_pwm_config(); 
+        let pwm_configs = data.sim.get_pwm_config();
 
 
         let text = [
@@ -57,7 +55,7 @@ where
             .wrap(true);
 
         para.draw(area, buf);
-        
+
         let mut s0 = String::from("");
 
         let p0 = match pwm_state[PwmPin::P0]{
@@ -74,7 +72,7 @@ where
 
         };
 
-        
+
         let text = [TuiText::styled(s0, Style::default().fg(Color::LightGreen))];
         para = Paragraph::new(text.iter())
             .style(Style::default().fg(Color::White).bg(Color::Reset))
@@ -113,7 +111,7 @@ where
             }
 
         };
-         
+
         let text = [TuiText::styled(s1, Style::default().fg(Color::LightGreen))];
         para = Paragraph::new(text.iter())
             .style(Style::default().fg(Color::White).bg(Color::Reset))
@@ -122,7 +120,7 @@ where
         let area2 = increment(10, Axis::X, area1);
         para.draw(area2, buf);
 
-        
+
 
     }
 

@@ -1,6 +1,4 @@
-//! A widget that does nothing but occupy space.
-//!
-//! Useful for testing and for blank spaces.
+//! TODO!
 
 use super::widget_impl_support::*;
 use tui::widgets::{Text as TuiText, Paragraph};
@@ -44,7 +42,7 @@ where
 
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let timer_state = data.sim.get_timer_states();
-        let timer_configs = data.sim.get_timer_config(); 
+        let timer_configs = data.sim.get_timer_config();
 
 
         let text = [
@@ -57,7 +55,7 @@ where
             .wrap(true);
 
         para.draw(area, buf);
-        
+
 
         let mut s0 = String::from("");
 
@@ -79,7 +77,7 @@ where
                     timer_configs[TimerId::T0]
                 )),
         };
-        
+
         let text = [TuiText::styled(s0, Style::default().fg(Color::LightGreen))];
         para = Paragraph::new(text.iter())
             .style(Style::default().fg(Color::White).bg(Color::Reset))
@@ -87,7 +85,7 @@ where
             .wrap(true);
         let area = increment(10, Axis::X, area);
         para.draw(area, buf);
-        
+
 
 
 
@@ -122,9 +120,9 @@ where
                     timer_configs[TimerId::T1]
                 )),
         };
-     
 
-        
+
+
 
         let text = [TuiText::styled(s1, Style::default().fg(Color::LightGreen))];
         para = Paragraph::new(text.iter())
@@ -134,7 +132,7 @@ where
         let area = increment(10, Axis::X, area);
         para.draw(area, buf);
 
-        
+
 
     }
 

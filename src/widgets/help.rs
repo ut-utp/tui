@@ -1,6 +1,4 @@
-//! A widget that does nothing but occupy space.
-//!
-//! Useful for testing and for blank spaces.
+//! TODO!
 
 use super::widget_impl_support::*;
 
@@ -11,7 +9,7 @@ use tui::style::{Color, Style};
 use tui::layout::Alignment;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Help 
+pub struct Help
 {
     pub focusable: bool
 }
