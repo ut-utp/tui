@@ -2,6 +2,7 @@
 
 use super::widget_impl_support::*;
 
+use lc3_traits::control::load::{load_whole_memory_dump, Progress};
 
 // No block!
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -66,17 +67,32 @@ where
 
         match event {
             Focus(FocusEvent::GotFocus) => data.program_path.is_some(),
-            Focus(FocusEvent::LostFocus) => true,
+            Focus(FocusEvent::LostFocus) => false,
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
 
+            // TODO: make this a function! stomach the trait bounds
             Mouse(MouseEvent::Down(_, _, _, _)) => {
                 match data.program_path {
                     Some(ref p) => {
+                        let path = format!("{}", p.display());
                         if p.exists() {
+                            match lc3_shims::memory::FileBackedMemoryShim::from_existing_file(p) {
+                                Ok(mem) => {
+                                    // TODO: scoped thread to display progress!
+                                    let p = Progress::new();
 
+                                    match load_whole_memory_dump(data.sim, &mem.into(), Some(&p)) {
+                                        Ok(()) => data.log(format!("[Load] Successful Load (`{}`)!\n", path), Colour::Green),
+                                        Err(e) => data.log(format!("[Load] Error during load: {:?}\n", e), Colour::Red),
+
+                                    }
+                                }
+                                Err(e) => {
+                                    data.log(format!("[Load] Failed to load `{}` as a MemoryDump; got: {:?}\n", path, e), Colour::Red)
+                                }
+                            }
                         } else {
-                            let path = format!("{}", p.display());
-                            data.log(format!("Load Error: `{}` does not exist!", path), Colour::Red)
+                            data.log(format!("[Load] `{}` does not exist!\n", path), Colour::Red)
                         }
 
                         true
