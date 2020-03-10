@@ -64,5 +64,8 @@ pub use clock::*;
 mod button;
 pub use button::*;
 
+mod load_button;
+pub use load_button::*;
+
 use tui::layout::Rect;
 
