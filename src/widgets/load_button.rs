@@ -98,25 +98,31 @@ impl LoadButton {
                             // Update our progress bar:
                             if let Some(area) = self.area {
 
-                                let (_, area) = Self::split_for_text_and_gauge(area);
-
-                                let chunks = Layout::default()
-                                    .direction(Direction::Vertical)
-                                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                                    .split(area);
-
-                                let (gauge, info) = (chunks[0], chunks[1]);
-
+                                // let buffer = terminal.current_buffer_mut();
                                 terminal.draw(|mut f| {
-                                    if !f.size().intersects(area) {
-                                        return;
-                                    }
+                                    let area = f.size();
+                                    let (_, area) = Self::split_for_text_and_gauge(area);
+
+                                    let chunks = Layout::default()
+                                        .direction(Direction::Vertical)
+                                        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                                        .split(area);
+
+                                    let (gauge, info) = (chunks[0], chunks[1]);
+
+                                    // If the screen changed and we're not displayed
+                                    // anymore, skip the redraw (so we don't crash).
+                                    // if !buffer.area().intersects(area) {
+                                    // if !f.size().intersects(area) {
+                                    //     return;
+                                    // }
 
                                     Gauge::default()
                                         // .block(Block::default().borders(Borders::ALL).title("Progress"))
                                         .style(Style::default().fg(Colour::Green).bg(Colour::Black).modifier(Modifier::ITALIC | Modifier::BOLD))
                                         .ratio(progress.progress().max(0.0f32).into())
                                         .render(&mut f, gauge);
+                                        // .draw(gauge, buffer);
 
                                     let success_rate = format!("{:.2}%", progress.success_rate() * 100.0);
 
@@ -141,8 +147,11 @@ impl LoadButton {
                                         .alignment(Alignment::Center)
                                         .wrap(true)
                                         .render(&mut f, info);
+                                        // .draw(info, buffer);
                                 }).unwrap();
                             }
+
+                            // terminal.flush();
 
                             std::thread::sleep(Duration::from_millis(30))
                         },
