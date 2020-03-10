@@ -11,6 +11,7 @@ use tui::backend::Backend;
 use tui::buffer::Buffer;
 use tui::Frame;
 use tui::layout::Rect;
+use tui::terminal::Terminal;
 
 use std::marker::PhantomData;
 
@@ -72,7 +73,7 @@ where
     //
     // This is useful for events that must be handled only once (i.e. changing
     // which widget is currently focused).
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool;
+    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool;
 }
 
 pub fn increment(offset: u16, axis: Axis, area: Rect) -> Rect {
@@ -87,5 +88,5 @@ pub fn increment(offset: u16, axis: Axis, area: Rect) -> Rect {
             offset = area.height;
         }
         return Rect::new(area.x, area.y+offset, area.width, area.height.saturating_sub(offset));
-    }   
+    }
 }

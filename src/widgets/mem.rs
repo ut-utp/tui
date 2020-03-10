@@ -243,14 +243,14 @@ where
         para.draw(area, buf)
     }
 
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
         use WidgetEvent::*;
 
         fn set_bp<'a, 'int, C, I, O>(offset: u16, _data: &mut TuiData<'a, 'int, C, I, O>)
         where
             C: Control + ?Sized + 'a,
             I: InputSink + ?Sized + 'a,
-            O: OutputSource + ?Sized + 'a,  
+            O: OutputSource + ?Sized + 'a,
         {
             let cur_addr = _data.sim.get_pc().wrapping_sub(offset);
             match _data.bp.remove(&cur_addr) {
@@ -266,7 +266,7 @@ where
         where
             C: Control + ?Sized + 'a,
             I: InputSink + ?Sized + 'a,
-            O: OutputSource + ?Sized + 'a,  
+            O: OutputSource + ?Sized + 'a,
         {
             let cur_addr = _data.sim.get_pc().wrapping_sub(offset);
             match _data.wp.remove(&cur_addr) {

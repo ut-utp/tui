@@ -97,13 +97,13 @@ where
 
         let mut para = Paragraph::new(text.iter())
             .style(Style::default().fg(Color::White).bg(Color::Reset))
-            .alignment(Alignment::Left)
+            .alignment(Alignment::Center)
             .wrap(true);
 
         para.draw(area, buf);
     }
 
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 

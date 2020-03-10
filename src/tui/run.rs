@@ -34,7 +34,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         // Focus the root and never unfocus it!
         // (The root widget really should accept focus but we don't check that it does
         // here; if we're told to run with an empty widget tree we shall.)
-        let _ = root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data);
+        let _ = root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data, term);
 
         self.data.log("Hello! 👋\n", Color::Cyan);
         self.data.log("We're up! 🚀\n", Color::Magenta);
@@ -74,7 +74,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                     Key(KeyEvent { code: KeyCode::F(4), modifiers: KeyModifiers::ALT }) => {
                         return false
                     }
-                    e => drop(root.update(e.into(), &mut tui.data)),
+                    e => drop(root.update(e.into(), &mut tui.data, term)),
                 }
             }
 

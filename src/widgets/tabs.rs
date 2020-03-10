@@ -87,20 +87,20 @@ where
         .select(self.current_tab)
     }
 
-    fn propagate(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
-        self.tabs[self.current_tab].update(event, data)
+    fn propagate(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+        self.tabs[self.current_tab].update(event, data, terminal)
     }
 
-    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
-        self.tabs.iter_mut().fold(false, |b, w| b | w.update(event, data))
+    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+        self.tabs.iter_mut().fold(false, |b, w| b | w.update(event, data, terminal))
     }
 
-    fn switch_to_tab(&mut self, data: &mut TuiData<'a, 'int, C, I, O>, idx: usize) -> bool {
+    fn switch_to_tab(&mut self, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>, idx: usize) -> bool {
         if idx < self.tabs.len() {
             // Only send a focus event if we are actually switching to this tab:
             if self.current_tab != idx {
                 self.current_tab = idx;
-                let _ = self.propagate(WidgetEvent::Focus(FocusEvent::GotFocus), data);
+                let _ = self.propagate(WidgetEvent::Focus(FocusEvent::GotFocus), data, terminal);
             }
 
             true
@@ -143,7 +143,7 @@ where
         Widget::draw(&mut *self.tabs[self.current_tab], data, rest, buf)
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
@@ -152,35 +152,35 @@ where
                 KeyEvent { code: KeyCode::Char(n @ '1'..='9'), modifiers: KeyModifiers::CONTROL } |
                 KeyEvent { code: KeyCode::Char(n @ '1'..='9'), modifiers: KeyModifiers::ALT } => {
                     // Switch to 0 indexing:
-                    self.switch_to_tab(data, n as usize - '1' as usize)
+                    self.switch_to_tab(data, terminal, n as usize - '1' as usize)
                 },
                 KeyEvent { code: KeyCode::F(n), modifiers: EMPTY } => {
                     // Switch to 0 indexing:
-                    self.switch_to_tab(data, n as usize - 1)
+                    self.switch_to_tab(data, terminal, n as usize - 1)
                 }
 
                 // Crossterm seems to drop `ctrl` so we'll compromise with this for now (TODO):
                 KeyEvent { code: KeyCode::BackTab, modifiers: EMPTY } |
                 KeyEvent { code: KeyCode::BackTab, modifiers: KeyModifiers::CONTROL } => {
-                    self.switch_to_tab(data, self.current_tab.checked_sub(1).unwrap_or(self.tabs.len() - 1))
+                    self.switch_to_tab(data, terminal, self.current_tab.checked_sub(1).unwrap_or(self.tabs.len() - 1))
                 }
 
                 // Crossterm seems to drop `ctrl` so we'll compromise with this for now (TODO):
                 KeyEvent { code: KeyCode::Tab, modifiers: EMPTY } |
                 KeyEvent { code: KeyCode::Tab, modifiers: KeyModifiers::CONTROL } => {
-                    self.switch_to_tab(data, self.current_tab.checked_add(1).filter(|i| *i < self.tabs.len()).unwrap_or(0))
+                    self.switch_to_tab(data, terminal, self.current_tab.checked_add(1).filter(|i| *i < self.tabs.len()).unwrap_or(0))
                 }
 
-                _ => self.propagate(event, data),
+                _ => self.propagate(event, data, terminal),
             }
 
             // TODO: pick a style for the tabs!
             // TODO: handle mouse events! (blocked on the above)
 
             // Resize all the tabs!
-            Resize(_, _) => self.propagate_to_all(event, data),
+            Resize(_, _) => self.propagate_to_all(event, data, terminal),
 
-            _ => self.propagate(event, data)
+            _ => self.propagate(event, data, terminal)
         }
     }
 }
