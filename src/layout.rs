@@ -59,22 +59,40 @@ where
     let timers = Timers::default();
     let clock = Clock::default();
     let adc = Adc::default();
+    let console_peripherals = Console_peripherals::default();
 
 
+   
 
+
+    let gpio_toggle = Gpio_toggle::default();
+    let pwm_toggle =  Pwm_toggle::default();
+    let timers_toggle = Timers_toggle::default();
+    let adc_toggle = Adc_toggle::default();
+
+
+    let mut peripherals = Widgets::new(vert.clone());
     let mut io = Widgets::new(vert.clone());
-    //let mut top_left = Widgets::new(vert.clone());
-
+    // let mut top_left = Widgets::new(vert.clone());
+    
     let _ = left.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory")))
         .add_widget(Constraint::Percentage(20), regs, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Registers + PC+ PSR").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
 
     let mut right = Widgets::new(vert.clone());
 
-    let _ = io.add_widget(Constraint::Percentage(35), gpio.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("GPIO").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(20), adc.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("ADC").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(13), timers.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Timers").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(14), pwm.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("PWM").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(13), clock.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Clock").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
+    let _ = io.add_widget(Constraint::Percentage(35), gpio.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("GPIO").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(20), adc.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("ADC").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(13), timers.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Timers").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(14), pwm.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("PWM").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(13), clock.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Clock").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
+
+
+    let _ = peripherals.add_widget(Constraint::Percentage(35), gpio_toggle.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("GPIO").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+    .add_widget(Constraint::Percentage(20), adc_toggle.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("ADC").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+    .add_widget(Constraint::Percentage(10), timers_toggle.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Timers").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+    .add_widget(Constraint::Percentage(10), pwm_toggle.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("PWM").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+    .add_widget(Constraint::Percentage(10), clock.focusable(true), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Clock").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+    .add_widget(Constraint::Percentage(15), console_peripherals, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Peripheral Console")));
 
     let _ = right.add_widget(Constraint::Percentage(60), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console")))
         .add_widget(Constraint::Percentage(40), io, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("IO")));
@@ -113,7 +131,7 @@ where
     let _ = log.add_widget(Constraint::Percentage(100), log_window, Some(b.clone().border_style(Style::default().fg(Color::Green)).title("Global Program Log")));
 
     let mut tabs = Tabs::new(root, "🌴 Root")
-        .add(empty, "🎛️  Peripherals")
+        .add(peripherals, "🎛️  Peripherals")
         .add(empty, "😀 Foo")
         .add(empty, "😲 Bar")
         .add(empty, "😉 Baz")

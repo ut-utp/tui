@@ -67,5 +67,21 @@ pub use button::*;
 mod load_button;
 pub use load_button::*;
 
+mod gpio_toggle;
+pub use gpio_toggle::*;
+
+mod timers_toggle;
+pub use timers_toggle::*;
+
+mod adc_toggle;
+pub use adc_toggle::*;
+
+mod pwm_toggle;
+pub use pwm_toggle::*;
+
+mod console_peripherals;
+pub use console_peripherals::*;
+
+
 use tui::layout::Rect;
 
