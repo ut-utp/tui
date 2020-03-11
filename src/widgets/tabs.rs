@@ -1,4 +1,4 @@
-//! A tabs widget owns its tabs that allows users to switch between the tabs.
+//! A tabs widget that owns its tabs and allows users to switch between the tabs.
 //!
 //! TODO!
 
