@@ -110,10 +110,10 @@ where
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
         match event {
-            Focus(FocusEvent::GotFocus) => true,
-            Focus(FocusEvent::LostFocus) => true,
-            Mouse(MouseEvent::Up(_, _, _, _)) => true,
-            Mouse(MouseEvent::Down(_, _, _, _)) => true,
+            Focus(FocusEvent::GotFocus) => false,
+            Focus(FocusEvent::LostFocus) => false,
+            Mouse(MouseEvent::Up(_, _, _, _)) => false,
+            Mouse(MouseEvent::Down(_, _, _, _)) => false,
             _ => false,
         }
     }

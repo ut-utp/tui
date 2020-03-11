@@ -299,11 +299,13 @@ where
             }
 
             Mouse(MouseEvent::ScrollUp(_, _, _)) => {
-                self.offset = self.offset.wrapping_add(1);
+                self.offset = self.offset.saturating_sub(1);
+                self.focus = self.focus.wrapping_add(1);
                 true
             }
             Mouse(MouseEvent::ScrollDown(_, _, _)) => {
-                self.offset = self.offset.wrapping_sub(1);
+                self.offset = self.offset.wrapping_add(1);
+                self.focus = self.focus.wrapping_sub(1);
                 true
             }
 

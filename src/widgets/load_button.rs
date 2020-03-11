@@ -244,7 +244,7 @@ where
         match event {
             Focus(FocusEvent::GotFocus) => data.program_path.is_some(),
             Focus(FocusEvent::LostFocus) => false,
-            Mouse(MouseEvent::Up(_, _, _, _)) => true,
+            Mouse(MouseEvent::Up(_, _, _, _)) => data.program_path.is_some(),
 
             Key(KeyEvent { code: KeyCode::Enter, .. } ) | Mouse(MouseEvent::Down(_, _, _, _)) => {
                 // Timeout so we don't repeated try again on key mashes / accidental

@@ -32,7 +32,7 @@ where
     O: OutputSource + ?Sized + 'a,
     F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>),
 {
-    fn new_from_func(func:F) -> Self{
+    pub fn new_from_func(func:F) -> Self{
         Self {
             title: String::from(""),
             func,
@@ -41,7 +41,7 @@ where
         }
     }
 
-    fn new_sans_colour(title:String, func:F) -> Self {
+    pub fn new_sans_colour(title:String, func:F) -> Self {
         Self {
             title,
             func,
@@ -50,7 +50,7 @@ where
         }
     }
 
-    fn new_sans_title(colour:Color, func:F) -> Self {
+    pub fn new_sans_title(colour:Color, func:F) -> Self {
         Self {
             title: String::from(""),
             func,
@@ -59,7 +59,7 @@ where
         }
     }
 
-    fn new(title:String, colour:Color, func:F) -> Self {
+    pub fn new(title:String, colour:Color, func:F) -> Self {
         Self {
             title,
             func,
