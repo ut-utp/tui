@@ -7,6 +7,7 @@ use tui::layout::Alignment;
 use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
 use std::sync::{mpsc, Arc, Mutex, RwLock};
 
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Gpio_toggle {
     pub focusable: bool,
@@ -177,18 +178,11 @@ where
                     match(c) {
                         '0' => {
                             let lock = RwLock::write(&shim.gpio);
-
-                            lock.unwrap().set_pin(GpioPin::G0, true); 
-                           
-                            
-                       
+                             lock.unwrap().set_pin(GpioPin::G0, true); 
                         },
                         '1' => {
                             let lock = RwLock::write(&shim.gpio);
                             lock.unwrap().set_pin(GpioPin::G1, true); 
-                          
-                            
-                       
                         },
                         '2' => {
                             let lock = RwLock::write(&shim.gpio);
@@ -231,7 +225,6 @@ where
                             let lock = RwLock::write(&shim.gpio);
                             lock.unwrap().set_pin(GpioPin::G7, true); 
                             
-                       
                         },
                         _ => {
                       
