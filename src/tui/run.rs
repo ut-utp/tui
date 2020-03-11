@@ -65,10 +65,21 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                                     tx.send(ActualEvent(Resize(width, height))).unwrap();
                                 }
                             }
-                            _ => { /* Otherwise, continue discarding events. */ }
+                            _ => {
+                                /* Otherwise, continue discarding events. */
+                                if let Some(ref mut v) = tui.data.debug_log {
+                                    let time = std::time::SystemTime::now();
+                                    let time: DateTime<Local> = time.into();
+                                    let line = format!("[EVENT] @ {}, discarded: {:?}\n", time.format("%d/%m/%Y %T%.6f"), event);
+
+                                    v.push(TuiText::styled(line, Style::default().fg(Color::Yellow)));
+                                }
+                            }
                         }
                     }
                 }
+
+                return true;
             }
 
             log::trace!("Event: {:?}", event);
@@ -105,7 +116,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                     e => drop(root.update(e.into(), &mut tui.data, term)),
                 }
 
-                _ => unreachable!(),
+                _ => unreachable!("Got {:?} which shouldn't be possible.", event),
             }
 
             // onwards! (i.e. don't stop)
