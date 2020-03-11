@@ -94,11 +94,13 @@ where
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, _, _, _)) => true,
 
+            Key(KeyEvent { code: KeyCode::Up, modifiers: EMPTY }) |
             Mouse(MouseEvent::ScrollUp(_, _, _)) => {
                 self.follow = false;
                 self.offset = self.offset.saturating_sub(1);
                 true
             }
+            Key(KeyEvent { code: KeyCode::Down, modifiers: EMPTY }) |
             Mouse(MouseEvent::ScrollDown(_, _, _)) => {
                 self.follow = false;
                 self.offset = self.offset.saturating_add(1);
