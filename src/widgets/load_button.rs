@@ -44,7 +44,8 @@ impl Attempt {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LoadButton {
     area: Option<Rect>,
-    attempt: Option<Attempt>
+    attempt: Option<Attempt>,
+    fullscreen_load: bool,
 }
 
 impl LoadButton {
@@ -52,6 +53,7 @@ impl LoadButton {
         Self {
             area: None,
             attempt: None,
+            fullscreen_load: true,
         }
     }
 
@@ -96,62 +98,60 @@ impl LoadButton {
                         Ok(()) => break (),
                         Err(mpsc::TryRecvError::Empty) => {
                             // Update our progress bar:
-                            if let Some(area) = self.area {
+                            terminal.draw(|mut f| {
+                                let area = if self.fullscreen_load {
+                                    f.size()
+                                } else if let Some(area) = self.area {
+                                    area
+                                } else {
+                                    return; // don't draw if we don't have a rect
+                                };
 
-                                // let buffer = terminal.current_buffer_mut();
-                                terminal.draw(|mut f| {
-                                    let area = f.size();
-                                    let (_, area) = Self::split_for_text_and_gauge(area);
+                                let (_, area) = Self::split_for_text_and_gauge(area);
 
-                                    let chunks = Layout::default()
-                                        .direction(Direction::Vertical)
-                                        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                                        .split(area);
+                                let chunks = Layout::default()
+                                    .direction(Direction::Vertical)
+                                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                                    .split(area);
 
-                                    let (gauge, info) = (chunks[0], chunks[1]);
+                                let (gauge, info) = (chunks[0], chunks[1]);
 
-                                    // If the screen changed and we're not displayed
-                                    // anymore, skip the redraw (so we don't crash).
-                                    // if !buffer.area().intersects(area) {
-                                    // if !f.size().intersects(area) {
-                                    //     return;
-                                    // }
+                                // If the screen changed and we're not displayed
+                                // anymore, skip the redraw (so we don't crash).
+                                if f.size().intersection(area) != area {
+                                    return;
+                                }
 
-                                    Gauge::default()
-                                        // .block(Block::default().borders(Borders::ALL).title("Progress"))
-                                        .style(Style::default().fg(Colour::Green).bg(Colour::Black).modifier(Modifier::ITALIC | Modifier::BOLD))
-                                        .ratio(progress.progress().max(0.0f32).into())
-                                        .render(&mut f, gauge);
-                                        // .draw(gauge, buffer);
+                                Gauge::default()
+                                    // .block(Block::default().borders(Borders::ALL).title("Progress"))
+                                    .style(Style::default().fg(Colour::Green).bg(Colour::Black).modifier(Modifier::ITALIC | Modifier::BOLD))
+                                    .ratio(progress.progress().max(0.0f32).into())
+                                    .render(&mut f, gauge);
 
-                                    let success_rate = format!("{:.2}%", progress.success_rate() * 100.0);
+                                let success_rate = format!("{:.2}%", progress.success_rate() * 100.0);
 
-                                    let time_remaining = progress
-                                        .estimate_time_remaining()
-                                        .and_then(|d| chrono::Duration::from_std(d).ok())
-                                        .map(|d| {
-                                            if d.num_seconds() > 60 {
-                                                format!("{}m {}.{:03}s", d.num_minutes(), d.num_seconds() % 60, d.num_milliseconds() % 1000)
-                                            } else {
-                                                format!("{}.{:03}s", d.num_seconds(), d.num_milliseconds() % 1000)
-                                            }
-                                        })
-                                        .unwrap_or("Unknown".to_string());
+                                let time_remaining = progress
+                                    .estimate_time_remaining()
+                                    .and_then(|d| chrono::Duration::from_std(d).ok())
+                                    .map(|d| {
+                                        if d.num_seconds() > 60 {
+                                            format!("{}m {}.{:03}s", d.num_minutes(), d.num_seconds() % 60, d.num_milliseconds() % 1000)
+                                        } else {
+                                            format!("{}.{:03}s", d.num_seconds(), d.num_milliseconds() % 1000)
+                                        }
+                                    })
+                                    .unwrap_or("Unknown".to_string());
 
-                                    Paragraph::new([
-                                            TuiText::styled(format!("~{}", time_remaining), Style::default().fg(Colour::Green)),
-                                            TuiText::styled(format!(" // "), Style::default().fg(Colour::Gray)),
-                                            TuiText::styled(format!("{} success", success_rate), Style::default().fg(Colour::Magenta)),
-                                        ].iter())
-                                        .style(Style::default().fg(Colour::White))
-                                        .alignment(Alignment::Center)
-                                        .wrap(true)
-                                        .render(&mut f, info);
-                                        // .draw(info, buffer);
-                                }).unwrap();
-                            }
-
-                            // terminal.flush();
+                                Paragraph::new([
+                                        TuiText::styled(format!("~{}", time_remaining), Style::default().fg(Colour::Green)),
+                                        TuiText::styled(format!(" // "), Style::default().fg(Colour::Gray)),
+                                        TuiText::styled(format!("{} success", success_rate), Style::default().fg(Colour::Magenta)),
+                                    ].iter())
+                                    .style(Style::default().fg(Colour::White))
+                                    .alignment(Alignment::Center)
+                                    .wrap(true)
+                                    .render(&mut f, info);
+                            }).unwrap();
 
                             std::thread::sleep(Duration::from_millis(30))
                         },
@@ -266,6 +266,7 @@ where
                             },
                         }
 
+                        data.flush_events();
                         true
                     },
                     None => false,
