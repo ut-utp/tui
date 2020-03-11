@@ -29,7 +29,6 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 lc3-application-support = { path = "../application-support", version = "0.1.0" }
-lc3-baseline-sim = { path = "../baseline-sim", version = "0.1.0", default-features = false }
 lc3-isa = { path = "../isa", version = "0.1.0", default-features = false }
 lc3-macros = { path = "../macros", version = "0.1.0" }
 lc3-shims = { path = "../shims", version = "0.1.0" }
@@ -40,8 +39,9 @@ crossterm = "0.16.0"
 crossbeam = "0.7.3"
 failure = "0.1.6"
 log = "0.4.8"
+
+# Only needed for the bin target; remove these once that leaves this crate (TODO)!
 flexi_logger = { version = "0.14", default_features = false }
-lazy_static = "1.4.0"
 structopt = { version = "0.3", default-features = false }
 
 [dependencies.tui]
@@ -58,8 +58,3 @@ pretty_assertions = "0.6.1"
 [[bin]]
 name = "tui"
 path = "bins/tui.rs"
-
-
-# [[bin]]
-# name = "tui-old"
-# path = "bins/main.rs"
