@@ -29,18 +29,12 @@ where
     layout_tabs()
 }
 
-/*fn make_footer(footer: &mut Widget) {
-    let b = Block::default()
-        .title_style(Style::default().fg(Color::Red))
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::White))
-        .style(Style::default().bg(Color::Reset));
-    let empty = Empty::default();
-
+/*fn make_footer(horz:Layout, b:Block) -> Widgets {
     let mut buttons = Widgets::new(horz.clone());
     //let run = Button::new(String::from("Run"), Color::Green, |t| &t.sim.run_until_event());
     //let pause = Button::new(String::from("Pause"), Color::Red, |t| &t.sim.pause());
     //let step = Button::new(String::from("Step"), Color::Yellow, |t| &t.sim.step());
+    let empty = Empty::default();
     let run = empty.focusable(true);
     let pause = empty.focusable(true);
     let step = empty.focusable(true);
@@ -50,6 +44,7 @@ where
         .add_widget(Constraint::Percentage(25), step, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow))))
         .add_widget(Constraint::Percentage(25), LoadButton::new(), Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::White))));
 
+    let mut footer = Widgets::new(horz.clone());
     let _ = footer.add_widget(Constraint::Percentage(50), Footer::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")))
         .add_widget(Constraint::Percentage(50), buttons, None);
 }*/
@@ -132,6 +127,9 @@ where
     let run = empty.focusable(true);
     let pause = empty.focusable(true);
     let step = empty.focusable(true);
+    //let run = Sim_Button::new(String::from("Run"), Color::Green, |t| t.run_until_event());
+    //let pause = Sim_Button::new(String::from("Pause"), Color::Red, |t| t.pause());
+    //let step = Sim_Button::new(String::from("Step"), Color::Yellow, |t| t.step());
 
     let _ = buttons.add_widget(Constraint::Percentage(25), run, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Green))))
         .add_widget(Constraint::Percentage(25), pause, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Red))))

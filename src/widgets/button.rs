@@ -12,12 +12,12 @@ use lc3_isa::{Addr, Instruction, Reg, Word};
 
 #[allow(explicit_outlives_requirement)]
 #[derive(Debug, Clone, PartialEq)]
-pub struct Button<'a, 'int, C, I, O, F>
+pub struct Sim_Button<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>),
+    F: for<'r> Fn(&'r mut C),
 {
     title: String,
     func: F,
@@ -25,12 +25,12 @@ where
     _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
 }
 
-impl<'a, 'int, C, I, O, F> Button<'a, 'int, C, I, O, F>
+impl<'a, 'int, C, I, O, F> Sim_Button<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>),
+    F: for<'r> Fn(&'r mut C),
 {
     pub fn new_from_func(func:F) -> Self{
         Self {
@@ -69,12 +69,12 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, F> TuiWidget for Button<'a, 'int, C, I, O, F>
+impl<'a, 'int, C, I, O, F> TuiWidget for Sim_Button<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>),
+    F: for<'r> Fn(&'r mut C),
 {
     fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
         unimplemented!("Don't call this! We need TuiData to draw!")
@@ -82,12 +82,12 @@ where
 }
 
 
-impl<'a, 'int, C, I, O, B, F> Widget<'a, 'int, C, I, O, B> for Button<'a, 'int, C, I, O, F>
+impl<'a, 'int, C, I, O, B, F> Widget<'a, 'int, C, I, O, B> for Sim_Button<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>),
+    F: for<'r> Fn(&'r mut C),
     B: Backend,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
@@ -103,7 +103,7 @@ where
         para.draw(area, buf);
     }
 
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
@@ -112,7 +112,7 @@ where
             Focus(FocusEvent::LostFocus) => true,
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, _, _, _)) => {
-                (self.func)(_data);
+                (self.func)(data.sim);
                 true
             }
             _ => false,

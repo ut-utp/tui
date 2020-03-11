@@ -53,7 +53,7 @@ where
         let mut mem: [Word; 50] = [0; 50];
         let mut x: u16 = 0;
         while x != 50 {
-            mem[x as usize] = data.sim.read_word(pc.wrapping_sub(self.offset).wrapping_add(x));
+            mem[x as usize] = data.sim.read_word(pc.wrapping_sub(self.offset).wrapping_add(x).wrapping_sub(self.focus));
             x = x + 1;
         }
 
