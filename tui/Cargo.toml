@@ -1,0 +1,53 @@
+[package]
+name = "lc3-tui"
+version = "0.1.0"
+authors = ["UT UTP <ut.utp.group@gmail.com>"]
+edition = "2018"
+
+workspace = ".."
+
+description = "A command line simulator for the LC-3 with additional peripherals."
+homepage = "https://ut-utp.github.io"
+repository = "http://github.com/ut-utp/tui"
+
+readme = "README.md"
+
+keywords = ["lc-3", "cli", "tui", "peripherals", "utp"]
+categories = ["simulation", "command-line-utilities"]
+
+license = "MPL-2.0"
+
+[badges]
+github-actions = { repository = "ut-utp/tui", workflow = "tui" }
+codecov = { repository = "ut-utp/tui", branch = "master", service = "github" }
+
+is-it-maintained-issue-resolution = { repository = "ut-utp/tui" }
+is-it-maintained-open-issues = { repository = "ut-utp/tui" }
+maintenance = { status = "actively-developed" }
+
+
+[dependencies]
+lc3-application-support = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0" }
+lc3-isa = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0", default-features = false }
+lc3-macros = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0" }
+lc3-shims = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0" }
+lc3-traits = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0", default-features = false, features = [] } # Enable std features
+# TODO: change all of the above to grab the crates from crates.io instead of git
+
+
+chrono = "0.4"
+crossterm = "0.16.0" # TODO: drop on wasm
+crossbeam = "0.7.3"
+failure = "0.1.6"
+log = "0.4.8"
+
+
+[dependencies.tui]
+version = "0.8.0"
+default-features = false
+features = ["crossterm"]
+
+
+[dev-dependencies]
+pretty_assertions = "0.6.1"
+

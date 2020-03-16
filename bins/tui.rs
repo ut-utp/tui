@@ -1,3 +1,9 @@
+extern crate lc3_tui;
+extern crate lc3_application_support;
+extern crate structopt;
+extern crate failure;
+extern crate flexi_logger;
+
 use lc3_tui::DynTui;
 use lc3_tui::layout;
 use lc3_application_support::init::{BlackBox, SimDevice, SimWithRpcDevice};

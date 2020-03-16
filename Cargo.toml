@@ -1,60 +1,40 @@
-[package]
-name = "lc3-tui"
+[workspace]
+members = [
+    "tui",
+]
+
+
+[package] # TODO: split into another crate once web becomes a thing
+name = "utp-tui"
 version = "0.1.0"
-authors = ["UT UTP <ut.utp.group@gmail.com>"]
-edition = "2018"
 
-workspace = ".."
+default-run = "tui"
 
-description = "A command line simulator for the LC-3 with additional peripherals."
-homepage = "https://ut-utp.github.io"
-repository = "http://github.com/ut-utp/prototype"
-
-readme = "README.md"
-
-keywords = ["lc-3", "cli", "tui", "peripherals", "utp"]
-categories = ["simulation", "command-line-utilities"]
-
-license = "MPL-2.0"
-default-run = "tui" # TODO: move this bin target outside of this crate, eventually
-
-[badges]
-github-actions = { repository = "ut-utp/prototype", workflow = "tui" }
-codecov = { repository = "ut-utp/prototype", branch = "master", service = "github" }
-
-is-it-maintained-issue-resolution = { repository = "ut-utp/prototype" }
-is-it-maintained-open-issues = { repository = "ut-utp/prototype" }
-maintenance = { status = "actively-developed" }
-
-
-[dependencies]
-lc3-application-support = { path = "../application-support", version = "0.1.0" }
-lc3-isa = { path = "../isa", version = "0.1.0", default-features = false }
-lc3-macros = { path = "../macros", version = "0.1.0" }
-lc3-shims = { path = "../shims", version = "0.1.0" }
-lc3-traits = { path = "../traits", version = "0.1.0", default-features = false, features = [] } # Enable std features
-
-chrono = "0.4"
-crossterm = "0.16.0"
-crossbeam = "0.7.3"
-failure = "0.1.6"
-log = "0.4.8"
-
-# Only needed for the bin target; remove these once that leaves this crate (TODO)!
-flexi_logger = { version = "0.14", default_features = false }
-structopt = { version = "0.3", default-features = false }
-
-[dependencies.tui]
-version = "0.8.0"
-default-features = false
-features = ["crossterm"]
-
-
-[dev-dependencies]
-pretty_assertions = "0.6.1"
-
-
-# TODO: move this bin target outside of this crate, eventually
+# TODO: CI for this binary
 [[bin]]
 name = "tui"
 path = "bins/tui.rs"
+
+
+[dependencies]
+flexi_logger = { version = "0.14", default_features = false }
+structopt = { version = "0.3", default-features = false }
+failure = "0.1.6"
+
+lc3-application-support = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0" }
+# TODO: grab the above from crates.io instead of git
+lc3-tui = { path = "tui", version = "0.1.0" }
+# TODO: grab the above from crates.io instead of by path
+
+
+[profile.release]
+opt-level = 3
+debug = true
+rpath = false
+lto = "fat"
+debug-assertions = false
+codegen-units = 1
+# target-cpu = "native"
+# panic = "abort"
+incremental = false
+overflow-checks = false
