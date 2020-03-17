@@ -40,9 +40,31 @@
 #![doc(test(attr(deny(rust_2018_idioms, warnings))))]
 #![doc(html_logo_url = "")] // TODO!
 
+// macro_rules! specialize {
+//     (desktop => { $($d:item)* } web => { $($w:item)* }) => {
+//         $(
+//             #[cfg(not(target = "wasm32"))]
+//             $d
+//         )*
+
+//         $(
+//             #[cfg(target = "wasm32")]
+//             $w
+//         )*
+//     };
+// }
+
+// specialize!{
+//     desktop => { extern crate tui_desktop as tui; }
+//     web => { extern crate tui_web as tui; }
+// }
+
 pub mod debug;
 pub mod layout;
 pub mod widgets;
+
+// mod tui_lib;
+// pub use crate::tui_lib::{DynTui, Tui};
 
 mod tui;
 pub use crate::tui::{DynTui, Tui};

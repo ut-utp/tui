@@ -34,20 +34,98 @@ lc3-shims = { git = "https://github.com/ut-utp/prototype", branch = "master", ve
 lc3-traits = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0", default-features = false, features = [] } # Enable std features
 # TODO: change all of the above to grab the crates from crates.io instead of git
 
-
+# tui = { version = "0.8.0", default-features = false }
 chrono = "0.4"
-crossterm = "0.16.0" # TODO: drop on wasm
 crossbeam = "0.7.3"
 failure = "0.1.6"
 log = "0.4.8"
 
+# Version hack attempt:
+# No crossterm on wasm:
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+crossterm = "0.16.0"
+tui = { version = "0.8.0", default-features = false, features = ["crossterm"] }
 
-[dependencies.tui]
-version = "0.8.0"
-default-features = false
-features = ["crossterm"]
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+tui = { version = "0.7.0", default-features = false}
+#                  ^^^^^ awful hack! This tricks cargo into thinking this and
+#                        the above are separate crates (which lets them have
+#                        different features).
+#
+# Once this (https://github.com/rust-lang/cargo/issues/7914) hits stable, we
+# won't need this anymore.
+
+
+# # Source cooperation attempt (i.e. have Cargo pretend they're different crates):
+# # (unfortunately this wasn't enough; we needed the wrapper crate too.. *and*, because
+# # Cargo is too smart, required us to use a different version of the tui crate so that
+# # Cargo would actually allow different features for "web version" of tui and the regular
+# # version (that the regular version was behind a transitive dependency did not fool
+# # Cargo))
+# #
+# # Additionally, this required some very not fun gymnastics inside lib.rs since we
+# # already have something called tui.
+# # No crossterm on wasm:
+# [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# crossterm = "0.16.0"
+# # tui-desktop = { version = "0.8.0", package = "tui", default-features = false, features = ["crossterm"] }
+# tui-desktop = { version = "0.8.0", package = "utp-tui-crossterm", path = "../wrapper-crates/tui-crossterm" }
+
+
+# [target.'cfg(target_arch = "wasm32")'.dependencies]
+# # tui-web = { version = "0.8.0", package = "tui", default-features = false }
+# tui-web = { version = "0.7.0", package = "tui", default-features = false }
+# #                      ^^^^^ awful hack!
+
+# Wrapper crate attempt:
+#
+# Failed with:
+#   "Dependency 'tui' has different source paths depending on the build target. Each
+#    dependency must have a single canonical source path irrespective of build target."
+# # No crossterm on wasm:
+# [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# crossterm = "0.16.0"
+# tui = { version = "0.8.0", package = "utp-tui-crossterm", path = "../wrapper-crates/tui-crossterm" }
+
+# [target.'cfg(target_arch = "wasm32")'.dependencies]
+# tui = { version = "0.8.0", default-features = false }
+
+# [target.]
+
+# # No crossterm on wasm:
+# [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# crossterm = "0.16.0"
+# tui = { version = "0.8.0", default-features = false, features = ["crossterm"] }
+
+# # [target.'cfg(not(target_arch = "wasm32"))'.dependencies.tui]
+# # features = ["crossterm"]
+# # # version = "0.8.0"
+# # # default-features = false
+
+# # `tui` without crossterm on wasm:
+# [target.'cfg(target_arch = "wasm32")'.dependencies.tui]
+# version = "0.8.0"
+# default-features = false
+# features = []
 
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
 
+
+# This needs to exist because we can't seem to conditionally add enable features
+# for dependencies; i.e. this doesn't work:
+# ```
+# [target.'cfg(not(target_arch = "wasm32"))'.dependencies.tui]
+# features = ["crossterm"]
+# ```
+# See: https://github.com/rust-lang/cargo/issues/1197.
+#
+# As a workaround we tried to do the below (use a feature to enable the feature
+# and have the feature only be enabled on specific architectures), but it also
+# does not work. Once this (https://github.com/rust-lang/cargo/issues/7914)
+# lands, it will work.
+# ```
+# [target.'cfg(not(target_arch = "wasm32"))'.features]
+# default-features = ["tui/crossterm"]
+# ```

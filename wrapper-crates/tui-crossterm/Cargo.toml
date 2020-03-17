@@ -1,0 +1,8 @@
+[package]
+name = "utp-tui-crossterm"
+version = "0.8.0"
+authors = ["UT UTP <ut.utp.group@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+tui = { version = "0.8.0", default-features = false, features =  ["crossterm"] }

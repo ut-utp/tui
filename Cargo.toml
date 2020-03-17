@@ -2,6 +2,7 @@
 members = [
     "tui",
 ]
+exclude = ["wrapper-crates"]
 
 
 [package] # TODO: split into another crate once web becomes a thing
