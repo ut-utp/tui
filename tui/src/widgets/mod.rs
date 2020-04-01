@@ -15,7 +15,7 @@ pub(in self) mod widget_impl_support {
     pub use tui::buffer::Buffer;
     pub use tui::layout::{Rect, Layout, Direction, Constraint};
     pub use tui::terminal::Terminal;
-    pub use tui::widgets::{Text as TuiText, Paragraph, Gauge};
+    pub use tui::widgets::{Text as TuiText, Paragraph, Gauge, Block, Borders};
     pub use tui::style::{Color as Colour, Style, Modifier};
     pub use tui::layout::Alignment;
 
@@ -82,6 +82,5 @@ pub use pwm_toggle::*;
 mod console_peripherals;
 pub use console_peripherals::*;
 
-
-use tui::layout::Rect;
-
+mod modeline;
+pub use modeline::*;
