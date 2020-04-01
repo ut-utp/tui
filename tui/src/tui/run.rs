@@ -114,7 +114,15 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                         return false
                     }
                     Key(KeyEvent { code: KeyCode::Char('s'), modifiers: KeyModifiers::CONTROL }) => {
-                        tui.data.sim.step();
+                        tui.data.step = true;
+                        return true
+                    }
+                    Key(KeyEvent { code: KeyCode::Char('p'), modifiers: KeyModifiers::CONTROL }) => {
+                        tui.data.run = false;
+                        return true
+                    }
+                    Key(KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::CONTROL }) => {
+                        tui.data.run = true;
                         return true
                     }
                     e => drop(root.update(e.into(), &mut tui.data, term)),

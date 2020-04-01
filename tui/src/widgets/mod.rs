@@ -82,6 +82,14 @@ pub use pwm_toggle::*;
 mod console_peripherals;
 pub use console_peripherals::*;
 
+mod mem_console;
+pub use mem_console::*;
+
+mod watch_window;
+pub use watch_window::*;
+
+mod break_window;
+pub use break_window::*;
 
 use tui::layout::Rect;
 

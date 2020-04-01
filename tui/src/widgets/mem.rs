@@ -241,36 +241,36 @@ where
         para.draw(area, buf)
     }
 
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
         use WidgetEvent::*;
 
-        fn set_bp<'a, 'int, C, I, O>(offset: u16, _data: &mut TuiData<'a, 'int, C, I, O>)
+        fn set_bp<'a, 'int, C, I, O>(offset: u16, data: &mut TuiData<'a, 'int, C, I, O>)
         where
             C: Control + ?Sized + 'a,
             I: InputSink + ?Sized + 'a,
             O: OutputSource + ?Sized + 'a,
         {
-            let cur_addr = _data.sim.get_pc().wrapping_sub(offset);
-            match _data.bp.remove(&cur_addr) {
-                Some(val) => {_data.sim.unset_breakpoint(val);},
-                None => {match _data.sim.set_breakpoint(cur_addr) {
-                    Ok(val) => {_data.bp.insert(cur_addr, val);},
+            let cur_addr = data.sim.get_pc().wrapping_sub(offset);
+            match data.bp.remove(&cur_addr) {
+                Some(val) => {data.sim.unset_breakpoint(val);},
+                None => {match data.sim.set_breakpoint(cur_addr) {
+                    Ok(val) => {data.bp.insert(cur_addr, val);},
                     Err(_e) => {},
                 }},
             };
         }
 
-        fn set_wp<'a, 'int, C, I, O>(offset: u16, _data: &mut TuiData<'a, 'int, C, I, O>)
+        fn set_wp<'a, 'int, C, I, O>(offset: u16, data: &mut TuiData<'a, 'int, C, I, O>)
         where
             C: Control + ?Sized + 'a,
             I: InputSink + ?Sized + 'a,
             O: OutputSource + ?Sized + 'a,
         {
-            let cur_addr = _data.sim.get_pc().wrapping_sub(offset);
-            match _data.wp.remove(&cur_addr) {
-                Some(val) => {_data.sim.unset_memory_watchpoint(val);},
-                None => {match _data.sim.set_memory_watchpoint(cur_addr) {
-                    Ok(val) => {_data.wp.insert(cur_addr, val);},
+            let cur_addr = data.sim.get_pc().wrapping_sub(offset);
+            match data.wp.remove(&cur_addr) {
+                Some(val) => {data.sim.unset_memory_watchpoint(val);},
+                None => {match data.sim.set_memory_watchpoint(cur_addr) {
+                    Ok(val) => {data.wp.insert(cur_addr, val);},
                     Err(_e) => {},
                 }},
             };
@@ -288,9 +288,9 @@ where
                 let x = x.wrapping_sub(self.position.x);
                 let y = y.wrapping_sub(self.position.y);
                 if (4 <= x) && (x <= 8) {
-                    set_bp(self.focus.wrapping_sub(y).wrapping_add(self.offset), _data);
+                    set_bp(self.focus.wrapping_sub(y).wrapping_add(self.offset), data);
                 } else if (9 <= x) && (x <= 13) {
-                    set_wp(self.focus.wrapping_sub(y).wrapping_add(self.offset), _data)
+                    set_wp(self.focus.wrapping_sub(y).wrapping_add(self.offset), data)
                 } else if (15 <= x) && (x <= 55) {
                     self.focus = self.focus.wrapping_add(self.offset).wrapping_sub(y);
                     self.offset = y;
@@ -349,12 +349,12 @@ where
             Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
                 match c {
                     'w' => {
-                        set_wp(self.focus, _data);
+                        set_wp(self.focus, data);
                         true
                     }
 
                     'b' => {
-                        set_bp(self.focus, _data);
+                        set_bp(self.focus, data);
                         true
                     }
 

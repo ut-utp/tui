@@ -29,7 +29,7 @@ where
     layout_tabs()
 }
 
-/*fn make_footer(horz:Layout, b:Block) -> Widgets {
+/*fn make_footer(horz:Layout, b:Block) -> layout {
     let mut buttons = Widgets::new(horz.clone());
     //let run = Button::new(String::from("Run"), Color::Green, |t| &t.sim.run_until_event());
     //let pause = Button::new(String::from("Pause"), Color::Red, |t| &t.sim.pause());
@@ -47,6 +47,8 @@ where
     let mut footer = Widgets::new(horz.clone());
     let _ = footer.add_widget(Constraint::Percentage(50), Footer::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")))
         .add_widget(Constraint::Percentage(50), buttons, None);
+
+    footer
 }*/
 
 pub fn layout_tabs<'a, 'int: 'a, C, I, O, B: 'a>() -> Tabs<'a, 'int, C, I, O, B, impl Fn() -> TabsBar<'a, String>>
@@ -209,11 +211,34 @@ where
     let log_window = Text::new(|t| t.log.as_ref());
     let _ = log.add_widget(Constraint::Percentage(100), log_window, Some(b.clone().border_style(Style::default().fg(Color::Green)).title("Global Program Log")));
 
+    let mut debug = Widgets::new(horz.clone());
+    let mut top_right = Widgets::new(horz.clone());
+    let _ = top_right.add_widget(Constraint::Percentage(30), BreakWindow::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Breakpoints")))
+        .add_widget(Constraint::Percentage(70), WatchWindow::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Watchpoints").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
+
+    let mem = Mem::default();
+    let regs = Regs::default();
+    let mut left = Widgets::new(vert.clone());
+    let _ = left.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory")))
+        .add_widget(Constraint::Percentage(20), regs, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Registers + PC+ PSR").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
+
+    let console = Console::default();
+    let mem_console = MemConsole::default();
+
+    let mut right = Widgets::new(vert.clone());
+    let _ = right.add_widget(Constraint::Percentage(50), top_right, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Debug Tools")))
+        .add_widget(Constraint::Percentage(25), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(25), mem_console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory Interface").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
+
+
+    let _ = debug.add_widget(Constraint::Percentage(50), left, None)
+        .add_widget(Constraint::Percentage(50), right, None);
+         
     let mut tabs = Tabs::new(root, "🌴 Root")
         .add(peripherals, "🎛️  Peripherals")
         .add(memory, "😀 Mem")
         .add(big_console_tab, "😲 Console")
-        .add(empty, "😉 Baz")
+        .add(debug, "😉 Debug")
         .add(help, "ℹ️  Help")
         .add(log, "📜 Log")
         .with_tabs_bar(|| {
