@@ -436,6 +436,7 @@ dependencies = [
  "lc3-shims",
  "lc3-traits",
  "log",
+ "pin-utils",
  "pretty_assertions",
  "tui 0.7.0",
  "tui 0.8.0",
@@ -579,6 +580,12 @@ dependencies = [
  "smallvec",
  "winapi 0.3.8",
 ]
+
+[[package]]
+name = "pin-utils"
+version = "0.1.0-alpha.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5894c618ce612a3fa23881b152b608bafb8c56cfc22f434a3ba3120b40f7b587"
 
 [[package]]
 name = "pretty_assertions"
