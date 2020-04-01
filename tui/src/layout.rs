@@ -26,7 +26,22 @@ where
     B: Backend,
     Terminal<B>: Send,
 {
-    layout_tabs()
+    let vert = Layout::default().direction(Direction::Vertical);
+
+    let mut root = Widgets::new(vert.clone());
+
+    root
+        .add_widget(Constraint::Min(1), layout_tabs(), None)
+        .add_widget(Constraint::Length(3), layout_modeline(), Some(
+            Block::default()
+                .style(Style::default().bg(Color::Blue))
+                .border_style(Style::default().fg(Color::Blue))
+                .borders(Borders::TOP/* & (!Borders::BOTTOM)*/)
+                .title("")));
+
+    root
+
+    // layout_tabs()
 }
 
 /*fn make_footer(horz:Layout, b:Block) -> Widgets {
@@ -49,6 +64,18 @@ where
         .add_widget(Constraint::Percentage(50), buttons, None);
 }*/
 
+pub fn layout_modeline<'a, 'int: 'a, C, I, O, B: 'a>() -> impl Widget<'a, 'int, C, I, O, B>
+where
+    C: Control + ?Sized + 'a,
+    I: InputSink + ?Sized + 'a,
+    O: OutputSource + ?Sized + 'a,
+    B: Backend,
+    Terminal<B>: Send,
+{
+    // Empty::default().focusable(true)
+    Modeline::new()
+}
+
 pub fn layout_tabs<'a, 'int: 'a, C, I, O, B: 'a>() -> Tabs<'a, 'int, C, I, O, B, impl Fn() -> TabsBar<'a, String>>
 where
     C: Control + ?Sized + 'a,
@@ -69,8 +96,8 @@ where
     let mut root = Widgets::new(vert.clone());
     let mut root_main = Widgets::new(horz.clone());
 
-    
-    
+
+
     let mem = Mem::default();
     let regs = Regs::default();
     let console = Console::default();
@@ -82,7 +109,7 @@ where
     let console_peripherals = Console_peripherals::default();
 
 
-   
+
 
 
     let gpio_toggle = Gpio_toggle::default();
@@ -94,7 +121,7 @@ where
     let mut peripherals = Widgets::new(vert.clone());
     let mut io = Widgets::new(vert.clone());
     // let mut top_left = Widgets::new(vert.clone());
-    
+
     let mut left = Widgets::new(vert.clone());
     let _ = left.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory")))
         .add_widget(Constraint::Percentage(20), regs, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Registers + PC+ PSR").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
@@ -121,7 +148,7 @@ where
     let _ = root_main.add_widget(Constraint::Percentage(50), left, None)
         .add_widget(Constraint::Percentage(50), right, None);
 
-    
+
     let mut footer = Widgets::new(horz.clone());
     let mut buttons = Widgets::new(horz.clone());
     let run = empty.focusable(true);
@@ -224,7 +251,7 @@ where
                 // .divider(tui::symbols::DOT)
         });
 
-    
+
     if crate::debug::in_debug_mode() {
         let events = Text::new(|t| t.debug_log.as_ref().unwrap());
 
