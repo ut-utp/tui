@@ -6,7 +6,7 @@ use lc3_application_support::io_peripherals::{InputSink, OutputSource};
 
 use lc3_shims::peripherals::SourceShim;
 use lc3_traits::control::rpc::{EventFuture, SyncEventFutureSharedState};
-use lc3_traits::control::control::Control;
+use lc3_traits::control::control::{Control, Event};
 
 use lc3_isa::Addr;
 
@@ -32,10 +32,10 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
 {
-    pub(in crate) sim: &'a mut C,
-    pub(in crate) input: Option<&'a I>,
-    pub(in crate) output: Option<&'a O>,
-    pub(in crate) shims: Option<Shims<'int>>,
+    pub sim: &'a mut C,
+    pub input: Option<&'a I>,
+    pub output: Option<&'a O>,
+    pub shims: Option<Shims<'int>>,
 
     pub(in crate) program_path: Option<PathBuf>,
 
@@ -45,6 +45,8 @@ where
     pub(in crate) wp: HashMap<Addr, usize>,
 
     pub(in crate) flush_all_events: Option<Flush>,
+    /// Is `Some(_)` when an `Event` has _just_ occurred.
+    pub(in crate) current_event: Option<Event>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -60,11 +62,11 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
 {
-    pub(in crate) fn log<L: ToString>(&mut self, line: L, colour: Color) {
+    pub fn log<L: ToString>(&mut self, line: L, colour: Color) {
         self.log.push(TuiText::styled(line.to_string(), Style::default().fg(colour)))
     }
 
-    pub(in crate) fn log_raw<L: ToString>(&mut self, line: L) {
+    pub fn log_raw<L: ToString>(&mut self, line: L) {
         self.log.push(TuiText::raw(line.to_string()))
     }
 
@@ -74,6 +76,10 @@ where
             Some(Flush::Acknowledged(i)) => Flush::Acknowledged(i + 1),
             None => Flush::Requested(0),
         })
+    }
+
+    pub fn get_current_event(&self) -> Option<Event> {
+        self.current_event
     }
 }
 
@@ -85,7 +91,7 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
 {
-    pub(in crate::tui) data: TuiData<'a, 'int, C, I, O>,
+    pub data: TuiData<'a, 'int, C, I, O>,
 
     pub(in crate::tui) update_period: Duration,
     // pub(in crate::tui)
@@ -115,6 +121,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 wp: HashMap::new(),
 
                 flush_all_events: None,
+                current_event: None,
             },
 
             update_period: Duration::from_millis(250),

@@ -25,12 +25,6 @@ mod single;
 mod grouped;
 pub use grouped::Widgets;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Axis {
-    X,
-    Y,
-}
-
 pub trait Widget<'a, 'int, C, I, O, B>: TuiWidget
 where
     C: Control + ?Sized + 'a,
@@ -76,6 +70,14 @@ where
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool;
 }
 
+// TODO: should this actually be pub?
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum Axis {
+    X,
+    Y,
+}
+
+// TODO: should this actually be pub?
 pub fn increment(offset: u16, axis: Axis, area: Rect) -> Rect {
     let mut offset = offset;
     if axis == Axis::X {
