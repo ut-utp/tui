@@ -119,8 +119,10 @@ fn main() -> Result<(), failure::Error> {
             tui.set_program_path(p);
         }
 
+        // TODO: have this take extra tabs we want to add!
+        // let layout = layout::layout_tabs();
 
-        let layout = layout::layout_tabs();
+        let layout = layout::layout();
 
         tui.set_update_period(options.update_period.into());
         tui.run_with_crossterm(Some(layout))?;
