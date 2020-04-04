@@ -250,7 +250,7 @@ where
         .add_widget(Constraint::Percentage(20), regs, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Registers + PC+ PSR").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
 
     let console = Console::default();
-    let mem_console = MemConsole::default();
+    let mem_console = MemRegInterface::default();
 
     let mut right = Widgets::new(vert.clone());
     let _ = right.add_widget(Constraint::Percentage(50), top_right, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Debug Tools")))

@@ -82,9 +82,6 @@ pub use pwm_toggle::*;
 mod console_peripherals;
 pub use console_peripherals::*;
 
-mod mem_console;
-pub use mem_console::*;
-
 mod watch_window;
 pub use watch_window::*;
 
@@ -93,3 +90,6 @@ pub use break_window::*;
 
 mod modeline;
 pub use modeline::*;
+
+mod mem_reg_interface;
+pub use mem_reg_interface::*;
