@@ -26,25 +26,34 @@ where
     B: Backend,
     Terminal<B>: Send,
 {
-    let vert = Layout::default().direction(Direction::Vertical);
+    /*let vert = Layout::default().direction(Direction::Vertical);
 
     let mut root = Widgets::new(vert.clone());
 
     root
         .add_widget(Constraint::Min(1), layout_tabs(), None)
-        .add_widget(Constraint::Length(3), layout_modeline(), Some(
-            Block::default()
-                .style(Style::default().bg(Color::Blue))
-                .border_style(Style::default().fg(Color::Blue))
-                .borders(Borders::TOP/* & (!Borders::BOTTOM)*/)
-                .title("")));
+        .add_widget(Constraint::Length(3), layout_modeline(), None);
 
-    root
+    root*/
 
-    // layout_tabs()
+    layout_tabs()
 }
 
-/*fn make_footer(horz:Layout, b:Block) -> layout {
+pub fn layout_modeline<'a, 'int: 'a, C, I, O, B: 'a>() -> impl Widget<'a, 'int, C, I, O, B>
+where
+    C: Control + ?Sized + 'a,
+    I: InputSink + ?Sized + 'a,
+    O: OutputSource + ?Sized + 'a,
+    B: Backend,
+    Terminal<B>: Send,
+{
+    let horz = Layout::default().direction(Direction::Horizontal);
+    let vert = Layout::default().direction(Direction::Vertical);
+    let b = Block::default()
+        .title_style(Style::default().fg(Color::Red))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::White))
+        .style(Style::default().bg(Color::Reset));
     let mut buttons = Widgets::new(horz.clone());
     //let run = Button::new(String::from("Run"), Color::Green, |t| &t.sim.run_until_event());
     //let pause = Button::new(String::from("Pause"), Color::Red, |t| &t.sim.pause());
@@ -59,23 +68,11 @@ where
         .add_widget(Constraint::Percentage(25), step, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow))))
         .add_widget(Constraint::Percentage(25), LoadButton::new(), Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::White))));
 
-    let mut footer = Widgets::new(horz.clone());
-    let _ = footer.add_widget(Constraint::Percentage(50), Footer::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")))
+    let mut modeline = Widgets::new(horz.clone());
+    let _ = modeline.add_widget(Constraint::Percentage(50), Modeline::new(), None)
         .add_widget(Constraint::Percentage(50), buttons, None);
-
-    footer
-}*/
-
-pub fn layout_modeline<'a, 'int: 'a, C, I, O, B: 'a>() -> impl Widget<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-    Terminal<B>: Send,
-{
-    // Empty::default().focusable(true)
-    Modeline::new()
+    
+    modeline
 }
 
 pub fn layout_tabs<'a, 'int: 'a, C, I, O, B: 'a>() -> Tabs<'a, 'int, C, I, O, B, impl Fn() -> TabsBar<'a, String>>
@@ -93,12 +90,15 @@ where
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::White))
         .style(Style::default().bg(Color::Reset));
+
+    let m = Block::default()
+        .borders(Borders::TOP)
+        .border_style(Style::default().fg(Color::Blue));
+        
     let empty = Empty::default();
 
     let mut root = Widgets::new(vert.clone());
     let mut root_main = Widgets::new(horz.clone());
-
-
 
     let mem = Mem::default();
     let regs = Regs::default();
@@ -109,18 +109,13 @@ where
     let clock = Clock::default();
     let adc = Adc::default();
     let console_peripherals = Console_peripherals::default();
-
-
-
-
-
     let gpio_toggle = Gpio_toggle::default();
     let pwm_toggle =  Pwm_toggle::default();
     let timers_toggle = Timers_toggle::default();
     let adc_toggle = Adc_toggle::default();
 
-
     let mut peripherals = Widgets::new(vert.clone());
+    let mut peripherals_main = Widgets::new(vert.clone());
     let mut io = Widgets::new(vert.clone());
     // let mut top_left = Widgets::new(vert.clone());
 
@@ -136,40 +131,24 @@ where
         .add_widget(Constraint::Percentage(14), pwm.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("PWM").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
         .add_widget(Constraint::Percentage(13), clock.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Clock").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
 
-
-    let _ = peripherals.add_widget(Constraint::Percentage(35), gpio_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("GPIO").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(20), adc_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("ADC").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(10), timers_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Timers").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(10), pwm_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("PWM").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(10), clock.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Clock").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(15), console_peripherals, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Peripheral Console")));
-
     let _ = right.add_widget(Constraint::Percentage(60), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console")))
         .add_widget(Constraint::Percentage(40), io, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("IO")));
 
     let _ = root_main.add_widget(Constraint::Percentage(50), left, None)
         .add_widget(Constraint::Percentage(50), right, None);
 
+    let _ = root.add_widget(Constraint::Min(1), root_main, None)
+        .add_widget(Constraint::Length(3), layout_modeline(), Some(m.clone()));
 
-    let mut footer = Widgets::new(horz.clone());
-    let mut buttons = Widgets::new(horz.clone());
-    let run = empty.focusable(true);
-    let pause = empty.focusable(true);
-    let step = empty.focusable(true);
-    //let run = Sim_Button::new(String::from("Run"), Color::Green, |t| t.run_until_event());
-    //let pause = Sim_Button::new(String::from("Pause"), Color::Red, |t| t.pause());
-    //let step = Sim_Button::new(String::from("Step"), Color::Yellow, |t| t.step());
+    let _ = peripherals_main.add_widget(Constraint::Percentage(35), gpio_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("GPIO").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(20), adc_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("ADC").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(10), timers_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Timers").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(10), pwm_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("PWM").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(10), clock.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Clock").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(15), console_peripherals, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Peripheral Console")));
 
-    let _ = buttons.add_widget(Constraint::Percentage(25), run, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Green))))
-        .add_widget(Constraint::Percentage(25), pause, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Red))))
-        .add_widget(Constraint::Percentage(25), step, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow))))
-        .add_widget(Constraint::Percentage(25), LoadButton::new(), Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::White))));
-
-    let _ = footer.add_widget(Constraint::Percentage(50), Footer::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")))
-        .add_widget(Constraint::Percentage(50), buttons, None);
-
-    let _ = root.add_widget(Constraint::Percentage(85), root_main, None)
-        .add_widget(Constraint::Percentage(15), footer, None);
+    let _ = peripherals.add_widget(Constraint::Min(1), peripherals_main, None)
+        .add_widget(Constraint::Length(3), layout_modeline(), Some(m.clone()));
 
     let mut help = Widgets::new(horz.clone());
     let mut middle = Widgets::new(vert.clone());
@@ -195,50 +174,23 @@ where
     let _ = memory_main.add_widget(Constraint::Percentage(50), left, None)
         .add_widget(Constraint::Percentage(50), empty.focusable(false), None);
 
-    let mut footer = Widgets::new(horz.clone());
-    let mut buttons = Widgets::new(horz.clone());
-    let run = empty.focusable(true);
-    let pause = empty.focusable(true);
-    let step = empty.focusable(true);
-
-    let _ = buttons.add_widget(Constraint::Percentage(25), run, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Green))))
-        .add_widget(Constraint::Percentage(25), pause, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Red))))
-        .add_widget(Constraint::Percentage(25), step, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow))))
-        .add_widget(Constraint::Percentage(25), LoadButton::new(), Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::White))));
-
-    let _ = footer.add_widget(Constraint::Percentage(50), Footer::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")))
-        .add_widget(Constraint::Percentage(50), buttons, None);
-
-    let _ = memory.add_widget(Constraint::Percentage(85), memory_main, None)
-       .add_widget(Constraint::Percentage(15), footer, None);
+    let _ = memory.add_widget(Constraint::Min(1), memory_main, None)
+       .add_widget(Constraint::Length(3), layout_modeline(), Some(m.clone()));
 
     let mut big_console_tab  = Widgets::new(vert.clone());
 
-    let mut footer = Widgets::new(horz.clone());
-    let mut buttons = Widgets::new(horz.clone());
-    let run = empty.focusable(true);
-    let pause = empty.focusable(true);
-    let step = empty.focusable(true);
-
-    let _ = buttons.add_widget(Constraint::Percentage(25), run, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Green))))
-        .add_widget(Constraint::Percentage(25), pause, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Red))))
-        .add_widget(Constraint::Percentage(25), step, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow))))
-        .add_widget(Constraint::Percentage(25), LoadButton::new(), Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::White))));
-
-    let _ = footer.add_widget(Constraint::Percentage(50), Footer::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")))
-        .add_widget(Constraint::Percentage(50), buttons, None);
-    //make_footer(footer);
 
     let console = Console::default();
-    let _ = big_console_tab.add_widget(Constraint::Percentage(85), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console")))
-        .add_widget(Constraint::Percentage(15), footer, None);
+    let _ = big_console_tab.add_widget(Constraint::Min(1), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console")))
+        .add_widget(Constraint::Length(3), layout_modeline(), Some(m.clone()));
 
     let mut log = Widgets::new(horz.clone());
 
     let log_window = Text::new(|t| t.log.as_ref());
     let _ = log.add_widget(Constraint::Percentage(100), log_window, Some(b.clone().border_style(Style::default().fg(Color::Green)).title("Global Program Log")));
 
-    let mut debug = Widgets::new(horz.clone());
+    let mut debug_main = Widgets::new(horz.clone());
+    let mut debug = Widgets::new(vert.clone());
     let mut top_right = Widgets::new(horz.clone());
     let _ = top_right.add_widget(Constraint::Percentage(30), BreakWindow::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Breakpoints")))
         .add_widget(Constraint::Percentage(70), WatchWindow::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Watchpoints").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
@@ -258,8 +210,11 @@ where
         .add_widget(Constraint::Percentage(25), mem_console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory Interface").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
 
 
-    let _ = debug.add_widget(Constraint::Percentage(50), left, None)
+    let _ = debug_main.add_widget(Constraint::Percentage(50), left, None)
         .add_widget(Constraint::Percentage(50), right, None);
+
+    let _ = debug.add_widget(Constraint::Min(1), debug_main, None)
+        .add_widget(Constraint::Length(3), layout_modeline(), Some(m.clone()));
          
     let mut tabs = Tabs::new(root, "🌴 Root")
         .add(peripherals, "🎛️  Peripherals")

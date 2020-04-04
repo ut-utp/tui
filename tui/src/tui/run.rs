@@ -114,7 +114,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                         return false
                     }
                     Key(KeyEvent { code: KeyCode::Char('s'), modifiers: KeyModifiers::CONTROL }) => {
-                        tui.data.step = true;
+                        tui.data.step = 1;
                         return true
                     }
                     Key(KeyEvent { code: KeyCode::Char('p'), modifiers: KeyModifiers::CONTROL }) => {

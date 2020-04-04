@@ -13,6 +13,7 @@ use tui::buffer::Buffer;
 use tui::layout::{Layout, Direction, Constraint, Rect};
 use tui::widgets::Block;
 use tui::terminal::Terminal;
+use tui::style::{Color as Colour, Style, Modifier};
 use crossterm::event::{MouseEvent, MouseButton, KeyEvent, KeyCode, KeyModifiers};
 
 
@@ -255,6 +256,8 @@ where
         // todo!()
 
         use WidgetEvent::*;
+
+        data.log(format!("[mode] Got an event! {:?}", event), Colour::Blue);
 
         match event {
             r @ Resize(_, _) => {

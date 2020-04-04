@@ -45,7 +45,6 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
 {
-    event_fut: Option<C::EventFuture>,
     colour: Color,
     _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
 }
@@ -62,7 +61,6 @@ where
 
     pub fn new_with_colour(colour:Color) -> Self {
         Self {
-            event_fut: None,
             colour,
             _p: PhantomData,
         }
@@ -78,18 +76,18 @@ where
         // Only call `run_until_event` if we're not already running until an event.
         if State::RunningUntilEvent != data.sim.get_state() {
             // Dispose of any currently running futures correctly.
-            if let Some(e) = self.event_fut.take() {
+            if let Some(e) = data.event_fut.take() {
                 // If we're calling this (i.e. if we're not actively running
                 // until an event) blocking on this should return _immediately_.
                 block_on(e);
             }
 
-            self.event_fut = Some(data.sim.run_until_event());
+            data.event_fut = Some(data.sim.run_until_event());
         } else {
             // Just to make sure!
 
             // eprintln!("Already running!");
-            assert!(self.event_fut.is_some());
+            assert!(data.event_fut.is_some());
         }
 
         drop(data.current_event.take())
@@ -99,7 +97,7 @@ where
         data.sim.reset();
 
         // Resolve the pending future, if there is one.
-        if let Some(e) = self.event_fut.take() {
+        if let Some(e) = data.event_fut.take() {
             data.sim.step();
             block_on(e);
         }
@@ -149,9 +147,9 @@ where
 
         // If we're currently running an event and the state changes, we've got
         // ourselves an event.
-        if let Some(_) = self.event_fut {
+        if let Some(_) = data.event_fut {
             if State::RunningUntilEvent != data.sim.get_state() {
-                let event = block_on(self.event_fut.take().unwrap());
+                let event = block_on(data.event_fut.take().unwrap());
 
                 data.log(format!("[mode] Got an event! {:?}", event), Color::Blue);
 
@@ -159,13 +157,13 @@ where
                 data.current_event = Some(event);
             }
         }
-
+        
         match event {
             Focus(FocusEvent::GotFocus) => true,
             Focus(FocusEvent::LostFocus) => true,
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, _, _, _)) => {
-                self.run(data);
+                //self.run(data);
                 true
             }
             _ => false,

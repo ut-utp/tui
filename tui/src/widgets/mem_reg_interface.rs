@@ -152,6 +152,7 @@ where
             }
 
             Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
+                self.input = self.input.to_lowercase();
                 if self.input.len() == 2 {
                     if self.input.starts_with("r") {
                         self.input.remove(0);
@@ -187,8 +188,6 @@ where
                         }
                         Err(e) => {data.log(format!("[Addr] {}\n", e), Colour::Red)}
                     }
-
-                    self.input = self.input.to_lowercase();
                     if self.input.len() > 2 {
                         let val = self.input.split_off(2);
                         if self.input == "0x" {
@@ -211,7 +210,6 @@ where
                     }
                     data.log(format!("[Addr] {}\n", self.input), Colour::Green);
                 } else if self.mode == 1 {
-                    self.input = self.input.to_lowercase();
                     if self.input == "b" {
                         match data.sim.set_breakpoint(self.mem_addr) {
                             Ok(val) => {
