@@ -2,8 +2,6 @@
 
 use super::widget_impl_support::*;
 
-use tui::style::Color; // TODO: coloUr
-
 use std::convert::TryInto;
 
 use lc3_isa::{Addr, Instruction, Reg, Word};
@@ -121,11 +119,11 @@ where
 
         let text = [TuiText::styled(
             loc_arrow,
-            Style::default().fg(Color::Rgb(0x73, 0xB7, 0xE8)),
+            Style::default().fg(Colour::Rgb(0x73, 0xB7, 0xE8)),
         )];
 
         let mut para = Paragraph::new(text.iter())
-                .style(Style::default().fg(Color::White).bg(Color::Reset))
+                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
                 .wrap(true);
 
@@ -133,11 +131,11 @@ where
 
         let text = [TuiText::styled(
             pc_arrow,
-            Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)),
+            Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)),
         )];
 
         let mut para = Paragraph::new(text.iter())
-                .style(Style::default().fg(Color::White).bg(Color::Reset))
+                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
                 .wrap(true);
 
@@ -145,11 +143,11 @@ where
 
         let text = [TuiText::styled(
             bp_locs,
-            Style::default().fg(Color::Rgb(0xCC, 0x02, 0x02)),
+            Style::default().fg(Colour::Rgb(0xCC, 0x02, 0x02)),
         )];
 
         para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
@@ -161,11 +159,11 @@ where
 
         let text = [TuiText::styled(
             wp_locs,
-            Style::default().fg(Color::Rgb(0x30, 0x49, 0xDE)),
+            Style::default().fg(Colour::Rgb(0x30, 0x49, 0xDE)),
         )];
 
         para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
@@ -175,10 +173,10 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(addresses, Style::default().fg(Color::Gray))];
+        let text = [TuiText::styled(addresses, Style::default().fg(Colour::Gray))];
 
         para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
@@ -188,10 +186,10 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(bin, Style::default().fg(Color::LightGreen))];
+        let text = [TuiText::styled(bin, Style::default().fg(Colour::LightGreen))];
 
         para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(false);
 
@@ -201,10 +199,10 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(hex, Style::default().fg(Color::LightGreen))];
+        let text = [TuiText::styled(hex, Style::default().fg(Colour::LightGreen))];
 
         para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(false);
 
@@ -214,10 +212,10 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(dec, Style::default().fg(Color::LightGreen))];
+        let text = [TuiText::styled(dec, Style::default().fg(Colour::LightGreen))];
 
         para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(false);
 
@@ -227,10 +225,10 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(insts, Style::default().fg(Color::LightCyan))];
+        let text = [TuiText::styled(insts, Style::default().fg(Colour::LightCyan))];
 
         para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 

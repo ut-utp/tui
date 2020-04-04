@@ -5,6 +5,7 @@ use super::widget_impl_support::*;
 use lc3_isa::{Addr, Instruction, Reg, Word};
 use std::convert::TryInto;
 
+use lc3_traits::control::control::{Event};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WatchWindow
@@ -52,110 +53,90 @@ where
             self.wp_len = data.wp.len().try_into().unwrap();
         }
 
-        let mut wp_indices = String::from("");
-        let mut addresses = String::from("");
-        let mut index_highlight = String::from("");
-        let mut addr_highlight = String::from("");
-        let mut s_highlight = String::from("");
-        let mut s = String::from("");
+        let mut event_flag = false;
+        let mut event_addr: Addr = 0;
+        if let Some(Event::MemoryWatch{addr, data}) = data.get_current_event() {
+            event_flag = true;
+            event_addr = addr;
+        }
+    
+        let mut t_i = Vec::new();
+        let mut t_a = Vec::new();
+        let mut t_v = Vec::new();
+        let mut event_highlight = 200;
         let mut i = 0;
+        let mut vec = Vec::new();
 
-        for (wp_addr, index) in data.wp.iter() {
+        for (wp_addr, _) in data.wp.iter() {
+            vec.push(*wp_addr);
+        }
+        vec.sort();
+
+        for (wp_addr) in vec.iter() {
             if flag && *wp_addr == self.highlight_addr {
                 self.highlight = i;
                 flag = false;
             }
 
-            if i != self.highlight {
-                wp_indices.push_str(&format!(
-                    "{}\n",
-                    i
-                ));
+            if event_flag && *wp_addr == event_addr {
+                event_highlight = i;
+                event_flag = false;
+            }
 
-                addresses.push_str(&format!(
-                    "{:#06x}\n",
-                    wp_addr
-                ));
-
-                s.push_str(&format!(
-                    "{:#018b} {:#06x} {:#05}\n",
-                    data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr)
-                ));
-
-                index_highlight.push_str("\n");
-                addr_highlight.push_str("\n");
-                s_highlight.push_str("\n");
-            } else {
-                index_highlight.push_str(&format!(
-                    "{}\n",
-                    i
-                ));
-
-                addr_highlight.push_str(&format!(
-                    "{:#06x}\n",
-                    wp_addr
-                ));
-
+            if i == event_highlight && i == self.highlight {
+                let x = format!("{}\n", i);
+                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Magenta)));
+                let x = format!("{:#06x}\n",wp_addr);
+                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Magenta)));
+                let x = format!("{:#018b} {:#06x} {:#05}\n",data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr));
+                t_v.push(TuiText::styled(x, Style::default().fg(Colour::Magenta)));
                 self.highlight_addr = *wp_addr;
-
-                s_highlight.push_str(&format!(
-                    "{:#018b} {:#06x} {:#05}\n",
-                    data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr)
-                ));
-
-                wp_indices.push_str("\n");
-                addresses.push_str("\n");
-                s.push_str("\n");
+            } else if i == event_highlight {
+                let x = format!("{}\n", i);
+                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Red)));
+                let x = format!("{:#06x}\n",wp_addr);
+                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Red)));
+                let x = format!("{:#018b} {:#06x} {:#05}\n",data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr));
+                t_v.push(TuiText::styled(x, Style::default().fg(Colour::Red)));
+            } else if i == self.highlight { 
+                let x = format!("{}\n", i);
+                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Cyan)));
+                let x = format!("{:#06x}\n",wp_addr);
+                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Cyan)));
+                let x = format!("{:#018b} {:#06x} {:#05}\n",data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr));
+                t_v.push(TuiText::styled(x, Style::default().fg(Colour::Cyan)));
+                self.highlight_addr = *wp_addr;
+            } else {
+                let x = format!("{}\n", i);
+                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))));
+                let x = format!("{:#06x}\n",wp_addr);
+                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Gray)));
+                let x = format!("{:#018b} {:#06x} {:#05}\n",data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr));
+                t_v.push(TuiText::styled(x, Style::default().fg(Colour::LightGreen)));
             }
 
             i = i + 1;
         }
 
-        let text = [TuiText::styled(wp_indices,Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
-        let mut para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-            .alignment(Alignment::Left)
-            .wrap(true);
-        para.draw(area, buf);
-
-        let text = [TuiText::styled(index_highlight,Style::default().fg(Colour::Cyan))];
-        let mut para = Paragraph::new(text.iter())
+        let mut para = Paragraph::new(t_i.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
         para.draw(area, buf);
 
         let area = increment(5, Axis::X, area);
-        let text = [TuiText::styled(addresses, Style::default().fg(Colour::Gray))];
-        para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-            .alignment(Alignment::Left)
-            .wrap(true);
-        para.draw(area, buf);
-
-        let text = [TuiText::styled(addr_highlight,Style::default().fg(Colour::Cyan))];
-        let mut para = Paragraph::new(text.iter())
+        para = Paragraph::new(t_a.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
         para.draw(area, buf);
 
         let area = increment(10, Axis::X, area);
-        let text = [TuiText::styled(s, Style::default().fg(Colour::LightGreen))];
-        para = Paragraph::new(text.iter())
+        para = Paragraph::new(t_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
         para.draw(area, buf);
-
-        let text = [TuiText::styled(s_highlight,Style::default().fg(Colour::Cyan))];
-        let mut para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-            .alignment(Alignment::Left)
-            .wrap(true);
-        para.draw(area, buf);
-
-
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
