@@ -44,9 +44,6 @@ where
     pub(in crate) bp: HashMap<Addr, usize>,
     pub(in crate) wp: HashMap<Addr, usize>,
 
-    pub(in crate) run: bool,
-    pub(in crate) step: bool,
-
     pub(in crate) flush_all_events: Option<Flush>,
     /// Is `Some(_)` when an `Event` has _just_ occurred.
     pub(in crate) current_event: Option<Event>,
@@ -122,9 +119,6 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
                 bp: HashMap::new(),
                 wp: HashMap::new(),
-
-                run: false,
-                step: false,
 
                 flush_all_events: None,
                 current_event: None,

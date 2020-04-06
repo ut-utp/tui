@@ -93,3 +93,6 @@ pub use modeline::*;
 
 mod mem_reg_interface;
 pub use mem_reg_interface::*;
+
+mod root_widget;
+pub use root_widget::*;

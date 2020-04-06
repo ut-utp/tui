@@ -48,6 +48,7 @@ where
     event_fut: Option<C::EventFuture>,
     colour: Color,
     _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
+    focus: bool,
 }
 
 impl<'a, 'int, C, I, O> Modeline<'a, 'int, C, I, O>
@@ -65,11 +66,18 @@ where
             event_fut: None,
             colour,
             _p: PhantomData,
+            focus: false,
         }
     }
 
-    // fn step
-    // TODO: should call `drop(data.current_event.take())`
+    fn step(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+        data.sim.step();
+        drop(data.current_event.take())
+    }
+
+    fn pause(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+        data.sim.pause();
+    }
 
     // fn load
     // TODO: should also call `drop(data.current_event.take())`
@@ -128,15 +136,20 @@ where
     B: Backend,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+        let mut bColour = self.colour;
+        if self.focus {
+            bColour = Colour::Red;
+        }
+
         let mut bg_block = Block::default()
-            .style(Style::default().bg(Color::Blue))
-            .borders(Borders::NONE/* & (!Borders::BOTTOM)*/)
+            .style(Style::default().bg(self.colour))
+            .borders(Borders::TOP)
+            .border_style(Style::default().fg(bColour))
             .title("");
 
         bg_block.draw(area, buf);
 
         let area = bg_block.inner(area);
-
         // TODO!
 
     }
@@ -160,13 +173,31 @@ where
             }
         }
 
+        self.focus = true;
+
         match event {
             Focus(FocusEvent::GotFocus) => true,
-            Focus(FocusEvent::LostFocus) => true,
+            Focus(FocusEvent::LostFocus) => {self.focus = false; false},
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, _, _, _)) => {
                 self.run(data);
                 true
+            }
+
+            Key(e) => match e {
+                KeyEvent { code: KeyCode::Char('s'), modifiers: KeyModifiers::CONTROL } => {
+                    self.step(data);
+                    true
+                }
+                KeyEvent { code: KeyCode::Char('p'), modifiers: KeyModifiers::CONTROL } => {
+                    self.pause(data);
+                    true
+                }
+                KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::CONTROL } => {
+                    self.run(data);
+                    true
+                }
+                _ => false,
             }
             _ => false,
         }

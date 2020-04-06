@@ -26,25 +26,28 @@ where
     B: Backend,
     Terminal<B>: Send,
 {
-    let vert = Layout::default().direction(Direction::Vertical);
-
-    let mut root = Widgets::new(vert.clone());
-
-    root
-        .add_widget(Constraint::Min(1), layout_tabs(), None)
-        .add_widget(Constraint::Length(3), layout_modeline(), Some(
-            Block::default()
-                .style(Style::default().bg(Color::Blue))
-                .border_style(Style::default().fg(Color::Blue))
-                .borders(Borders::TOP/* & (!Borders::BOTTOM)*/)
-                .title("")));
+    let mut root = RootWidget::new(layout_tabs())
+        .add(layout_modeline());
 
     root
 
-    // layout_tabs()
 }
 
-/*fn make_footer(horz:Layout, b:Block) -> layout {
+pub fn layout_modeline<'a, 'int: 'a, C, I, O, B: 'a>() -> impl Widget<'a, 'int, C, I, O, B>
+where
+    C: Control + ?Sized + 'a,
+    I: InputSink + ?Sized + 'a,
+    O: OutputSource + ?Sized + 'a,
+    B: Backend,
+    Terminal<B>: Send,
+{
+    /*let horz = Layout::default().direction(Direction::Horizontal);
+    let vert = Layout::default().direction(Direction::Vertical);
+    let b = Block::default()
+        .title_style(Style::default().fg(Color::Red))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::White))
+        .style(Style::default().bg(Color::Reset));
     let mut buttons = Widgets::new(horz.clone());
     //let run = Button::new(String::from("Run"), Color::Green, |t| &t.sim.run_until_event());
     //let pause = Button::new(String::from("Pause"), Color::Red, |t| &t.sim.pause());
@@ -59,22 +62,11 @@ where
         .add_widget(Constraint::Percentage(25), step, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow))))
         .add_widget(Constraint::Percentage(25), LoadButton::new(), Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::White))));
 
-    let mut footer = Widgets::new(horz.clone());
-    let _ = footer.add_widget(Constraint::Percentage(50), Footer::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")))
+    let mut modeline = Widgets::new(horz.clone());
+    let _ = modeline.add_widget(Constraint::Percentage(50), Modeline::new(), None)
         .add_widget(Constraint::Percentage(50), buttons, None);
-
-    footer
-}*/
-
-pub fn layout_modeline<'a, 'int: 'a, C, I, O, B: 'a>() -> impl Widget<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-    Terminal<B>: Send,
-{
-    // Empty::default().focusable(true)
+    
+    modeline*/
     Modeline::new()
 }
 
