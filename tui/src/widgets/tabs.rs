@@ -59,6 +59,13 @@ where
         self
     }
 
+    pub fn add_dyn(mut self, tab: Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, title: String) -> Self {
+        self.tabs.push(tab);
+        self.titles.push(title);
+
+        self
+    }
+
     pub fn with_tabs_bar(mut self, func: F) -> Self {
         self.tabs_bar_func = Some(func);
         self
