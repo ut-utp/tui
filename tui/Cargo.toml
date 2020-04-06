@@ -27,12 +27,13 @@ maintenance = { status = "actively-developed" }
 
 
 [dependencies]
-lc3-application-support = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0" }
-lc3-isa = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0", default-features = false }
-lc3-macros = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0" }
-lc3-shims = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0" }
-lc3-traits = { git = "https://github.com/ut-utp/prototype", branch = "master", version = "0.1.0", default-features = false, features = [] } # Enable std features
+lc3-application-support = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tests", version = "0.1.0" }
+lc3-isa = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tests", version = "0.1.0", default-features = false }
+lc3-macros = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tests", version = "0.1.0" }
+lc3-shims = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tests", version = "0.1.0" }
+lc3-traits = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tests", version = "0.1.0", default-features = false, features = [] } # Enable std features
 # TODO: change all of the above to grab the crates from crates.io instead of git
+# TODO: get rid of the feat-trap-tests branch thing
 
 chrono = "0.4"
 crossbeam = "0.7.3"
@@ -40,10 +41,11 @@ failure = "0.1.6"
 log = "0.4.8"
 pin-utils = "0.1.0-alpha.4"
 
+crossterm = "0.17.1"
+
 # Version hack:
-# No crossterm on wasm:
+# No crossterm feature in the tui on wasm:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-crossterm = "0.16.0"
 tui = { version = "0.8.0", default-features = false, features = ["crossterm"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -71,7 +73,6 @@ tui = { version = "0.7.0", default-features = false}
 # [target.'cfg(not(target_arch = "wasm32"))'.features]
 # default-features = ["tui/crossterm"]
 # ```
-
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
