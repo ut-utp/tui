@@ -4,7 +4,7 @@ use super::widget_impl_support::*;
 use tui::widgets::{Text as TuiText, Paragraph};
 use tui::style::{Color, Style};
 use tui::layout::Alignment;
-use lc3_traits::peripherals::timers::{TimerId, TimerState};
+use lc3_traits::peripherals::timers::{TimerId, TimerState, TimerMode};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Timers {
@@ -42,7 +42,7 @@ where
 
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let timer_state = data.sim.get_timer_states();
-        let timer_configs = data.sim.get_timer_config();
+        let timer_modes = data.sim.get_timer_modes();
 
 
         let text = [
@@ -64,18 +64,30 @@ where
                 let disabled_string = "Disabled";
                 s0.push_str(&format!("{}\n", disabled_string))
             }
-            TimerState::Repeated => s0.push_str(&format!(
-                    "Repeat:  {:#018b} {:#06x} {:#05}\n",
-                    timer_configs[TimerId::T0],
-                    timer_configs[TimerId::T0],
-                    timer_configs[TimerId::T0]
-                )),
-            TimerState::SingleShot => s0.push_str(&format!(
-                    "Single:  {:#018b} {:#06x} {:#05}\n",
-                    timer_configs[TimerId::T0],
-                    timer_configs[TimerId::T0],
-                    timer_configs[TimerId::T0]
-                )),
+            TimerState::WithPeriod(period) => {
+                match timer_modes[TimerId::T0]{
+                        TimerMode::Repeated => {
+                            s0.push_str(&format!(
+                                "Repeated: {:#018b} {:#06x} {:#05}\n",
+                                period,
+                                period,
+                                period,
+                            ))
+                    },
+                        TimerMode::SingleShot => {
+                            s0.push_str(&format!(
+                                "Single: {:#018b} {:#06x} {:#05}\n",
+                                period,
+                                period,
+                                period,
+                            ))
+                        }
+
+                };
+            
+            
+            },
+            
         };
 
         let text = [TuiText::styled(s0, Style::default().fg(Color::LightGreen))];
@@ -85,10 +97,6 @@ where
             .wrap(true);
         let area = increment(10, Axis::X, area);
         para.draw(area, buf);
-
-
-
-
 
         let text = [
             TuiText::styled("Timer 1: \n", Style::default().fg(Color::Gray)),
@@ -108,19 +116,30 @@ where
                 let disabled_string = "Disabled";
                 s1.push_str(&format!("{}\n", disabled_string))
             }
-            TimerState::Repeated => s1.push_str(&format!("Repeat:  {:#018b} {:#06x} {:#05}\n",
-                    timer_configs[TimerId::T1],
-                    timer_configs[TimerId::T1],
-                    timer_configs[TimerId::T1]
-                )),
-            TimerState::SingleShot => s1.push_str(&format!(
-                    "Single:  {:#018b} {:#06x} {:#05}\n",
-                    timer_configs[TimerId::T1],
-                    timer_configs[TimerId::T1],
-                    timer_configs[TimerId::T1]
-                )),
-        };
+            TimerState::WithPeriod(period) => {
+                match timer_modes[TimerId::T0]{
+                        TimerMode::Repeated => {
+                            s1.push_str(&format!(
+                                "Repeated: {:#018b} {:#06x} {:#05}\n",
+                                period,
+                                period,
+                                period,
+                            ))
+                    },
+                        TimerMode::SingleShot => {
+                            s1.push_str(&format!(
+                                "Single: {:#018b} {:#06x} {:#05}\n",
+                                period,
+                                period,
+                                period,
+                            ))
+                        }
 
+                };
+            
+            },
+            
+        };
 
 
 

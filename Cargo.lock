@@ -202,9 +202,9 @@ dependencies = [
 
 [[package]]
 name = "crossterm"
-version = "0.16.0"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8a3223215bc00c666d6be730e88aef245ad4a4f837e87a16c347e8acf701643"
+checksum = "2aa8fc03593d557fb7897c88b0bae3cbae1e52c1ab7fbaa9033ef1af3a354eef"
 dependencies = [
  "bitflags",
  "crossterm_winapi 0.6.1",
@@ -358,7 +358,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lc3-application-support"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#2d8ffe333a2d272ab83ef16876d3f8f02c7b44a9"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#277d187a2d56486986032ee5418451e6b3ef88a1"
 dependencies = [
  "lazy_static",
  "lc3-baseline-sim",
@@ -369,7 +369,7 @@ dependencies = [
 [[package]]
 name = "lc3-baseline-sim"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#2d8ffe333a2d272ab83ef16876d3f8f02c7b44a9"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#277d187a2d56486986032ee5418451e6b3ef88a1"
 dependencies = [
  "lc3-isa",
  "lc3-macros",
@@ -380,7 +380,7 @@ dependencies = [
 [[package]]
 name = "lc3-isa"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#2d8ffe333a2d272ab83ef16876d3f8f02c7b44a9"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#277d187a2d56486986032ee5418451e6b3ef88a1"
 dependencies = [
  "lc3-macros",
  "serde",
@@ -390,7 +390,7 @@ dependencies = [
 [[package]]
 name = "lc3-macros"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#2d8ffe333a2d272ab83ef16876d3f8f02c7b44a9"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#277d187a2d56486986032ee5418451e6b3ef88a1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -400,9 +400,10 @@ dependencies = [
 [[package]]
 name = "lc3-shims"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#2d8ffe333a2d272ab83ef16876d3f8f02c7b44a9"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#277d187a2d56486986032ee5418451e6b3ef88a1"
 dependencies = [
  "byteorder",
+ "chrono",
  "lc3-isa",
  "lc3-macros",
  "lc3-traits",
@@ -413,7 +414,7 @@ dependencies = [
 [[package]]
 name = "lc3-traits"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#2d8ffe333a2d272ab83ef16876d3f8f02c7b44a9"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#277d187a2d56486986032ee5418451e6b3ef88a1"
 dependencies = [
  "lc3-isa",
  "lc3-macros",
@@ -428,7 +429,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "crossbeam",
- "crossterm 0.16.0",
+ "crossterm 0.17.1",
  "failure",
  "lc3-application-support",
  "lc3-isa",
