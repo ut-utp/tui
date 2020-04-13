@@ -18,7 +18,9 @@ use tui::style::{Style, Color};
 // This is currently 'static' (i.e. doesn't change based on the inputs given)
 // but that could change in the future.
 // TODO: potentially parameterize this from with user configurable options!
-pub fn layout<'a, 'int: 'a, C, I, O, B: 'a>() -> impl Widget<'a, 'int, C, I, O, B>
+pub fn layout<'a, 'int: 'a, C, I, O, B: 'a>(
+    extra_tabs: Vec<(Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, String)>,
+) -> impl Widget<'a, 'int, C, I, O, B>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -26,14 +28,17 @@ where
     B: Backend,
     Terminal<B>: Send,
 {
-    let mut root = RootWidget::new(layout_tabs())
+    let mut root = RootWidget::new(layout_tabs(extra_tabs))
         .add(Modeline::new(LoadButton::new()));
 
     root
 
 }
 
-pub fn layout_tabs<'a, 'int: 'a, C, I, O, B: 'a>() -> Tabs<'a, 'int, C, I, O, B, impl Fn() -> TabsBar<'a, String>>
+
+pub fn layout_tabs<'a, 'int: 'a, C, I, O, B: 'a>(
+    extra_tabs: Vec<(Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, String)>,
+) -> Tabs<'a, 'int, C, I, O, B, impl Fn() -> TabsBar<'a, String>>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -66,10 +71,10 @@ where
 
 
 
-    let gpio_toggle = Gpio_toggle::default();
-    let pwm_toggle =  Pwm_toggle::default();
-    let timers_toggle = Timers_toggle::default();
-    let adc_toggle = Adc_toggle::default();
+    let gpio2 = Gpio::default();
+    let pwm2 =  Pwm::default();
+    let timers2 = Timers::default();
+    let adc2 = Adc::default();
 
 
     let mut peripherals = Widgets::new(vert.clone());
@@ -89,10 +94,10 @@ where
         .add_widget(Constraint::Percentage(13), clock.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Clock").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
 
 
-    let _ = peripherals.add_widget(Constraint::Percentage(35), gpio_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("GPIO").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(20), adc_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("ADC").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(10), timers_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Timers").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
-        .add_widget(Constraint::Percentage(10), pwm_toggle.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("PWM").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+    let _ = peripherals.add_widget(Constraint::Percentage(35), gpio2.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("GPIO").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(20), adc2.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("ADC").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(10), timers2.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Timers").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+        .add_widget(Constraint::Percentage(10), pwm2.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("PWM").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
         .add_widget(Constraint::Percentage(10), clock.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(Color::Blue)).title("Clock").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
         .add_widget(Constraint::Percentage(15), console_peripherals, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Peripheral Console")));
 
@@ -191,7 +196,7 @@ where
 
     let _ = debug.add_widget(Constraint::Percentage(50), left, None)
         .add_widget(Constraint::Percentage(50), right, None);
-         
+
     let mut tabs = Tabs::new(root, "🌴 Root")
         .add(peripherals, "🎛️  Peripherals")
         .add(memory, "😀 Mem")
@@ -207,6 +212,9 @@ where
                 // .divider(tui::symbols::DOT)
         });
 
+    for (w, t) in extra_tabs {
+        tabs = tabs.add_dyn(w, t);
+    }
 
     if crate::debug::in_debug_mode() {
         let events = Text::new(|t| t.debug_log.as_ref().unwrap());

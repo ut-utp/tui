@@ -173,9 +173,9 @@ where
                             "gpio" => {
                                 let lock = RwLock::write(&shim.gpio);
                                 
-                                match vec[1] {
+                                match vec[1] { // gpio:pin:{true(1)/false(0)}
                                     "0" => {
-                                        match vec[3] {
+                                        match vec[2] {
                                             "0" => {
                                                 lock.unwrap().set_pin(GpioPin::G0, false); 
                                             },
@@ -187,7 +187,7 @@ where
                                         
                                     },
                                     "1" => {
-                                        match vec[3] {
+                                        match vec[2] {
                                             "0" => {
                                                 lock.unwrap().set_pin(GpioPin::G1, false); 
                                             },
@@ -199,7 +199,7 @@ where
                                         
                                     },
                                     "2" => {
-                                        match vec[3] {
+                                        match vec[2] {
                                             "0" => {
                                                 lock.unwrap().set_pin(GpioPin::G2, false); 
                                             },
@@ -211,7 +211,7 @@ where
                                         
                                     },
                                     "3" => {
-                                        match vec[3] {
+                                        match vec[2] {
                                             "0" => {
                                                 lock.unwrap().set_pin(GpioPin::G3, false); 
                                             },
@@ -223,7 +223,7 @@ where
                                         
                                     },
                                     "4" => {
-                                        match vec[3] {
+                                        match vec[2] {
                                             "0" => {
                                                 lock.unwrap().set_pin(GpioPin::G4, false); 
                                             },
@@ -235,7 +235,7 @@ where
                                         
                                     },
                                     "5" => {
-                                        match vec[3] {
+                                        match vec[2] {
                                             "0" => {
                                                 lock.unwrap().set_pin(GpioPin::G5, false); 
                                             },
@@ -247,7 +247,7 @@ where
                                          
                                     },
                                     "6" => {
-                                        match vec[3] {
+                                        match vec[2] {
                                             "0" => {
                                                 lock.unwrap().set_pin(GpioPin::G6, false); 
                                             },
@@ -259,7 +259,7 @@ where
                                         
                                     },
                                     "7" => {
-                                        match vec[3] {
+                                        match vec[2] {
                                             "0" => {
                                                 lock.unwrap().set_pin(GpioPin::G7, false); 
                                             },

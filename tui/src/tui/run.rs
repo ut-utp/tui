@@ -130,7 +130,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         B: ExecutableCommand<&'static str>,
         Terminal<B>: Send,
     {
-        self.run_with_custom_layout(term, crate::layout::layout())
+        self.run_with_custom_layout(term, crate::layout::layout(vec![]))
     }
 
     // Run with crossterm; with or without your own special layout.

@@ -121,8 +121,8 @@ fn main() -> Result<(), failure::Error> {
 
         // TODO: have this take extra tabs we want to add!
         // let layout = layout::layout_tabs();
-
-        let layout = layout::layout();
+        let no_extra_tabs = Vec::new();
+        let layout = layout::layout(no_extra_tabs);
 
         tui.set_update_period(options.update_period.into());
         tui.run_with_crossterm(Some(layout))?;
