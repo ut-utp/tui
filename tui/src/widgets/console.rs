@@ -2,8 +2,6 @@
 
 use super::widget_impl_support::*;
 
-use lc3_isa::{Addr, Instruction, Reg, Word};
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Console
@@ -51,6 +49,40 @@ where
             .wrap(true);
 
         para.draw(area, buf);*/
+        
+        let console_output = match data.output{ // collect from the output source 
+            Some(output) => {
+                match output.get_chars() { 
+                    Some(s) => {
+                        // I don't think that pulling from output sink flushes the previous characters out...
+                       if s.len() > self.history.len() {  // so we only push to console_output when we get more characters
+                           s 
+                       } else {
+                           "".to_string()
+                       }
+                    },
+                    None => {
+                       "".to_string()
+                    },  
+
+                }
+            },
+           None => {
+               "".to_string()
+           }
+   
+         };
+        if console_output != "" {
+            self.history.push_str(&console_output[self.history.len()..]); // collect from output source
+        }
+
+
+        let text_history = [TuiText::styled(self.history.clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+        let mut para_history = Paragraph::new(text_history.iter())
+                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
+                .alignment(Alignment::Left)
+                .wrap(true);
+
 
         let text = [TuiText::styled(">", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
 
@@ -78,6 +110,8 @@ where
             }
             para.draw(area,buf);
         } else {
+            para_history.draw(area, buf); // the idea of this is to write the output before the ">", but I'm not sure this accomplishes that...
+
             let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
             para.draw(area, buf);
 
@@ -92,6 +126,8 @@ where
                 return;
             }
             para.draw(area,buf);
+
+            
         }
 
     }
@@ -100,22 +136,36 @@ where
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
+        
         match event {
             Focus(FocusEvent::GotFocus) => true,
             Focus(FocusEvent::LostFocus) => true,
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, _, _, _)) => true,
 
-            Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
-                let x = format!("{}", c);
-                self.input.push_str(&x);
-                true
-            }
 
+            Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
+                
+                match _data.input {
+                    Some(input) => {
+                        let x = format!("{}", c);
+                        self.input.push_str(&x);
+                        
+                        input.put_char(c);  // put characters into input sink
+                        true
+                    },
+                    None => {
+                        false
+
+                    }
+                }
+
+            },
             Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
                 self.input = String::from("");
+                
                 true
-            }
+            },
              _ => false,
         }
     }
