@@ -6,14 +6,14 @@ use super::widget_impl_support::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Console
 {
-    history: String,
+    history_vec: Vec<String>,
     input: String,
 }
 
 impl Default for Console {
     fn default() -> Self {
         Self {
-            history: String::from(""),
+            history_vec: Vec::<String>::new(),
             input: String::from(""),
         }
     }
@@ -55,7 +55,6 @@ where
                 match output.get_chars() { 
                     Some(s) => {
                         s 
-                       
                     },
                     None => {
                        "".to_string()
@@ -69,16 +68,17 @@ where
    
          };
         if console_output != "" {
-            self.history.push_str(&console_output); // collect from output source
+            self.history_vec.push(console_output); // collect from output source
         }
 
 
-        let text_history = [TuiText::styled(self.history.clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+            
+        let text_history = [TuiText::styled(self.history_vec.join("\n"), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
         let mut para_history = Paragraph::new(text_history.iter())
-                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-                .alignment(Alignment::Left)
-                .wrap(true);
-
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
+            .alignment(Alignment::Left)
+            .wrap(true);
+        
 
         let text = [TuiText::styled(">", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
 
@@ -107,7 +107,9 @@ where
             para.draw(area,buf);
         } else {
             para_history.draw(area, buf); // the idea of this is to write the output before the ">", but I'm not sure this accomplishes that...
-
+                
+            
+           
             let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
             para.draw(area, buf);
 
@@ -144,11 +146,20 @@ where
                 
                 match _data.input {
                     Some(input) => {
-                        let x = format!("{}", c);
-                        self.input.push_str(&x);
-                        
-                        input.put_char(c);  // put characters into input sink
-                        true
+                        let fallible = input.put_char(c);  // put characters into input sink
+
+                        match fallible {
+                            Some(some) => {
+                                let x = format!("{}", c);
+                                self.input.push_str(&x);
+                                true
+                            },
+
+                            None => {
+                                false
+                            }
+
+                        } 
                     },
                     None => {
                         false
