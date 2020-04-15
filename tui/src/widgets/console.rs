@@ -54,12 +54,8 @@ where
             Some(output) => {
                 match output.get_chars() { 
                     Some(s) => {
-                        // I don't think that pulling from output sink flushes the previous characters out...
-                       if s.len() > self.history.len() {  // so we only push to console_output when we get more characters
-                           s 
-                       } else {
-                           "".to_string()
-                       }
+                        s 
+                       
                     },
                     None => {
                        "".to_string()
@@ -73,7 +69,7 @@ where
    
          };
         if console_output != "" {
-            self.history.push_str(&console_output[self.history.len()..]); // collect from output source
+            self.history.push_str(&console_output); // collect from output source
         }
 
 
