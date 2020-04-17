@@ -32,6 +32,7 @@ pub enum WidgetEvent {
     Mouse(MouseEvent),
     Resize(u16, u16),
     Focus(FocusEvent),
+    Update, // Just another name for Tick.
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

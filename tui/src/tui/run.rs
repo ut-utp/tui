@@ -101,10 +101,14 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
                 // Currently, we only redraw on ticks (TODO: is this okay or should we
                 // redraw on events too?):
-                Tick => term.draw(|mut f| {
-                    let area = f.size();
-                    Widget::render(&mut root, &tui.data, &mut f, area)
-                }).unwrap(), // TODO: is unwrapping okay here?
+                Tick => {
+                    drop(root.update(WidgetEvent::Update, &mut tui.data, term));
+
+                    term.draw(|mut f| {
+                        let area = f.size();
+                        Widget::render(&mut root, &tui.data, &mut f, area)
+                    }).unwrap() // TODO: is unwrapping okay here?
+                }
 
                 ActualEvent(e) => match e {
                     // Capture `ctrl + q`/`alt + f4` and forward everything else:

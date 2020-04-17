@@ -75,7 +75,17 @@ where
         x = 0;
 
         while x != 50 {
-            let inst: Instruction = mem[x as usize].try_into().unwrap();
+            let mut inst_f = true;
+            let inst: Instruction = match mem[x as usize].try_into(){
+                Ok(x) => x,
+                Err(e) => {
+                    inst_f = false;
+                    Instruction::AddReg {
+                        dr: Reg::R0,
+                        sr1: Reg::R0,
+                        sr2: Reg::R0,
+                    }}
+            };
             //let inst = "TODO";
 
             let addr = pc.wrapping_sub(self.offset).wrapping_add(x).wrapping_sub(self.focus);
@@ -121,7 +131,12 @@ where
                 "{:#05}\n",
                 mem[x as usize]
             ));
-            insts.push_str(&format!("{}\n", inst));
+
+            if inst_f {
+                insts.push_str(&format!("{}\n", inst));
+            } else {
+                insts.push_str(&format!("\n"))
+            }
             x = x + 1;
         }
 
