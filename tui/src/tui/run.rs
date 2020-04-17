@@ -118,7 +118,6 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                             Widget::render(&mut root, &tui.data, &mut f, area)
                         }
 
-                        let area = f.size();
                         Widget::render(&mut root, &tui.data, &mut f, area)
                     }).unwrap() // TODO: is unwrapping okay here?
                 }
