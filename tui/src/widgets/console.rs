@@ -70,12 +70,12 @@ where
            data.history_vec.borrow_mut().push(console_output); // collect from output source
         }
 
-        while data.history_vec.borrow_mut().len() > 100{
+        while data.history_vec.borrow_mut().len() > 50{
             data.history_vec.borrow_mut().remove(0);
         }
 
-        let mut temp = data.history_vec.borrow_mut().clone();
-        while temp.len() > (area.y/2).try_into().unwrap() {
+        let mut temp = data.history_vec.borrow().clone();
+        while temp.len() > (area.y*3/4).try_into().unwrap() {
             temp.remove(0);
         }
            
