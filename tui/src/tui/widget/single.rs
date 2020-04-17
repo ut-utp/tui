@@ -63,6 +63,8 @@ where
             self.area
         };
 
+        debug_assert!(buf.area().union(area) == *buf.area(), "drew {:?} on a {:?}", area, buf.area());
+
         Widget::draw(&mut *self.widget, data, area, buf)
     }
 }
