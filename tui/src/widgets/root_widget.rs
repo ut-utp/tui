@@ -82,7 +82,7 @@ where
         let out = self.components[0].update(event, data, terminal);
         if self.cur_focus == 1 {
             self.drop_extra_focus(0, data, terminal);
-        } 
+        }
         out
     }
 
@@ -232,6 +232,8 @@ where
 
             // Resize all the tabs!
             Resize(_, _) => self.propagate_to_all(event, data, terminal),
+
+            Update => self.propagate_to_all(event, data, terminal),
 
             _ => self.propagate(event, data, terminal)
         }

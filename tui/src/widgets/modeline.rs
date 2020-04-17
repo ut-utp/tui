@@ -218,7 +218,7 @@ where
             .wrap(true);
         para.draw(state_block, buf);
 
-        let event = match data.current_event {
+        let event = match data.get_current_event() {
             Some(event) => {
                 match event {
                     Event::Breakpoint {addr} => format!("Breakpoint at {}!", addr),

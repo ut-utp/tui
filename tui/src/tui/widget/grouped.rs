@@ -262,6 +262,10 @@ where
                 self.propagate_to_all(r, data, terminal)
             },
 
+            Update => {
+                self.propagate_to_all(Update, data, terminal)
+            },
+
             Focus(FocusEvent::GotFocus) => {
                 self.focused = if !self.widgets.is_empty() {
                     'outer: loop {
