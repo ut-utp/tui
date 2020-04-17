@@ -76,7 +76,7 @@ where
                 },
 
 
-                GpioState::Input | GpioState::Interrupt => {
+                GpioState::Input => {
                     match gpioin[gpio_pins_1[i]] {
                         Ok(val) => {
                                 s1.push_str(&format!(
@@ -89,6 +89,26 @@ where
                             let err_string = "-";
                             s1.push_str(&format!(
                                 "Input: {}\n",
+                                err_string,
+
+                                ));
+                        }
+                        }
+                },
+
+                GpioState::Interrupt => {
+                    match gpioin[gpio_pins_1[i]] {
+                        Ok(val) => {
+                                s1.push_str(&format!(
+                                "Interrupt: {}\n",
+                                val,
+
+                                ));
+                            }
+                        _ => {
+                            let err_string = "-";
+                            s1.push_str(&format!(
+                                "Interrupt: {}\n",
                                 err_string,
 
                                 ));
