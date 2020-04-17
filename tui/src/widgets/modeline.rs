@@ -83,8 +83,7 @@ where
     }
 
     fn step(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
-        data.sim.step();
-        drop(data.current_event.take())
+        data.current_event = data.sim.step();
     }
 
     fn pause(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
