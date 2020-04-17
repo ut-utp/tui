@@ -397,25 +397,25 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lc3-application-support"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#e9f8232e738d7a16d94f360cc198054b48d782db"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#3ea1808a9a643265398271de8dcabc0709f1b333"
 dependencies = [
  "lazy_static",
- "lc3-baseline-sim 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "lc3-shims 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
+ "lc3-baseline-sim",
+ "lc3-shims",
+ "lc3-traits",
 ]
 
 [[package]]
 name = "lc3-assembler"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/assembler#d99c9a9015fff86340f5166c3d8bdc3910aa9fa8"
+source = "git+https://github.com/ut-utp/assembler#0adfdbda1c29967b1ecd4afef43e1973dd2def5a"
 dependencies = [
  "annotate-snippets",
  "clap",
  "itertools",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/prototype)",
+ "lc3-isa",
  "lc3-os",
- "lc3-shims 0.1.0 (git+https://github.com/ut-utp/prototype)",
+ "lc3-shims",
  "num-traits",
  "regex 0.2.11",
 ]
@@ -423,41 +423,20 @@ dependencies = [
 [[package]]
 name = "lc3-baseline-sim"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#e9f8232e738d7a16d94f360cc198054b48d782db"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#3ea1808a9a643265398271de8dcabc0709f1b333"
 dependencies = [
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "static_assertions",
-]
-
-[[package]]
-name = "lc3-baseline-sim"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#46e0e7d5d9d0e2ec78ab483a3022a3b71e84adc4"
-dependencies = [
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/prototype)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/prototype)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/prototype)",
+ "lc3-isa",
+ "lc3-macros",
+ "lc3-traits",
  "static_assertions",
 ]
 
 [[package]]
 name = "lc3-isa"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#e9f8232e738d7a16d94f360cc198054b48d782db"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#3ea1808a9a643265398271de8dcabc0709f1b333"
 dependencies = [
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "serde",
- "static_assertions",
-]
-
-[[package]]
-name = "lc3-isa"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#46e0e7d5d9d0e2ec78ab483a3022a3b71e84adc4"
-dependencies = [
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/prototype)",
+ "lc3-macros",
  "serde",
  "static_assertions",
 ]
@@ -465,17 +444,7 @@ dependencies = [
 [[package]]
 name = "lc3-macros"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#e9f8232e738d7a16d94f360cc198054b48d782db"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "lc3-macros"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#46e0e7d5d9d0e2ec78ab483a3022a3b71e84adc4"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#3ea1808a9a643265398271de8dcabc0709f1b333"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -485,39 +454,28 @@ dependencies = [
 [[package]]
 name = "lc3-os"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#46e0e7d5d9d0e2ec78ab483a3022a3b71e84adc4"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#3ea1808a9a643265398271de8dcabc0709f1b333"
 dependencies = [
  "lazy_static",
- "lc3-baseline-sim 0.1.0 (git+https://github.com/ut-utp/prototype)",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/prototype)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/prototype)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/prototype)",
+ "lc3-baseline-sim",
+ "lc3-isa",
+ "lc3-macros",
+ "lc3-shims",
+ "lc3-traits",
+ "static_assertions",
 ]
 
 [[package]]
 name = "lc3-shims"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#e9f8232e738d7a16d94f360cc198054b48d782db"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#3ea1808a9a643265398271de8dcabc0709f1b333"
 dependencies = [
  "byteorder",
  "chrono",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
+ "lc3-isa",
+ "lc3-macros",
+ "lc3-traits",
  "static_assertions",
- "time",
- "timer",
-]
-
-[[package]]
-name = "lc3-shims"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#46e0e7d5d9d0e2ec78ab483a3022a3b71e84adc4"
-dependencies = [
- "byteorder",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/prototype)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/prototype)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/prototype)",
  "time",
  "timer",
 ]
@@ -525,22 +483,10 @@ dependencies = [
 [[package]]
 name = "lc3-traits"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#e9f8232e738d7a16d94f360cc198054b48d782db"
+source = "git+https://github.com/ut-utp/prototype?branch=feat-trap-tests#3ea1808a9a643265398271de8dcabc0709f1b333"
 dependencies = [
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "log",
- "serde",
- "static_assertions",
-]
-
-[[package]]
-name = "lc3-traits"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype#46e0e7d5d9d0e2ec78ab483a3022a3b71e84adc4"
-dependencies = [
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/prototype)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/prototype)",
+ "lc3-isa",
+ "lc3-macros",
  "log",
  "serde",
  "static_assertions",
@@ -550,16 +496,18 @@ dependencies = [
 name = "lc3-tui"
 version = "0.1.0"
 dependencies = [
+ "annotate-snippets",
  "chrono",
  "crossbeam",
  "crossterm 0.17.3",
  "failure",
  "lc3-application-support",
  "lc3-assembler",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "lc3-shims 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/prototype?branch=feat-trap-tests)",
+ "lc3-isa",
+ "lc3-macros",
+ "lc3-os",
+ "lc3-shims",
+ "lc3-traits",
  "log",
  "pin-utils",
  "pretty_assertions",
