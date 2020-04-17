@@ -41,6 +41,8 @@ where
     //
     // Listed here anyways for clarity.
     fn render<BB: Backend>(&mut self, f: &mut Frame<'_, BB>, area: Rect) {
+        debug_assert!(f.size().union(area) == f.size(), "drew {:?} on a {:?}", area, f.size());
+
         f.render(self, area);
 
         // Goes to this:

@@ -38,7 +38,7 @@ fn block_on<F: Future/* + Unpin*/>(f: F) -> F::Output {
     }
 }
 
-#[allow(explicit_outlives_requirement)]
+#[allow(explicit_outlives_requirements)]
 pub struct Modeline<'a, 'int, C, I, O, B>
 where
     C: Control + ?Sized + 'a,
@@ -100,7 +100,7 @@ where
             if let Some(e) = self.event_fut.take() {
                 // If we're calling this (i.e. if we're not actively running
                 // until an event) blocking on this should return _immediately_.
-                block_on(e);
+                data.current_event = Some(block_on(e));
             }
 
             self.event_fut = Some(data.sim.run_until_event());
@@ -140,6 +140,18 @@ where
     fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
         unimplemented!("Don't call this! We need TuiData to draw!")
     }
+}
+
+// Divides rect into NUM_SEGMENTS equal segments
+// Creates a rect based on index and size (# of segments)
+fn create_rect(index: u16, size: u16, area:Rect) -> Rect {
+    const NUM_SEGMENTS: u16 = 8;
+    const MARGIN_FRACTION: u16 = 200;
+    Rect::new(
+        area.width/NUM_SEGMENTS*index + area.width/MARGIN_FRACTION,
+        area.y,
+        area.width/NUM_SEGMENTS*size - 2*area.width/MARGIN_FRACTION,
+        area.height)
 }
 
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Modeline<'a, 'int, C, I, O, B>
@@ -186,7 +198,7 @@ where
         bg_block.draw(area, buf);
 
         let area = bg_block.inner(area);
-        let area = Rect::new(area.x, area.y, area.width/2, area.height);
+        let area = Rect::new(area.x, area.y, area.width, area.height);
 
 //        let mut bg_block = Block::default()
 //            .style(Style::default().bg(mColour))
@@ -194,24 +206,25 @@ where
 //
 //        bg_block.draw(area, buf);
 
-        let state_block = Rect::new(area.width/24, area.y, area.width*5/24, area.height);
-        let cur_event_block = Rect::new(area.width/24*8, area.y, area.width*17/24, area.height);
-        self.execution_control_button = Rect::new(area.width + area.width/24, area.y, area.width*4/24, area.height);
-        self.step_button = Rect::new(area.width + area.width/24*6, area.y, area.width*4/24, area.height);
-        self.reset_button = Rect::new(area.width + area.width/24*12, area.y, area.width*4/24, area.height);
-        self.load_button = Rect::new(area.width + area.width/24*18, area.y, area.width*4/24, area.height);
+        let state_block = create_rect(0, 1, area);
+        let cur_event_block = create_rect(1, 3, area);
+        self.execution_control_button = create_rect(4, 1, area);
+        self.step_button = create_rect(5, 1, area);
+        self.reset_button = create_rect(6, 1, area);
+        self.load_button = create_rect(7, 1, area);
 
+        let mut state_color = Color::White;
         let state = match data.sim.get_state() {
             State::Halted => "HALTED",
             State::Paused => "PAUSED",
             State::RunningUntilEvent => "RUNNING",
         };
-        let state_text = [TuiText::styled(state, Style::default().fg(Color::White))];
+        let state_text = [TuiText::styled(state, Style::default().fg(state_color))];
         let mut para = Paragraph::new(state_text.iter())
             .style(Style::default())
             .block(Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::White))
+                .border_style(Style::default().fg(state_color))
                 .title("Current State"))
             .alignment(Alignment::Center)
             .wrap(true);
@@ -220,21 +233,24 @@ where
         let event = match data.get_current_event() {
             Some(event) => {
                 match event {
-                    Event::Breakpoint {addr} => format!("Breakpoint at {}!", addr),
-                    Event::MemoryWatch {addr, data} => format!("Watchpoint at {} with data {}!", addr, data),
-                    Event::Error {err} => format!("Error: {}!", err),
+                    Event::Breakpoint {addr} => format!("Breakpoint at {:#x}!", addr),
+                    Event::MemoryWatch {addr, data} => format!("Watchpoint at {:#x} with data {:#x}!", addr, data),
+                    Event::Error {err} => {
+                        state_color = Color::Red;
+                        format!("Error: {}!", err)
+                    },
                     Event::Interrupted => format!("Interrupted!"),
                     Event::Halted => format!("Halted!"),
                 }
             },
             None => format!(""),
         };
-        let event_text = [TuiText::styled(event, Style::default().fg(Color::White))];
+        let event_text = [TuiText::styled(event, Style::default().fg(state_color))];
         let mut para = Paragraph::new(event_text.iter())
             .style(Style::default())
             .block(Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::White))
+                .border_style(Style::default().fg(state_color))
                 .title("Current Event"))
             .alignment(Alignment::Left)
             .wrap(true);

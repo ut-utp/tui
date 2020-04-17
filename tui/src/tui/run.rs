@@ -41,6 +41,8 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         self.data.log("Hello! 👋\n", Color::Cyan);
         self.data.log("We're up! 🚀\n", Color::Magenta);
 
+        let mut last_window_size = None;
+
         backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {
             use Event::*;
             use CrosstermEvent::*;
@@ -93,6 +95,10 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 v.push(text);
             }
 
+            if let ActualEvent(Resize(x, y)) = event {
+                last_window_size = Some((x, y));
+            }
+
             match event {
                 Error(err) => {
                     // TODO: should we crash here?
@@ -106,6 +112,12 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
                     term.draw(|mut f| {
                         let area = f.size();
+                        if (last_window_size == Some((area.width, area.height)) ||
+                                    last_window_size == None)
+                                && area.area() > 0 {
+                            Widget::render(&mut root, &tui.data, &mut f, area)
+                        }
+
                         Widget::render(&mut root, &tui.data, &mut f, area)
                     }).unwrap() // TODO: is unwrapping okay here?
                 }

@@ -10,7 +10,7 @@ use std::marker::PhantomData;
 
 use lc3_isa::{Addr, Instruction, Reg, Word};
 
-#[allow(explicit_outlives_requirement)]
+#[allow(explicit_outlives_requirements)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Sim_Button<'a, 'int, C, I, O, F>
 where
