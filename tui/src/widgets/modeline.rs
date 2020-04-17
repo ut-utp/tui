@@ -201,17 +201,18 @@ where
         self.reset_button = Rect::new(area.width + area.width/24*13, area.y, area.width*5/24, area.height);
         self.load_button = Rect::new(area.width + area.width/24*19, area.y, area.width*5/24, area.height);
 
+        let mut state_color = Color::White;
         let state = match data.sim.get_state() {
             State::Halted => "HALTED",
             State::Paused => "PAUSED",
             State::RunningUntilEvent => "RUNNING",
         };
-        let state_text = [TuiText::styled(state, Style::default().fg(Color::White))];
+        let state_text = [TuiText::styled(state, Style::default().fg(state_color))];
         let mut para = Paragraph::new(state_text.iter())
             .style(Style::default())
             .block(Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::White))
+                .border_style(Style::default().fg(state_color))
                 .title("Current State"))
             .alignment(Alignment::Center)
             .wrap(true);
@@ -220,21 +221,24 @@ where
         let event = match data.get_current_event() {
             Some(event) => {
                 match event {
-                    Event::Breakpoint {addr} => format!("Breakpoint at {}!", addr),
-                    Event::MemoryWatch {addr, data} => format!("Watchpoint at {} with data {}!", addr, data),
-                    Event::Error {err} => format!("Error: {}!", err),
+                    Event::Breakpoint {addr} => format!("Breakpoint at {:#x}!", addr),
+                    Event::MemoryWatch {addr, data} => format!("Watchpoint at {:#x} with data {:#x}!", addr, data),
+                    Event::Error {err} => {
+                        state_color = Color::Red;
+                        format!("Error: {}!", err)
+                    },
                     Event::Interrupted => format!("Interrupted!"),
                     Event::Halted => format!("Halted!"),
                 }
             },
             None => format!(""),
         };
-        let event_text = [TuiText::styled(event, Style::default().fg(Color::White))];
+        let event_text = [TuiText::styled(event, Style::default().fg(state_color))];
         let mut para = Paragraph::new(event_text.iter())
             .style(Style::default())
             .block(Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::White))
+                .border_style(Style::default().fg(state_color))
                 .title("Current Event"))
             .alignment(Alignment::Left)
             .wrap(true);
