@@ -76,11 +76,11 @@ where
                 },
 
 
-                _ => {
+                GpioState::Input | GpioState::Interrupt => {
                     match gpioin[gpio_pins_1[i]] {
                         Ok(val) => {
                                 s1.push_str(&format!(
-                                "{}\n",
+                                "Input: {}\n",
                                 val,
 
                                 ));
@@ -88,7 +88,7 @@ where
                         _ => {
                             let err_string = "-";
                             s1.push_str(&format!(
-                                "{}\n",
+                                "Input: {}\n",
                                 err_string,
 
                                 ));
