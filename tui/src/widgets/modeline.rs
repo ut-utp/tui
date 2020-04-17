@@ -48,10 +48,10 @@ where
 {
     event_fut: Option<C::EventFuture>,
     colour: Color,
-    button1: Rect,
-    button2: Rect,
-    button3: Rect,
-    button4: Rect,
+    execution_control_button: Rect,
+    step_button: Rect,
+    reset_button: Rect,
+    load_button: Rect,
     reset_flag: bool,
     loadB: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
     focus: u8,
@@ -72,10 +72,10 @@ where
         Self {
             event_fut: None,
             colour,
-            button1: Rect::default(),
-            button2: Rect::default(),
-            button3: Rect::default(),
-            button4: Rect::default(),
+            execution_control_button: Rect::default(),
+            step_button: Rect::default(),
+            reset_button: Rect::default(),
+            load_button: Rect::default(),
             reset_flag: false,
             loadB: vec![Box::new(button)],
             focus: 0,
@@ -143,7 +143,6 @@ where
     }
 }
 
-
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Modeline<'a, 'int, C, I, O, B>
 where
     C: Control + ?Sized + 'a,
@@ -190,19 +189,59 @@ where
         let area = bg_block.inner(area);
         let area = Rect::new(area.x, area.y, area.width/2, area.height);
 
-        let mut bg_block = Block::default()
-            .style(Style::default().bg(mColour))
-            .title("");
+//        let mut bg_block = Block::default()
+//            .style(Style::default().bg(mColour))
+//            .title("");
+//
+//        bg_block.draw(area, buf);
 
-        bg_block.draw(area, buf);
+        let state_block = Rect::new(area.width/24, area.y, area.width*5/24, area.height);
+        let cur_event_block = Rect::new(area.width/24*8, area.y, area.width*17/24, area.height);
+        self.execution_control_button = Rect::new(area.width + area.width/24, area.y, area.width*5/24, area.height);
+        self.step_button = Rect::new(area.width + area.width/24*8, area.y, area.width*5/24, area.height);
+        self.reset_button = Rect::new(area.width + area.width/24*15, area.y, area.width*5/24, area.height);
+        self.load_button = Rect::new(area.width + area.width/24*22, area.y, area.width*5/24, area.height);
 
-        self.button1 = Rect::new(area.width + area.width/12, area.y, area.width*2/12, area.height);
-        self.button2 = Rect::new(area.width + area.width/12*4, area.y, area.width*2/12, area.height);
-        self.button3 = Rect::new(area.width + area.width/12*7, area.y, area.width*2/12, area.height);
-        self.button4 = Rect::new(area.width + area.width/12*10, area.y, area.width*2/12, area.height);
+        let state = match data.sim.get_state() {
+            State::Halted => "HALTED",
+            State::Paused => "PAUSED",
+            State::RunningUntilEvent => "RUNNING",
+        };
+        let state_text = [TuiText::styled(state, Style::default().fg(Color::White))];
+        let mut para = Paragraph::new(state_text.iter())
+            .style(Style::default())
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::White))
+                .title("Current State"))
+            .alignment(Alignment::Center)
+            .wrap(true);
+        para.draw(state_block, buf);
+
+        let event = match data.current_event {
+            Some(event) => {
+                match event {
+                    Event::Breakpoint {addr} => format!("Breakpoint at {}!", addr),
+                    Event::MemoryWatch {addr, data} => format!("Watchpoint at {} with data {}!", addr, data),
+                    Event::Error {err} => format!("Error: {}!", err),
+                    Event::Interrupted => format!("Interrupted!"),
+                    Event::Halted => format!("Halted!"),
+                }
+            },
+            None => format!(""),
+        };
+        let event_text = [TuiText::styled(event, Style::default().fg(Color::White))];
+        let mut para = Paragraph::new(event_text.iter())
+            .style(Style::default())
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::White))
+                .title("Current Event"))
+            .alignment(Alignment::Left)
+            .wrap(true);
+        para.draw(cur_event_block, buf);
 
         let mut vec = Vec::new();
-
         if data.sim.get_state() == State::RunningUntilEvent{
             vec.push(TuiText::styled("Pause", Style::default().fg(Colour::Yellow)));
         } else {
@@ -216,10 +255,7 @@ where
                 .title(""))
             .alignment(Alignment::Center)
             .wrap(true);
-        para.draw(self.button1,buf);
-        
-            
-
+        para.draw(self.execution_control_button,buf);
 
         let text = [TuiText::styled("Step", Style::default().fg(Colour::Magenta))];
         para = Paragraph::new(text.iter())
@@ -230,12 +266,9 @@ where
                 .title(""))
             .alignment(Alignment::Center)
             .wrap(true);
-            
-
-        para.draw(self.button2,buf);
+        para.draw(self.step_button,buf);
 
         let mut vec = Vec::new();
-
         if self.reset_flag {
             vec.push(TuiText::styled("Are You Sure", Style::default().fg(Colour::Red)));
         } else {
@@ -249,18 +282,15 @@ where
                 .title(""))
             .alignment(Alignment::Center)
             .wrap(true);
-            
-
-        para.draw(self.button3,buf);
+        para.draw(self.reset_button,buf);
 
         bg_block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(b4Colour))
             .title("");
+        bg_block.draw(self.load_button, buf);
 
-        bg_block.draw(self.button4, buf);
-
-        Widget::draw(&mut *self.loadB[0], data, bg_block.inner(self.button4), buf);
+        Widget::draw(&mut *self.loadB[0], data, bg_block.inner(self.load_button), buf);
 
     }
 
@@ -276,7 +306,7 @@ where
             if State::RunningUntilEvent != data.sim.get_state() {
                 let event = block_on(self.event_fut.take().unwrap());
 
-                data.log(format!("[mode] Got an event! {:?}", event), Color::Blue);
+                data.log(format!("[mode] Got an event! {:?}\n", event), Color::Blue);
 
                 assert!(data.current_event.is_none()); // We're being defensive; I thini this holds.
                 data.current_event = Some(event);
@@ -292,17 +322,17 @@ where
             Focus(FocusEvent::LostFocus) => {self.focus = 0; false},
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, x, y, _)) => {
-                if self.button1.intersects(Rect::new(x,y,1,1)) {
+                if self.execution_control_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = 2;
                     if data.sim.get_state() == State::RunningUntilEvent{
                         self.pause(data)
                     } else {
                         self.run(data);
                     }
-                } else if self.button2.intersects(Rect::new(x,y,1,1)) {
+                } else if self.step_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = 3;
                     self.step(data);
-                } else if self.button3.intersects(Rect::new(x,y,1,1)) {
+                } else if self.reset_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = 4;
                     if self.reset_flag{
                         self.reset(data);
@@ -310,7 +340,7 @@ where
                     } else {
                         self.reset_flag = true;
                     }
-                } else if self.button4.intersects(Rect::new(x,y,1,1)) {
+                } else if self.load_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = 5;
                     self.loadB[0].update(event, data, terminal);
                 }
