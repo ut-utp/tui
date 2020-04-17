@@ -50,6 +50,14 @@ where
         let Console_psr_pc = data.sim.get_registers_psr_and_pc();
         let (Console, psr, pc) = Console_psr_pc;
 
+        let peripheral_help = format!("Hello! To write to ADC or GPIO from the peripheral console,\nyou must write a line below separated by colons (:) then press ENTER to submit!\nex. gpio:1:1 will set GPIO pin 1 to True");
+        let text_help = [TuiText::styled(peripheral_help, Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))];
+        
+        let mut para_help = Paragraph::new(text_help.iter())
+            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .alignment(Alignment::Left)
+            .wrap(true);
+
         let text = [TuiText::styled(">", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))];
 
         let mut para = Paragraph::new(text.iter())
@@ -77,7 +85,7 @@ where
             para.draw(area,buf);
         } else {
 
-
+            para_help.draw(area, buf);
 
             let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
             para.draw(area, buf);
@@ -107,206 +115,243 @@ where
                     Focus(FocusEvent::LostFocus) => true,
                     Mouse(MouseEvent::Up(_, _, _, _)) => true,
                     Mouse(MouseEvent::Down(_, _, _, _)) => true,
-        
+
+
+                    Key(KeyEvent { code: KeyCode::Backspace, modifiers: EMPTY }) => {
+                        self.input.remove(self.input.len()-1);
+
+                        true
+
+                    }
+
+                    
                     Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
 
                         let mut x = format!("{}", c);
-                        
-
-
                         self.input.push_str(&x);
-        
-                        let mut vec: Vec<&str> = x.split(":").collect();
-                        
-                        
-                        if vec.len() > 2 {
-                        match vec[0] {
-
-                            // "pwm" => {
-                            //     let lock = RwLock::write(&shim.pwm);
-
-                            //     match vec[1] {
-                            //         "0" => {
-                            //             let duty_cycle = vec[2].parse::<NonZeroU8>().unwrap();
-                            //              lock.unwrap().set_duty_cycle_helper(PwmPin::P0, duty_cycle);
-
-
-
-
-                            //         },
-                            //         "1" => {
-                            //             let duty_cycle = vec[2].parse::<NonZeroU8>().unwrap();
-                            //             lock.unwrap().set_duty_cycle_helper(PwmPin::P1, duty_cycle);
-                            //         },
-
-                            //         _ => {}
-
-
-                            //     }
-
-
-                            // },
-                            "adc" => {
-                                let lock = RwLock::write(&shim.adc);
-
-                                match vec[1] {
-                                    "0" => {
-                                        let value = vec[2].parse::<u8>().unwrap();
-                                         lock.unwrap().set_value(AdcPin::A0, value);
-                                    },
-                                    "1" => {
-                                        let value = vec[2].parse::<u8>().unwrap();
-                                        lock.unwrap().set_value(AdcPin::A1, value);
-                                    },
-                                    "2" => {
-                                        let value = vec[2].parse::<u8>().unwrap();
-                                        lock.unwrap().set_value(AdcPin::A2, value);
-                                    },
-                                    "3" => {
-                                        let value = vec[2].parse::<u8>().unwrap();
-                                        lock.unwrap().set_value(AdcPin::A3, value);
-                                    },
-
-                                    _ => {}
-                                }
-                            },
-                            "gpio" => {
-                                let lock = RwLock::write(&shim.gpio);
-                                
-                                match vec[1] { // gpio:pin:{true(1)/false(0)}
-                                    "0" => {
-                                        match vec[2] {
-                                            "0" => {
-                                                lock.unwrap().set_pin(GpioPin::G0, false); 
-                                            },
-                                            "1" => {
-                                                lock.unwrap().set_pin(GpioPin::G0, true); 
-                                            },
-                                            _ => {}
-                                        }
-                                        
-                                    },
-                                    "1" => {
-                                        match vec[2] {
-                                            "0" => {
-                                                lock.unwrap().set_pin(GpioPin::G1, false); 
-                                            },
-                                            "1" => {
-                                                lock.unwrap().set_pin(GpioPin::G1, true); 
-                                            },
-                                            _ => {}
-                                        }
-                                        
-                                    },
-                                    "2" => {
-                                        match vec[2] {
-                                            "0" => {
-                                                lock.unwrap().set_pin(GpioPin::G2, false); 
-                                            },
-                                            "1" => {
-                                                lock.unwrap().set_pin(GpioPin::G2, true); 
-                                            },
-                                            _ => {}
-                                        }
-                                        
-                                    },
-                                    "3" => {
-                                        match vec[2] {
-                                            "0" => {
-                                                lock.unwrap().set_pin(GpioPin::G3, false); 
-                                            },
-                                            "1" => {
-                                                lock.unwrap().set_pin(GpioPin::G3, true); 
-                                            },
-                                            _ => {}
-                                        }
-                                        
-                                    },
-                                    "4" => {
-                                        match vec[2] {
-                                            "0" => {
-                                                lock.unwrap().set_pin(GpioPin::G4, false); 
-                                            },
-                                            "1" => {
-                                                lock.unwrap().set_pin(GpioPin::G4, true); 
-                                            },
-                                            _ => {}
-                                        }
-                                        
-                                    },
-                                    "5" => {
-                                        match vec[2] {
-                                            "0" => {
-                                                lock.unwrap().set_pin(GpioPin::G5, false); 
-                                            },
-                                            "1" => {
-                                                lock.unwrap().set_pin(GpioPin::G5, true); 
-                                            },
-                                            _ => {}
-                                        }
-                                         
-                                    },
-                                    "6" => {
-                                        match vec[2] {
-                                            "0" => {
-                                                lock.unwrap().set_pin(GpioPin::G6, false); 
-                                            },
-                                            "1" => {
-                                                lock.unwrap().set_pin(GpioPin::G6, true); 
-                                            },
-                                            _ => {}
-                                        }
-                                        
-                                    },
-                                    "7" => {
-                                        match vec[2] {
-                                            "0" => {
-                                                lock.unwrap().set_pin(GpioPin::G7, false); 
-                                            },
-                                            "1" => {
-                                                lock.unwrap().set_pin(GpioPin::G7, true); 
-                                            },
-                                            _ => {}
-                                        }
-                                        
-                                    },
-                                    _ => {}
-
-                                }
-                            },
-                            // "timers" => {
-                            //     let lock = RwLock::write(&shim.timers);
-                                
-                            //     match vec[1] {
-                            //         "0" => {
-                            //             let milliseconds = vec[2].parse::<Word>().unwrap();
-                            //             //  lock.unwrap().set_period(TimerId::T0, milliseconds);
-                            //         },
-                            //         "1" => {
-                            //             let milliseconds = vec[2].parse::<Word>().unwrap();
-                            //             //  lock.unwrap().set_period(TimerId::T0, milliseconds);
-
-                            //         },
-
-                            //         _ => {}
-
-
-                            //     }
-
-
-                            // },
-                            _ => {}
-
-
-                        }
-                    }
-        
-        
                         true
+                        
                     }
         
                     Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
+                        let x = self.input.clone();
+                        let vec: Vec<&str> = x.split(":").collect();
+
                         self.input = String::from("");
+                        
+                        if vec.len() > 2 {
+                            match vec[0] {
+                                "adc" => {
+                                    let lock = RwLock::write(&shim.adc);
+                                    let adc_states = _data.sim.get_adc_states();
+                                    match vec[1] {
+                                        "0" => {
+                                            match adc_states[AdcPin::A0] {
+                                                AdcState::Enabled => {
+                                                    let value = vec[2].parse::<u8>().unwrap();
+                                                    lock.unwrap().set_value(AdcPin::A0, value);
+                                                },
+                                                AdcState::Disabled => {
+                                                }
+
+                                            }
+                                            
+                                        },
+                                        "1" => {
+                                            match adc_states[AdcPin::A1] {
+                                                AdcState::Enabled => {
+                                                    let value = vec[2].parse::<u8>().unwrap();
+                                                    lock.unwrap().set_value(AdcPin::A1, value);
+                                                },
+                                                AdcState::Disabled => {
+                                                    
+                                                }
+
+                                            }
+                                        },
+                                        "2" => {
+                                            match adc_states[AdcPin::A2] {
+                                                AdcState::Enabled => {
+                                                    let value = vec[2].parse::<u8>().unwrap();
+                                                    lock.unwrap().set_value(AdcPin::A2, value);
+                                                },
+                                                AdcState::Disabled => {
+                                                    
+                                                }
+
+                                            }
+                                        },
+                                        "3" => {
+                                            match adc_states[AdcPin::A3] {
+                                                AdcState::Enabled => {
+                                                    let value = vec[2].parse::<u8>().unwrap();
+                                                    lock.unwrap().set_value(AdcPin::A3, value);
+                                                },
+                                                AdcState::Disabled => {
+                                                    
+                                                }
+
+                                            }
+                                        },
+                                        _ => {}
+                                    }
+                                },
+                                "gpio" => {
+                                    let lock = RwLock::write(&shim.gpio);
+                                    let gpio_states = _data.sim.get_gpio_states();
+                                    match vec[1] { // gpio:pin:{true(1)/false(0)}
+                                        "0" => {
+                                            match gpio_states[GpioPin::G0] {
+                                                
+                                                GpioState::Input => {
+                                                    match vec[2] {
+                                                        "0" => {
+                                                            lock.unwrap().set_pin(GpioPin::G0, false); 
+                                                        },
+                                                        "1" => {
+                                                            lock.unwrap().set_pin(GpioPin::G0, true); 
+                                                        },
+                                                        _ => {}
+                                                    }
+                                                },
+                                                _ => {}
+                                            }
+                                            
+                                            
+                                        },
+                                        "1" => {
+                                            match gpio_states[GpioPin::G1] {
+                                                GpioState::Input => {
+                                                    match vec[2] {
+                                                        "0" => {
+                                                            lock.unwrap().set_pin(GpioPin::G1, false); 
+                                                        },
+                                                        "1" => {
+                                                            lock.unwrap().set_pin(GpioPin::G1, true); 
+                                                        },
+                                                        _ => {}
+                                                    }
+                                                },
+                                                _ => {}
+                                            }
+                                            
+                                        },
+                                        "2" => {
+                                            match gpio_states[GpioPin::G2] {
+                                                
+                                                GpioState::Input => {
+                                                    match vec[2] {
+                                                        "0" => {
+                                                            lock.unwrap().set_pin(GpioPin::G2, false); 
+                                                        },
+                                                        "1" => {
+                                                            lock.unwrap().set_pin(GpioPin::G2, true); 
+                                                        },
+                                                        _ => {}
+                                                    }
+                                                },
+                                                _ => {}
+                                            }
+                                            
+                                        },
+                                        "3" => {
+                                            match gpio_states[GpioPin::G3] {
+                                                
+                                                GpioState::Input => {
+                                                    match vec[2] {
+                                                        "0" => {
+                                                            lock.unwrap().set_pin(GpioPin::G3, false); 
+                                                        },
+                                                        "1" => {
+                                                            lock.unwrap().set_pin(GpioPin::G3, true); 
+                                                        },
+                                                        _ => {}
+                                                    }
+                                                },
+                                                _ => {}
+                                            }
+                                            
+                                        },
+                                        "4" => {
+                                            match gpio_states[GpioPin::G4] {
+                                                
+                                                GpioState::Input => {
+                                                    match vec[2] {
+                                                        "0" => {
+                                                            lock.unwrap().set_pin(GpioPin::G4, false); 
+                                                        },
+                                                        "1" => {
+                                                            lock.unwrap().set_pin(GpioPin::G4, true); 
+                                                        },
+                                                        _ => {}
+                                                    }
+                                                },
+                                                _ => {}
+                                            }
+                                        },
+                                        "5" => {
+                                            match gpio_states[GpioPin::G5] {
+                                                
+                                                GpioState::Input => {
+                                                    match vec[2] {
+                                                        "0" => {
+                                                            lock.unwrap().set_pin(GpioPin::G5, false); 
+                                                        },
+                                                        "1" => {
+                                                            lock.unwrap().set_pin(GpioPin::G5, true); 
+                                                        },
+                                                        _ => {}
+                                                    }
+                                                },
+                                                _ => {}
+                                            }
+                                            
+                                        },
+                                        "6" => {
+                                            match gpio_states[GpioPin::G6] {
+                                                
+                                                GpioState::Input => {
+                                                    match vec[2] {
+                                                        "0" => {
+                                                            lock.unwrap().set_pin(GpioPin::G6, false); 
+                                                        },
+                                                        "1" => {
+                                                            lock.unwrap().set_pin(GpioPin::G6, true); 
+                                                        },
+                                                        _ => {}
+                                                    }
+                                                },
+                                                _ => {}
+                                            }
+                                            
+                                        },
+                                        "7" => {
+                                            match gpio_states[GpioPin::G7] {
+                                                GpioState::Input => {
+                                                    match vec[2] {
+                                                        "0" => {
+                                                            lock.unwrap().set_pin(GpioPin::G7, false); 
+                                                        },
+                                                        "1" => {
+                                                            lock.unwrap().set_pin(GpioPin::G7, true); 
+                                                        },
+                                                        _ => {}
+                                                    }
+                                                },
+                                                _ => {}
+                                            }
+                                            
+                                        },
+                                        _ => {}
+
+                                    }
+                                },
+                            _ => {}
+
+
+                            }
+                        }
+            
                         true
                     }
                      _ => false,

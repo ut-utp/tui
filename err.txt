@@ -1,0 +1,1550 @@
+   Compiling lc3-macros v0.1.0 (https://github.com/ut-utp/prototype?branch=feat-trap-tests#c60010a5)
+   Compiling lc3-isa v0.1.0 (https://github.com/ut-utp/prototype?branch=feat-trap-tests#c60010a5)
+   Compiling lc3-traits v0.1.0 (https://github.com/ut-utp/prototype?branch=feat-trap-tests#c60010a5)
+   Compiling lc3-shims v0.1.0 (https://github.com/ut-utp/prototype?branch=feat-trap-tests#c60010a5)
+   Compiling lc3-baseline-sim v0.1.0 (https://github.com/ut-utp/prototype?branch=feat-trap-tests#c60010a5)
+   Compiling lc3-application-support v0.1.0 (https://github.com/ut-utp/prototype?branch=feat-trap-tests#c60010a5)
+   Compiling lc3-tui v0.1.0 (/Users/davidrollins/SrDesign/tui/tui)
+warning: lint `legacy_directory_ownership` has been removed: `converted into hard error, see https://github.com/rust-lang/rust/issues/37872`
+ --> tui/src/lib.rs:9:5
+  |
+9 |     legacy_directory_ownership,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(renamed_and_removed_lints)]` on by default
+
+warning: lint `plugin_as_library` has been removed: `plugins have been deprecated and retired`
+  --> tui/src/lib.rs:15:5
+   |
+15 |     plugin_as_library,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: lint `safe_extern_statics` has been removed: `converted into hard error, see https://github.com/rust-lang/rust/issues/36247`
+  --> tui/src/lib.rs:17:5
+   |
+17 |     safe_extern_statics,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unknown lint: `explicit_outlives_requirement`
+  --> tui/src/widgets/button.rs:13:9
+   |
+13 | #[allow(explicit_outlives_requirement)]
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: did you mean: `explicit_outlives_requirements`
+   |
+   = note: `#[warn(unknown_lints)]` on by default
+
+warning: unknown lint: `explicit_outlives_requirement`
+  --> tui/src/widgets/modeline.rs:41:9
+   |
+41 | #[allow(explicit_outlives_requirement)]
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: did you mean: `explicit_outlives_requirements`
+
+warning: unused macro definition
+  --> tui/src/lib.rs:43:1
+   |
+43 | / macro_rules! specialize {
+44 | |     (desktop => { $($d:item)* } web => { $($w:item)* }) => {
+45 | |         $( #[cfg(not(target = "wasm32"))] $d )*
+46 | |         $( #[cfg(target = "wasm32")] $w )*
+47 | |     };
+48 | | }
+   | |_^
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:19:5
+   |
+19 |     unused,
+   |     ^^^^^^
+   = note: `#[warn(unused_macros)]` implied by `#[warn(unused)]`
+
+warning: unused import: `super::super::Tui`
+  --> tui/src/widgets/help.rs:5:5
+   |
+5  | use super::super::Tui;
+   |     ^^^^^^^^^^^^^^^^^
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:19:5
+   |
+19 |     unused,
+   |     ^^^^^^
+   = note: `#[warn(unused_imports)]` implied by `#[warn(unused)]`
+
+warning: unused imports: `Addr`, `Reg`
+ --> tui/src/widgets/mem.rs:7:15
+  |
+7 | use lc3_isa::{Addr, Instruction, Reg, Word};
+  |               ^^^^               ^^^
+
+warning: unused imports: `Addr`, `Instruction`, `Reg`, `Word`
+ --> tui/src/widgets/regs.rs:9:15
+  |
+9 | use lc3_isa::{Addr, Instruction, Reg, Word};
+  |               ^^^^  ^^^^^^^^^^^  ^^^  ^^^^
+
+warning: unused imports: `Addr`, `Instruction`, `Reg`, `Word`
+  --> tui/src/widgets/button.rs:11:15
+   |
+11 | use lc3_isa::{Addr, Instruction, Reg, Word};
+   |               ^^^^  ^^^^^^^^^^^  ^^^  ^^^^
+
+warning: type `Sim_Button` should have an upper camel case name
+  --> tui/src/widgets/button.rs:15:12
+   |
+15 | pub struct Sim_Button<'a, 'int, C, I, O, F>
+   |            ^^^^^^^^^^ help: convert the identifier to upper camel case: `SimButton`
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:5:5
+   |
+5  |     bad_style,
+   |     ^^^^^^^^^
+   = note: `#[warn(non_camel_case_types)]` implied by `#[warn(bad_style)]`
+
+warning: unused import: `core::num::NonZeroU8`
+ --> tui/src/widgets/console_peripherals.rs:5:5
+  |
+5 | use core::num::NonZeroU8;
+  |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `GpioState`
+ --> tui/src/widgets/console_peripherals.rs:9:46
+  |
+9 | use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
+  |                                              ^^^^^^^^^
+
+warning: unused import: `AdcState`
+  --> tui/src/widgets/console_peripherals.rs:10:44
+   |
+10 | use lc3_traits::peripherals::adc::{AdcPin, AdcState};
+   |                                            ^^^^^^^^
+
+warning: unused imports: `PwmPin`, `PwmState`
+  --> tui/src/widgets/console_peripherals.rs:11:36
+   |
+11 | use lc3_traits::peripherals::pwm::{PwmPin, PwmState};
+   |                                    ^^^^^^  ^^^^^^^^
+
+warning: unused imports: `TimerId`, `TimerState`
+  --> tui/src/widgets/console_peripherals.rs:12:39
+   |
+12 | use lc3_traits::peripherals::timers::{TimerId, TimerState};
+   |                                       ^^^^^^^  ^^^^^^^^^^
+
+warning: unused imports: `Arc`, `Mutex`, `mpsc`
+  --> tui/src/widgets/console_peripherals.rs:13:17
+   |
+13 | use std::sync::{mpsc, Arc, Mutex, RwLock};
+   |                 ^^^^  ^^^  ^^^^^
+
+warning: unused imports: `Addr`, `Instruction`, `Reg`, `Word`
+  --> tui/src/widgets/console_peripherals.rs:15:15
+   |
+15 | use lc3_isa::{Addr, Instruction, Reg, Word};
+   |               ^^^^  ^^^^^^^^^^^  ^^^  ^^^^
+
+warning: type `Console_peripherals` should have an upper camel case name
+  --> tui/src/widgets/console_peripherals.rs:19:12
+   |
+19 | pub struct Console_peripherals
+   |            ^^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `ConsolePeripherals`
+
+warning: unused imports: `Instruction`, `Reg`, `Word`
+ --> tui/src/widgets/watch_window.rs:5:21
+  |
+5 | use lc3_isa::{Addr, Instruction, Reg, Word};
+  |                     ^^^^^^^^^^^  ^^^  ^^^^
+
+warning: braces around Event is unnecessary
+  --> tui/src/widgets/watch_window.rs:8:1
+   |
+8  | use lc3_traits::control::control::{Event};
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:35:5
+   |
+35 |     unused_import_braces,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unnecessary parentheses around pattern
+  --> tui/src/widgets/watch_window.rs:75:13
+   |
+75 |         for (wp_addr) in vec.iter() {
+   |             ^^^^^^^^^ help: remove these parentheses
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:23:5
+   |
+23 |     unused_parens,
+   |     ^^^^^^^^^^^^^
+
+warning: unnecessary parentheses around `if` condition
+   --> tui/src/widgets/watch_window.rs:157:19
+    |
+157 |                 if(c.is_digit(10)){
+    |                   ^^^^^^^^^^^^^^^^ help: remove these parentheses
+
+warning: unused imports: `Instruction`, `Reg`, `Word`
+ --> tui/src/widgets/break_window.rs:5:21
+  |
+5 | use lc3_isa::{Addr, Instruction, Reg, Word};
+  |                     ^^^^^^^^^^^  ^^^  ^^^^
+
+warning: braces around Event is unnecessary
+ --> tui/src/widgets/break_window.rs:8:1
+  |
+8 | use lc3_traits::control::control::{Event};
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::slice`
+  --> tui/src/widgets/break_window.rs:10:5
+   |
+10 | use std::slice;
+   |     ^^^^^^^^^^
+
+warning: unnecessary parentheses around pattern
+  --> tui/src/widgets/break_window.rs:79:13
+   |
+79 |         for (bp_addr) in vec.iter() {
+   |             ^^^^^^^^^ help: remove these parentheses
+
+warning: unnecessary parentheses around `if` condition
+   --> tui/src/widgets/break_window.rs:146:19
+    |
+146 |                 if(c.is_digit(10)){
+    |                   ^^^^^^^^^^^^^^^^ help: remove these parentheses
+
+warning: unused import: `super::load_button::*`
+ --> tui/src/widgets/modeline.rs:4:5
+  |
+4 | use super::load_button::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: braces around Paragraph is unnecessary
+ --> tui/src/widgets/modeline.rs:6:1
+  |
+6 | use tui::widgets::{Paragraph};
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `PhantomData`, `Unpin`
+ --> tui/src/widgets/modeline.rs:9:20
+  |
+9 | use core::marker::{PhantomData, Unpin};
+  |                    ^^^^^^^^^^^  ^^^^^
+
+warning: unused import: `core::pin::Pin`
+  --> tui/src/widgets/modeline.rs:10:5
+   |
+10 | use core::pin::Pin;
+   |     ^^^^^^^^^^^^^^
+
+warning: unused import: `Event`
+  --> tui/src/widgets/modeline.rs:14:27
+   |
+14 | use lc3_traits::control::{Event, State};
+   |                           ^^^^^
+
+warning: unnecessary trailing semicolon
+   --> tui/src/widgets/modeline.rs:316:41
+    |
+316 |                         self.focus += 1;;
+    |                                         ^ help: remove this semicolon
+    |
+    = note: `#[warn(redundant_semicolon)]` on by default
+
+warning: unused import: `Instruction`
+ --> tui/src/widgets/mem_reg_interface.rs:5:21
+  |
+5 | use lc3_isa::{Addr, Instruction, Reg, Word};
+  |                     ^^^^^^^^^^^
+
+warning: unused import: `MouseButton`
+  --> tui/src/tui/widget/grouped.rs:16:36
+   |
+16 | use crossterm::event::{MouseEvent, MouseButton, KeyEvent, KeyCode, KeyModifiers};
+   |                                    ^^^^^^^^^^^
+
+warning: unused variable: `data`
+  --> tui/src/widgets/footer.rs:36:24
+   |
+36 |     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+   |                        ^^^^ help: consider prefixing with an underscore: `_data`
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:19:5
+   |
+19 |     unused,
+   |     ^^^^^^
+   = note: `#[warn(unused_variables)]` implied by `#[warn(unused)]`
+
+warning: unused variable: `data`
+  --> tui/src/widgets/help.rs:40:24
+   |
+40 |     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+   |                        ^^^^ help: consider prefixing with an underscore: `_data`
+
+warning: unused variable: `button`
+   --> tui/src/widgets/mem.rs:281:34
+    |
+281 |             Mouse(MouseEvent::Up(button, x, y, _)) => {
+    |                                  ^^^^^^ help: consider prefixing with an underscore: `_button`
+
+warning: unused variable: `x`
+   --> tui/src/widgets/mem.rs:281:42
+    |
+281 |             Mouse(MouseEvent::Up(button, x, y, _)) => {
+    |                                          ^ help: consider prefixing with an underscore: `_x`
+
+warning: unused variable: `y`
+   --> tui/src/widgets/mem.rs:281:45
+    |
+281 |             Mouse(MouseEvent::Up(button, x, y, _)) => {
+    |                                             ^ help: consider prefixing with an underscore: `_y`
+
+warning: unused variable: `button`
+   --> tui/src/widgets/mem.rs:285:36
+    |
+285 |             Mouse(MouseEvent::Down(button, x, y, _)) => {
+    |                                    ^^^^^^ help: consider prefixing with an underscore: `_button`
+
+warning: unused variable: `Console`
+  --> tui/src/widgets/console.rs:39:14
+   |
+39 |         let (Console, psr, pc) = Console_psr_pc;
+   |              ^^^^^^^ help: consider prefixing with an underscore: `_Console`
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:19:5
+   |
+19 |     unused,
+   |     ^^^^^^
+   = note: `#[warn(unused_variables)]` implied by `#[warn(unused)]`
+
+warning: unused variable: `psr`
+  --> tui/src/widgets/console.rs:39:23
+   |
+39 |         let (Console, psr, pc) = Console_psr_pc;
+   |                       ^^^ help: consider prefixing with an underscore: `_psr`
+
+warning: unused variable: `pc`
+  --> tui/src/widgets/console.rs:39:28
+   |
+39 |         let (Console, psr, pc) = Console_psr_pc;
+   |                            ^^ help: consider prefixing with an underscore: `_pc`
+
+warning: unused variable: `some`
+   --> tui/src/widgets/console.rs:154:34
+    |
+154 | ...                   Some(some) =...
+    |                            ^^^^ help: consider prefixing with an underscore: `_some`
+
+warning: unused variable: `p0`
+  --> tui/src/widgets/pwm.rs:61:13
+   |
+61 |         let p0 = match pwm_state[PwmPin::P0]{
+   |             ^^ help: consider prefixing with an underscore: `_p0`
+
+warning: unused variable: `time`
+  --> tui/src/widgets/pwm.rs:66:31
+   |
+66 |             PwmState::Enabled(time) => {
+   |                               ^^^^ help: consider prefixing with an underscore: `_time`
+
+warning: unused variable: `p1`
+   --> tui/src/widgets/pwm.rs:101:13
+    |
+101 |         let p1 = match pwm_state[PwmPin::P1]{
+    |             ^^ help: consider prefixing with an underscore: `_p1`
+
+warning: unused variable: `time`
+   --> tui/src/widgets/pwm.rs:106:31
+    |
+106 |             PwmState::Enabled(time) => {
+    |                               ^^^^ help: consider prefixing with an underscore: `_time`
+
+warning: unused variable: `t0`
+  --> tui/src/widgets/timers.rs:62:13
+   |
+62 |         let t0 = match timer_state[TimerId::T0] {
+   |             ^^ help: consider prefixing with an underscore: `_t0`
+
+warning: unused variable: `t1`
+   --> tui/src/widgets/timers.rs:114:13
+    |
+114 |         let t1 = match timer_state[TimerId::T1] {
+    |             ^^ help: consider prefixing with an underscore: `_t1`
+
+warning: unused variable: `data`
+  --> tui/src/widgets/button.rs:93:24
+   |
+93 |     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+   |                        ^^^^ help: consider prefixing with an underscore: `_data`
+
+warning: unused variable: `terminal`
+   --> tui/src/widgets/button.rs:106:85
+    |
+106 |     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    |                                                                                     ^^^^^^^^ help: consider prefixing with an underscore: `_terminal`
+
+warning: unused variable: `Console`
+  --> tui/src/widgets/console_peripherals.rs:51:14
+   |
+51 |         let (Console, psr, pc) = Console_psr_pc;
+   |              ^^^^^^^ help: consider prefixing with an underscore: `_Console`
+
+warning: unused variable: `psr`
+  --> tui/src/widgets/console_peripherals.rs:51:23
+   |
+51 |         let (Console, psr, pc) = Console_psr_pc;
+   |                       ^^^ help: consider prefixing with an underscore: `_psr`
+
+warning: unused variable: `pc`
+  --> tui/src/widgets/console_peripherals.rs:51:28
+   |
+51 |         let (Console, psr, pc) = Console_psr_pc;
+   |                            ^^ help: consider prefixing with an underscore: `_pc`
+
+warning: unused variable: `data`
+  --> tui/src/widgets/watch_window.rs:58:46
+   |
+58 |         if let Some(Event::MemoryWatch{addr, data}) = data.get_current_event() {
+   |                                              ^^^^ help: try ignoring the field: `data: _`
+
+warning: unused variable: `data`
+  --> tui/src/widgets/mem_reg_interface.rs:43:24
+   |
+43 |     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+   |                        ^^^^ help: consider prefixing with an underscore: `_data`
+
+warning: value assigned to `addr` is never read
+   --> tui/src/widgets/mem_reg_interface.rs:274:29
+    |
+274 |                     let mut addr = 0;
+    |                             ^^^^
+    |
+note: the lint level is defined here
+   --> tui/src/lib.rs:19:5
+    |
+19  |     unused,
+    |     ^^^^^^
+    = note: `#[warn(unused_assignments)]` implied by `#[warn(unused)]`
+    = help: maybe it is overwritten before being read?
+
+warning: unused variable: `area`
+   --> tui/src/widgets/root_widget.rs:109:24
+    |
+109 |     fn draw(&mut self, area: Rect, buf: &mut Buffer) {
+    |                        ^^^^ help: consider prefixing with an underscore: `_area`
+
+warning: unused variable: `buf`
+   --> tui/src/widgets/root_widget.rs:109:36
+    |
+109 |     fn draw(&mut self, area: Rect, buf: &mut Buffer) {
+    |                                    ^^^ help: consider prefixing with an underscore: `_buf`
+
+warning: unused variable: `n`
+   --> tui/src/widgets/root_widget.rs:135:48
+    |
+135 |                 KeyEvent { code: KeyCode::Char(n @ '1'..='9'), modifiers: KeyModifiers::CONTROL } |
+    |                                                ^
+136 |                 KeyEvent { code: KeyCode::Char(n @ '1'..='9'), modifiers: KeyModifiers::ALT } => {
+    |                                                ^
+    |
+help: consider prefixing with an underscore
+    |
+135 |                 KeyEvent { code: KeyCode::Char(_n @ '1'..='9'), modifiers: KeyModifiers::CONTROL } |
+136 |                 KeyEvent { code: KeyCode::Char(_n @ '1'..='9'), modifiers: KeyModifiers::ALT } => {
+    |
+
+warning: unused variable: `n`
+   --> tui/src/widgets/root_widget.rs:141:45
+    |
+141 |                 KeyEvent { code: KeyCode::F(n), modifiers: EMPTY } => {
+    |                                             ^ help: consider prefixing with an underscore: `_n`
+
+warning: unused variable: `col`
+   --> tui/src/widgets/root_widget.rs:202:29
+    |
+202 |                     Down(_, col, row, _) | Up(_, col, row, _) => {
+    |                             ^^^                  ^^^
+    |
+help: consider prefixing with an underscore
+    |
+202 |                     Down(_, _col, row, _) | Up(_, _col, row, _) => {
+    |                             ^^^^                  ^^^^
+
+warning: variable does not need to be mutable
+  --> tui/src/layout.rs:31:9
+   |
+31 |     let mut root = RootWidget::new(layout_tabs(extra_tabs))
+   |         ----^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:19:5
+   |
+19 |     unused,
+   |     ^^^^^^
+   = note: `#[warn(unused_mut)]` implied by `#[warn(unused)]`
+
+warning: variable does not need to be mutable
+   --> tui/src/widgets/console_peripherals.rs:113:29
+    |
+113 |                         let mut x = format!("{}", c);
+    |                             ----^
+    |                             |
+    |                             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> tui/src/widgets/console_peripherals.rs:119:29
+    |
+119 |                         let mut vec: Vec<&str> = x.split(":").collect();
+    |                             ----^^^
+    |                             |
+    |                             help: remove this `mut`
+
+warning: constant item is never used: `EMPTY`
+   --> tui/src/widgets/regs.rs:110:9
+    |
+110 |         const EMPTY: KeyModifiers = KeyModifiers::empty();
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> tui/src/lib.rs:19:5
+    |
+19  |     unused,
+    |     ^^^^^^
+    = note: `#[warn(dead_code)]` implied by `#[warn(unused)]`
+
+warning: constant item is never used: `EMPTY`
+   --> tui/src/widgets/button.rs:108:9
+    |
+108 |         const EMPTY: KeyModifiers = KeyModifiers::empty();
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method is never used: `reset`
+   --> tui/src/widgets/modeline.rs:114:5
+    |
+114 |     fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method is never used: `propagate_until_handled`
+   --> tui/src/tui/widget/grouped.rs:114:5
+    |
+114 |     fn propagate_until_handled(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a constant
+  --> tui/src/debug.rs:3:1
+   |
+3  | pub const DEBUG_ENV_VAR: &'static str = "TUI_DEBUG";
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:30:5
+   |
+30 |     missing_docs,
+   |     ^^^^^^^^^^^^
+
+warning: missing documentation for a function
+ --> tui/src/debug.rs:5:1
+  |
+5 | pub fn in_debug_mode() -> bool {
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a function
+  --> tui/src/layout.rs:21:1
+   |
+21 | / pub fn layout<'a, 'int: 'a, C, I, O, B: 'a>(
+22 | |     extra_tabs: Vec<(Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, String)>,
+23 | | ) -> impl Widget<'a, 'int, C, I, O, B>
+24 | | where
+...  |
+35 | |
+36 | | }
+   | |_^
+
+warning: missing documentation for a function
+   --> tui/src/layout.rs:39:1
+    |
+39  | / pub fn layout_tabs<'a, 'int: 'a, C, I, O, B: 'a>(
+40  | |     extra_tabs: Vec<(Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, String)>,
+41  | | ) -> Tabs<'a, 'int, C, I, O, B, impl Fn() -> TabsBar<'a, String>>
+42  | | where
+...   |
+231 | |     tabs
+232 | | }
+    | |_^
+
+warning: missing documentation for a struct
+ --> tui/src/widgets/empty.rs:8:1
+  |
+8 | pub struct Empty {
+  | ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> tui/src/widgets/empty.rs:9:5
+  |
+9 |     pub focusable: bool,
+  |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/empty.rs:21:5
+   |
+21 |     pub fn focusable(mut self, focusable: bool) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/tabs.rs:17:1
+   |
+17 | / pub struct Tabs<'a, 'int, C, I, O, B, F>
+18 | | where
+19 | |     C: Control + ?Sized + 'a,
+20 | |     I: InputSink + ?Sized + 'a,
+...  |
+33 | |     current_tab: usize,
+34 | | }
+   | |_^
+
+warning: type does not implement `fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> tui/src/widgets/tabs.rs:17:1
+   |
+17 | / pub struct Tabs<'a, 'int, C, I, O, B, F>
+18 | | where
+19 | |     C: Control + ?Sized + 'a,
+20 | |     I: InputSink + ?Sized + 'a,
+...  |
+33 | |     current_tab: usize,
+34 | | }
+   | |_^
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:28:5
+   |
+28 |     missing_debug_implementations,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/tabs.rs:46:5
+   |
+46 |     pub fn new<W: Widget<'a, 'int, C, I, O, B> + 'a, S: ToString>(first_tab: W, title: S) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/tabs.rs:55:5
+   |
+55 |     pub fn add<W: Widget<'a, 'int, C, I, O, B> + 'a, S: ToString>(mut self, tab: W, title: S) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/tabs.rs:62:5
+   |
+62 |     pub fn add_dyn(mut self, tab: Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, title: String) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/tabs.rs:69:5
+   |
+69 |     pub fn with_tabs_bar(mut self, func: F) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/text.rs:17:1
+   |
+17 | / pub struct Text<'a, 'int, C, I, O, F>
+18 | | where
+19 | |     C: Control + ?Sized + 'a,
+20 | |     I: InputSink + ?Sized + 'a,
+...  |
+27 | |     _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
+28 | | }
+   | |_^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/text.rs:37:5
+   |
+37 |     pub fn new(func: F) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/footer.rs:10:1
+   |
+10 | pub struct Footer
+   | ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/help.rs:12:1
+   |
+12 | pub struct Help
+   | ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> tui/src/widgets/help.rs:14:5
+   |
+14 |     pub focusable: bool
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/mem.rs:11:1
+   |
+11 | pub struct Mem
+   | ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/regs.rs:13:1
+   |
+13 | pub struct Regs
+   | ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+ --> tui/src/widgets/console.rs:7:1
+  |
+7 | pub struct Console
+  | ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/gpio.rs:10:1
+   |
+10 | pub struct Gpio {
+   | ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> tui/src/widgets/gpio.rs:11:5
+   |
+11 |     pub focusable: bool,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/gpio.rs:23:5
+   |
+23 |     pub fn focusable(mut self, focusable: bool) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/adc.rs:10:1
+   |
+10 | pub struct Adc {
+   | ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> tui/src/widgets/adc.rs:11:5
+   |
+11 |     pub focusable: bool,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/adc.rs:23:5
+   |
+23 |     pub fn focusable(mut self, focusable: bool) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/pwm.rs:10:1
+   |
+10 | pub struct Pwm {
+   | ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> tui/src/widgets/pwm.rs:11:5
+   |
+11 |     pub focusable: bool,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/pwm.rs:23:5
+   |
+23 |     pub fn focusable(mut self, focusable: bool) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/timers.rs:10:1
+   |
+10 | pub struct Timers {
+   | ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> tui/src/widgets/timers.rs:11:5
+   |
+11 |     pub focusable: bool,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/timers.rs:23:5
+   |
+23 |     pub fn focusable(mut self, focusable: bool) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+ --> tui/src/widgets/clock.rs:8:1
+  |
+8 | pub struct Clock {
+  | ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> tui/src/widgets/clock.rs:9:5
+  |
+9 |     pub focusable: bool,
+  |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/clock.rs:21:5
+   |
+21 |     pub fn focusable(mut self, focusable: bool) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/button.rs:15:1
+   |
+15 | / pub struct Sim_Button<'a, 'int, C, I, O, F>
+16 | | where
+17 | |     C: Control + ?Sized + 'a,
+18 | |     I: InputSink + ?Sized + 'a,
+...  |
+25 | |     _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
+26 | | }
+   | |_^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/button.rs:35:5
+   |
+35 |     pub fn new_from_func(func:F) -> Self{
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/button.rs:44:5
+   |
+44 |     pub fn new_sans_colour(title:String, func:F) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/button.rs:53:5
+   |
+53 |     pub fn new_sans_title(colour:Color, func:F) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/button.rs:62:5
+   |
+62 |     pub fn new(title:String, colour:Color, func:F) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/load_button.rs:45:1
+   |
+45 | pub struct LoadButton {
+   | ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/load_button.rs:52:5
+   |
+52 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/console_peripherals.rs:19:1
+   |
+19 | pub struct Console_peripherals
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/watch_window.rs:11:1
+   |
+11 | pub struct WatchWindow
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/break_window.rs:13:1
+   |
+13 | pub struct BreakWindow
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/modeline.rs:42:1
+   |
+42 | / pub struct Modeline<'a, 'int, C, I, O, B>
+43 | | where
+44 | |     C: Control + ?Sized + 'a,
+45 | |     I: InputSink + ?Sized + 'a,
+...  |
+55 | |     focus: u8,
+56 | | }
+   | |_^
+
+warning: type does not implement `fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> tui/src/widgets/modeline.rs:42:1
+   |
+42 | / pub struct Modeline<'a, 'int, C, I, O, B>
+43 | | where
+44 | |     C: Control + ?Sized + 'a,
+45 | |     I: InputSink + ?Sized + 'a,
+...  |
+55 | |     focus: u8,
+56 | | }
+   | |_^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/modeline.rs:65:5
+   |
+65 |     pub fn new<W: Widget<'a, 'int, C, I, O, B> + 'a>(button: W) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/modeline.rs:69:5
+   |
+69 |     pub fn new_with_colour<W: Widget<'a, 'int, C, I, O, B> + 'a>(button: W, colour:Color) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+ --> tui/src/widgets/mem_reg_interface.rs:9:1
+  |
+9 | pub struct MemRegInterface
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> tui/src/widgets/root_widget.rs:17:1
+   |
+17 | / pub struct RootWidget<'a, 'int, C, I, O, B>
+18 | | where
+19 | |     C: Control + ?Sized + 'a,
+20 | |     I: InputSink + ?Sized + 'a,
+...  |
+29 | |     footer_cutoff: u16,
+30 | | }
+   | |_^
+
+warning: type does not implement `fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> tui/src/widgets/root_widget.rs:17:1
+   |
+17 | / pub struct RootWidget<'a, 'int, C, I, O, B>
+18 | | where
+19 | |     C: Control + ?Sized + 'a,
+20 | |     I: InputSink + ?Sized + 'a,
+...  |
+29 | |     footer_cutoff: u16,
+30 | | }
+   | |_^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/root_widget.rs:41:5
+   |
+41 |     pub fn new<W: Widget<'a, 'int, C, I, O, B> + 'a>(main: W) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> tui/src/widgets/root_widget.rs:49:5
+   |
+49 |     pub fn add<W: Widget<'a, 'int, C, I, O, B> + 'a>(mut self, footer: W) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> tui/src/tui/run.rs:26:5
+    |
+26  | /     pub fn run_with_custom_layout<B: Backend>(mut self, term: &mut Terminal<B>, mut root: impl Widget<'a, 'int, C, I, O, B>) -> Result<()>
+27  | |     where
+28  | |         B: ExecutableCommand<&'static str>,
+29  | |         Terminal<B>: Send,
+...   |
+124 | |         }).map_err(|_| err_msg("Channel disconnected; maybe something crashed?"))
+125 | |     }
+    | |_____^
+
+warning: missing documentation for a method
+   --> tui/src/tui/run.rs:128:5
+    |
+128 | /     pub fn run<B: Backend>(self, term: &mut Terminal<B>) -> Result<()>
+129 | |     where
+130 | |         B: ExecutableCommand<&'static str>,
+131 | |         Terminal<B>: Send,
+132 | |     {
+133 | |         self.run_with_custom_layout(term, crate::layout::layout(vec![]))
+134 | |     }
+    | |_____^
+
+warning: missing documentation for a method
+   --> tui/src/tui/run.rs:137:5
+    |
+137 |     pub fn run_with_crossterm(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, CrosstermBackend<Stdout>>>) -> Result<()> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: type does not implement `fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> tui/src/tui/mod.rs:29:1
+   |
+29 | / pub struct TuiData<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
+30 | | where
+31 | |     C: Control + ?Sized + 'a,
+32 | |     I: InputSink + ?Sized + 'a,
+...  |
+49 | |     pub(in crate) current_event: Option<Event>,
+50 | | }
+   | |_^
+
+warning: missing documentation for a struct
+  --> tui/src/tui/mod.rs:88:1
+   |
+88 | / pub struct Tui<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
+89 | | where
+90 | |     C: Control + ?Sized + 'a,
+91 | |     I: InputSink + ?Sized + 'a,
+...  |
+98 | |
+99 | | }
+   | |_^
+
+warning: type does not implement `fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> tui/src/tui/mod.rs:88:1
+   |
+88 | / pub struct Tui<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
+89 | | where
+90 | |     C: Control + ?Sized + 'a,
+91 | |     I: InputSink + ?Sized + 'a,
+...  |
+98 | |
+99 | | }
+   | |_^
+
+warning: missing documentation for a struct field
+  --> tui/src/tui/mod.rs:94:5
+   |
+94 |     pub data: TuiData<'a, 'int, C, I, O>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> tui/src/tui/mod.rs:102:5
+    |
+102 |     pub fn new(sim: &'a mut C) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> tui/src/tui/mod.rs:137:5
+    |
+137 |     pub fn attach_shims(mut self, shims: Shims<'int>) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> tui/src/tui/mod.rs:142:5
+    |
+142 |     pub fn attach_input_output(mut self, input: &'a I, output: &'a O) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a type alias
+   --> tui/src/tui/mod.rs:153:1
+    |
+153 | pub type DynTui<'a, 'int> = Tui<'a, 'int, DynControl<'a>, DynInputSink<'a>, DynOutputSource<'a>>;
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> tui/src/tui/mod.rs:156:5
+    |
+156 | /     pub fn new_boxed<C>(sim: &'a mut C) -> Self
+157 | |     where
+158 | |         C: Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>>,
+159 | |     {
+160 | |         Self::new(sim)
+161 | |     }
+    | |_____^
+
+warning: missing documentation for a method
+   --> tui/src/tui/mod.rs:163:5
+    |
+163 | /     pub fn attach_input_output_boxed<I, O>(self, input: &'a I, output: &'a O) -> Self
+164 | |     where
+165 | |         I: InputSink + 'a,
+166 | |         O: OutputSource + 'a,
+167 | |     {
+168 | |         self.attach_input_output(input, output)
+169 | |     }
+    | |_____^
+
+warning: missing documentation for a method
+   --> tui/src/tui/mod.rs:173:5
+    |
+173 | /     pub fn new_boxed_from_init<I: Init<'a>>(b: &'a mut BlackBox) -> Self
+174 | |     where
+175 | |         <I as Init<'a>>::ControlImpl: Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>> + 'a,
+176 | |         <I as Init<'a>>::ControlImpl: Sized,
+...   |
+192 | |         tui
+193 | |     }
+    | |_____^
+
+warning: missing documentation for a method
+   --> tui/src/tui/mod.rs:202:5
+    |
+202 |     pub fn set_program_path(&mut self, path: PathBuf) -> &mut Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> tui/src/tui/mod.rs:207:5
+    |
+207 |     pub fn set_update_period(&mut self, period: Duration) -> &mut Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/mem.rs:253:31
+    |
+253 |                 Some(val) => {data.sim.unset_breakpoint(val);},
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> tui/src/lib.rs:19:5
+    |
+19  |     unused,
+    |     ^^^^^^
+    = note: `#[warn(unused_must_use)]` implied by `#[warn(unused)]`
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused result
+   --> tui/src/widgets/mem.rs:255:33
+    |
+255 |                     Ok(val) => {data.bp.insert(cur_addr, val);},
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> tui/src/lib.rs:37:5
+    |
+37  |     unused_results,
+    |     ^^^^^^^^^^^^^^
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/mem.rs:269:31
+    |
+269 |                 Some(val) => {data.sim.unset_memory_watchpoint(val);},
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused result
+   --> tui/src/widgets/mem.rs:271:33
+    |
+271 |                     Ok(val) => {data.wp.insert(cur_addr, val);},
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: variable `Console_psr_pc` should have a snake case name
+  --> tui/src/widgets/console.rs:38:13
+   |
+38 |         let Console_psr_pc = data.sim.get_registers_psr_and_pc();
+   |             ^^^^^^^^^^^^^^ help: convert the identifier to snake case (notice the capitalization): `console_psr_pc`
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:5:5
+   |
+5  |     bad_style,
+   |     ^^^^^^^^^
+   = note: `#[warn(non_snake_case)]` implied by `#[warn(bad_style)]`
+
+warning: variable `Console` should have a snake case name
+  --> tui/src/widgets/console.rs:39:14
+   |
+39 |         let (Console, psr, pc) = Console_psr_pc;
+   |              ^^^^^^^ help: convert the identifier to snake case (notice the capitalization): `console`
+
+warning: outlives requirements can be inferred
+  --> tui/src/widgets/button.rs:18:17
+   |
+18 |     I: InputSink + ?Sized + 'a,
+   |                 ^^^^^^^^^^^^^^
+19 |     O: OutputSource + ?Sized + 'a,
+   |                    ^^^^^^^^^^^^^^
+   |
+note: the lint level is defined here
+  --> tui/src/lib.rs:38:5
+   |
+38 |     rust_2018_idioms
+   |     ^^^^^^^^^^^^^^^^
+   = note: `#[warn(explicit_outlives_requirements)]` implied by `#[warn(rust_2018_idioms)]`
+help: remove these bounds
+   |
+18 |     I: InputSink,
+19 |     O: OutputSource,
+   |
+
+warning: variable `Console_psr_pc` should have a snake case name
+  --> tui/src/widgets/console_peripherals.rs:50:13
+   |
+50 |         let Console_psr_pc = data.sim.get_registers_psr_and_pc();
+   |             ^^^^^^^^^^^^^^ help: convert the identifier to snake case (notice the capitalization): `console_psr_pc`
+
+warning: variable `Console` should have a snake case name
+  --> tui/src/widgets/console_peripherals.rs:51:14
+   |
+51 |         let (Console, psr, pc) = Console_psr_pc;
+   |              ^^^^^^^ help: convert the identifier to snake case (notice the capitalization): `console`
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/console_peripherals.rs:155:42
+    |
+155 | ...                   lock.unwrap().set_value(AdcPin::A0, value);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/console_peripherals.rs:159:41
+    |
+159 | ...                   lock.unwrap().set_value(AdcPin::A1, value);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/console_peripherals.rs:163:41
+    |
+163 | ...                   lock.unwrap().set_value(AdcPin::A2, value);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/console_peripherals.rs:167:41
+    |
+167 | ...                   lock.unwrap().set_value(AdcPin::A3, value);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:180:49
+    |
+180 | ...                   lock.unwrap().set_pin(GpioPin::G0, false); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:183:49
+    |
+183 | ...                   lock.unwrap().set_pin(GpioPin::G0, true); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:192:49
+    |
+192 | ...                   lock.unwrap().set_pin(GpioPin::G1, false); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:195:49
+    |
+195 | ...                   lock.unwrap().set_pin(GpioPin::G1, true); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:204:49
+    |
+204 | ...                   lock.unwrap().set_pin(GpioPin::G2, false); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:207:49
+    |
+207 | ...                   lock.unwrap().set_pin(GpioPin::G2, true); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:216:49
+    |
+216 | ...                   lock.unwrap().set_pin(GpioPin::G3, false); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:219:49
+    |
+219 | ...                   lock.unwrap().set_pin(GpioPin::G3, true); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:228:49
+    |
+228 | ...                   lock.unwrap().set_pin(GpioPin::G4, false); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:231:49
+    |
+231 | ...                   lock.unwrap().set_pin(GpioPin::G4, true); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:240:49
+    |
+240 | ...                   lock.unwrap().set_pin(GpioPin::G5, false); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:243:49
+    |
+243 | ...                   lock.unwrap().set_pin(GpioPin::G5, true); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:252:49
+    |
+252 | ...                   lock.unwrap().set_pin(GpioPin::G6, false); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:255:49
+    |
+255 | ...                   lock.unwrap().set_pin(GpioPin::G6, true); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:264:49
+    |
+264 | ...                   lock.unwrap().set_pin(GpioPin::G7, false); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/console_peripherals.rs:267:49
+    |
+267 | ...                   lock.unwrap().set_pin(GpioPin::G7, true); 
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/watch_window.rs:166:40
+    |
+166 |                         Some(val) =>  {data.sim.unset_memory_watchpoint(val);/*self.mode = 0;*/},
+    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/break_window.rs:155:40
+    |
+155 |                         Some(val) =>  {data.sim.unset_breakpoint(val);/*self.mode = 0;*/},
+    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: outlives requirements can be inferred
+  --> tui/src/widgets/modeline.rs:44:15
+   |
+44 |     C: Control + ?Sized + 'a,
+   |               ^^^^^^^^^^^^^^
+45 |     I: InputSink + ?Sized + 'a,
+   |                 ^^^^^^^^^^^^^^
+46 |     O: OutputSource + ?Sized + 'a,
+   |                    ^^^^^^^^^^^^^^
+   |
+help: remove these bounds
+   |
+44 |     C: Control,
+45 |     I: InputSink,
+46 |     O: OutputSource,
+   |
+
+warning: structure field `loadB` should have a snake case name
+  --> tui/src/widgets/modeline.rs:54:5
+   |
+54 |     loadB: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
+   |     ^^^^^ help: convert the identifier to snake case: `load_b`
+
+warning: unused result
+  --> tui/src/widgets/modeline.rs:82:9
+   |
+82 |         data.sim.step();
+   |         ^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/modeline.rs:100:17
+    |
+100 |                 block_on(e);
+    |                 ^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/modeline.rs:119:13
+    |
+119 |             data.sim.step();
+    |             ^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/modeline.rs:120:13
+    |
+120 |             block_on(e);
+    |             ^^^^^^^^^^^^
+
+warning: variable `bColour` should have a snake case name
+   --> tui/src/widgets/modeline.rs:148:17
+    |
+148 |         let mut bColour = self.colour;
+    |                 ^^^^^^^ help: convert the identifier to snake case: `b_colour`
+
+warning: variable `mColour` should have a snake case name
+   --> tui/src/widgets/modeline.rs:149:17
+    |
+149 |         let mut mColour = self.colour;
+    |                 ^^^^^^^ help: convert the identifier to snake case: `m_colour`
+
+warning: variable `b1Colour` should have a snake case name
+   --> tui/src/widgets/modeline.rs:150:17
+    |
+150 |         let mut b1Colour = Colour::Green;
+    |                 ^^^^^^^^ help: convert the identifier to snake case: `b1_colour`
+
+warning: variable `b2Colour` should have a snake case name
+   --> tui/src/widgets/modeline.rs:151:17
+    |
+151 |         let mut b2Colour = Colour::Magenta;
+    |                 ^^^^^^^^ help: convert the identifier to snake case: `b2_colour`
+
+warning: variable `b3Colour` should have a snake case name
+   --> tui/src/widgets/modeline.rs:152:17
+    |
+152 |         let mut b3Colour = Colour::White;
+    |                 ^^^^^^^^ help: convert the identifier to snake case: `b3_colour`
+
+warning: unused result
+   --> tui/src/widgets/modeline.rs:281:21
+    |
+281 |                     self.loadB[0].update(event, data, terminal);
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/modeline.rs:309:31
+    |
+309 |                         4 => {self.loadB[0].update(event, data, terminal);},
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/mem_reg_interface.rs:150:17
+    |
+150 |                 self.input.pop();
+    |                 ^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/mem_reg_interface.rs:158:25
+    |
+158 |                         self.input.remove(0);
+    |                         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/mem_reg_interface.rs:216:33
+    |
+216 | ...                   data.bp.insert(self.mem_addr, val);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/mem_reg_interface.rs:223:33
+    |
+223 | ...                   data.wp.insert(self.mem_addr, val);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/mem_reg_interface.rs:231:33
+    |
+231 | ...                   data.sim.unset_breakpoint(val);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/mem_reg_interface.rs:238:33
+    |
+238 | ...                   data.sim.unset_memory_watchpoint(val);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused result
+   --> tui/src/widgets/mem_reg_interface.rs:285:33
+    |
+285 | ...                   data.bp.insert(addr, val);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/mem_reg_interface.rs:292:33
+    |
+292 | ...                   data.wp.insert(addr, val);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/mem_reg_interface.rs:300:33
+    |
+300 | ...                   data.sim.unset_breakpoint(val);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `std::result::Result` that must be used
+   --> tui/src/widgets/mem_reg_interface.rs:307:33
+    |
+307 | ...                   data.sim.unset_memory_watchpoint(val);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused result
+  --> tui/src/widgets/root_widget.rs:84:13
+   |
+84 |             self.drop_extra_focus(0, data, terminal);
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+  --> tui/src/widgets/root_widget.rs:92:13
+   |
+92 |             self.drop_extra_focus(1, data, terminal);
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/root_widget.rs:138:21
+    |
+138 |                     self.drop_extra_focus(0, data, terminal);
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/root_widget.rs:143:21
+    |
+143 |                     self.drop_extra_focus(0, data, terminal);
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/root_widget.rs:150:21
+    |
+150 |                     self.drop_extra_focus(0, data, terminal);
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/root_widget.rs:168:29
+    |
+168 | ...                   self.drop_extra_focus(0, data, terminal);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/root_widget.rs:170:29
+    |
+170 | ...                   self.give_focus(1, data, terminal);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/root_widget.rs:180:25
+    |
+180 |                         self.drop_extra_focus(1, data, terminal);
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/root_widget.rs:182:25
+    |
+182 |                         self.give_focus(0, data, terminal);
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/root_widget.rs:192:21
+    |
+192 |                     self.drop_extra_focus(0, data, terminal);
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/root_widget.rs:204:29
+    |
+204 | ...                   self.drop_extra_focus(0, data, terminal);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused result
+   --> tui/src/widgets/root_widget.rs:210:33
+    |
+210 | ...                   self.drop_extra_focus(1, data, terminal);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   Compiling utp-tui v0.1.0 (/Users/davidrollins/SrDesign/tui)
+    Finished dev [unoptimized + debuginfo] target(s) in 30.51s
+     Running `target/debug/tui ../2048.mem`
