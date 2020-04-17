@@ -189,8 +189,8 @@ where
     let mem_console = MemRegInterface::default();
 
     let mut right = Widgets::new(vert.clone());
-    let _ = right.add_widget(Constraint::Percentage(50), top_right, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Debug Tools")))
-        .add_widget(Constraint::Percentage(25), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
+    let _ = right.add_widget(Constraint::Percentage(35), top_right, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Debug Tools")))
+        .add_widget(Constraint::Percentage(40), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))))
         .add_widget(Constraint::Percentage(25), mem_console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory Interface").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
 
 

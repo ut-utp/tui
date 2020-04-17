@@ -74,64 +74,66 @@ where
             data.history_vec.borrow_mut().remove(0);
         }
 
-        let mut temp = data.history_vec.borrow().clone();
-        while temp.len() > (area.y*3/4).try_into().unwrap() {
-            temp.remove(0);
+        let mut bottom_area = area;
+        if area.height <= 1 {
+        } else if area.height <= 4 {
+            let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
+            bottom_area = increment(1, Axis::Y, area);
+        } else {
+            let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
+            bottom_area = increment(1, Axis::Y, area);
         }
+
+        let mut temp = data.history_vec.borrow().clone();   
+        let mut temp = temp.join("\n");
+        let mut temp_clone = temp.clone();
+        let mut lines = 0;
+        while temp_clone != "" {
+            if temp_clone.pop() == Some('\n') {
+                lines += 1;
+            }
+        }
+        while lines > bottom_area.y-area.y {
+            if temp.remove(0) == '\n' {
+                lines -=1;
+            }
+        }
+       /* while temp.len() > (area.y*3/4).try_into().unwrap() {
+            temp.remove(0);
+        }*/
            
-        let text_history = [TuiText::styled(temp.join("\n"), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
-        let mut para_history = Paragraph::new(text_history.iter())
+        let text_history = [TuiText::styled(temp, Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+        let mut para = Paragraph::new(text_history.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
         
+        para.draw(area, buf); // the idea of this is to write the output before the ">", but I'm not sure this accomplishes that...
 
         let text = [TuiText::styled(">", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
 
-        let mut para = Paragraph::new(text.iter())
+        para = Paragraph::new(text.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
-
 
         if area.height <= 1 {
             para.draw(area, buf);
         } else if area.height <= 4 {
             let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
             para.draw(area, buf);
-
-            let text = [TuiText::styled(data.input_string.borrow_mut().clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
-            para = Paragraph::new(text.iter())
-                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-                .alignment(Alignment::Left)
-                .wrap(true);
-
-            let area = increment(1, Axis::Y, area);
-            if area.height < 2 {
-                return;
-            }
-            para.draw(area,buf);
         } else {
-            para_history.draw(area, buf); // the idea of this is to write the output before the ">", but I'm not sure this accomplishes that...
-                
-            
-           
             let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
             para.draw(area, buf);
+        }
 
+        if bottom_area.height >= 2 {
             let text = [TuiText::styled(data.input_string.borrow_mut().clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
             para = Paragraph::new(text.iter())
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
                 .wrap(true);
-
-            let area = increment(1, Axis::Y, area);
-            if area.height < 2 {
-                return;
-            }
-            para.draw(area,buf);
-
-            
+            para.draw(bottom_area,buf); 
         }
 
     }
