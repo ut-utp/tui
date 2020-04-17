@@ -34,8 +34,10 @@ impl Attempt {
 
     fn message(&self) -> TuiText<'static> {
         match self {
-            Self::Failure(_) => TuiText::styled("Failed to Load!", Style::default().fg(Colour::Red)),
-            Self::Success(_) => TuiText::styled("Successfully Loaded!", Style::default().fg(Colour::Green)),
+            // Self::Failure(_) => TuiText::styled("Failed to Load!", Style::default().fg(Colour::Red)),
+            // Self::Success(_) => TuiText::styled("Successfully Loaded!", Style::default().fg(Colour::Green)),
+            Self::Failure(_) => TuiText::styled("❌ Failed!", Style::default().fg(Colour::Red)),
+            Self::Success(_) => TuiText::styled("✔️  Successful!", Style::default().fg(Colour::Green)),
         }
     }
 }

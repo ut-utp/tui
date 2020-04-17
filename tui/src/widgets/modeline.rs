@@ -270,7 +270,7 @@ where
 
         let mut vec = Vec::new();
         if self.reset_flag {
-            vec.push(TuiText::styled("Are You Sure", Style::default().fg(Colour::Red)));
+            vec.push(TuiText::styled("⚠️  Are You Sure? ⚠️", Style::default().fg(Colour::Red)));
         } else {
             vec.push(TuiText::styled("Reset", Style::default().fg(Colour::Yellow)));
         }
