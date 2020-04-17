@@ -68,14 +68,14 @@ where
         self.components[self.cur_focus].update(event, data, terminal)
     }
 
-    fn drop_extra_focus(&mut self, section: usize, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn drop_extra_focus(&mut self, section: usize, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
         let event = WidgetEvent::Focus(FocusEvent::LostFocus);
-        self.components[section].update(event, data, terminal)
+        self.components[section].update(event, data, terminal);
     }
 
-    fn give_focus(&mut self, section: usize, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn give_focus(&mut self, section: usize, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
         let event = WidgetEvent::Focus(FocusEvent::GotFocus);
-        self.components[section].update(event, data, terminal)
+        self.components[section].update(event, data, terminal);
     }
 
     fn propagate_to_main(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
