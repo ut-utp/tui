@@ -329,11 +329,13 @@ where
         }
 
         if self.focus == 0 {
-            self.focus = 1;
+            if event != WidgetEvent::Update {
+                self.focus = 2;
+            }
         }
 
         match event {
-            Focus(FocusEvent::GotFocus) => true,
+            Focus(FocusEvent::GotFocus) => {true},
             Focus(FocusEvent::LostFocus) => {self.focus = 0; false},
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, x, y, _)) => {

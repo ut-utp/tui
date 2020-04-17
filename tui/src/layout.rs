@@ -119,55 +119,16 @@ where
         .add_widget(Constraint::Percentage(60), middle, None)
         .add_widget(Constraint::Percentage(20), empty.focusable(false), None);
 
-    /*let mut memory = Widgets::new(vert.clone());
-    let mut memory_main = Widgets::new(horz.clone());
+    let mut memory = Widgets::new(vert.clone());
 
     let mem = Mem::default();
     let regs = Regs::default();
-    let mut left = Widgets::new(vert.clone());
-    let _ = left.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory")))
+    let _ = memory.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory")))
         .add_widget(Constraint::Percentage(20), regs, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Registers + PC+ PSR").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
-
-    let _ = memory_main.add_widget(Constraint::Percentage(50), left, None)
-        .add_widget(Constraint::Percentage(50), empty.focusable(false), None);
-
-    let mut footer = Widgets::new(horz.clone());
-    let mut buttons = Widgets::new(horz.clone());
-    let run = empty.focusable(true);
-    let pause = empty.focusable(true);
-    let step = empty.focusable(true);
-
-    let _ = buttons.add_widget(Constraint::Percentage(25), run, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Green))))
-        .add_widget(Constraint::Percentage(25), pause, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Red))))
-        .add_widget(Constraint::Percentage(25), step, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow))))
-        .add_widget(Constraint::Percentage(25), LoadButton::new(), Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::White))));
-
-    let _ = footer.add_widget(Constraint::Percentage(50), Footer::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")))
-        .add_widget(Constraint::Percentage(50), buttons, None);
-
-    let _ = memory.add_widget(Constraint::Percentage(85), memory_main, None)
-       .add_widget(Constraint::Percentage(15), footer, None);*/
+    
 
     let mut big_console_tab  = Widgets::new(vert.clone());
-
-    let mut footer = Widgets::new(horz.clone());
-    let mut buttons = Widgets::new(horz.clone());
-    let run = empty.focusable(true);
-    let pause = empty.focusable(true);
-    let step = empty.focusable(true);
-
-    let _ = buttons.add_widget(Constraint::Percentage(25), run, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Green))))
-        .add_widget(Constraint::Percentage(25), pause, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Red))))
-        .add_widget(Constraint::Percentage(25), step, Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow))))
-        .add_widget(Constraint::Percentage(25), LoadButton::new(), Some(b.clone().borders(Borders::ALL).border_style(Style::default().fg(Color::White))));
-
-    let _ = footer.add_widget(Constraint::Percentage(50), Footer::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Footer")))
-        .add_widget(Constraint::Percentage(50), buttons, None);
-    //make_footer(footer);
-
-    let console = Console::default();
-    let _ = big_console_tab.add_widget(Constraint::Percentage(85), console, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console")))
-        .add_widget(Constraint::Percentage(15), footer, None);
+    let _ = big_console_tab.add_widget(Constraint::Percentage(100), Console::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console")));
 
     let mut log = Widgets::new(horz.clone());
 
@@ -199,7 +160,7 @@ where
 
     let mut tabs = Tabs::new(root, "Root")
         .add(peripherals, "Peripherals")
-        //.add(memory, "Mem")
+        .add(memory, "Mem")
         .add(big_console_tab, "Console")
         .add(debug, "Debug")
         .add(help, "Help")
