@@ -114,8 +114,7 @@ where
         } else if self.mode >= 2 {
             let text = [
                 TuiText::styled("Register Manipulation Help\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))),
-                TuiText::styled("b to set breakpoint at reg address, w to set watchpoint\n", Style::default().fg(Colour::LightCyan)),
-                TuiText::styled("rb to remove breakpoint at reg address, rw to remove watchpoint\n", Style::default().fg(Colour::LightRed)),
+                TuiText::styled("b to toggle breakpoint at reg address, w to toggle watchpoint\n", Style::default().fg(Colour::LightCyan)),
                 TuiText::styled("j to jump to reg address\n", Style::default().fg(Colour::Magenta)),
                 TuiText::styled("e to enter a new address, or type a register to change directly\n", Style::default().fg(Colour::LightGreen)),
                 TuiText::styled("Type a value to change data in the reg\n", Style::default().fg(Colour::Gray)),
@@ -133,6 +132,36 @@ where
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
+
+        fn set_bp<'a, 'int, C, I, O>(cur_addr: u16, data: &mut TuiData<'a, 'int, C, I, O>)
+        where
+            C: Control + ?Sized + 'a,
+            I: InputSink + ?Sized + 'a,
+            O: OutputSource + ?Sized + 'a,
+        {
+            match data.bp.remove(&cur_addr) {
+                Some(val) => {data.sim.unset_breakpoint(val);},
+                None => {match data.sim.set_breakpoint(cur_addr) {
+                    Ok(val) => {data.bp.insert(cur_addr, val);},
+                    Err(_e) => {},
+                }},
+            };
+        }
+
+        fn set_wp<'a, 'int, C, I, O>(cur_addr: u16, data: &mut TuiData<'a, 'int, C, I, O>)
+        where
+            C: Control + ?Sized + 'a,
+            I: InputSink + ?Sized + 'a,
+            O: OutputSource + ?Sized + 'a,
+        {
+            match data.wp.remove(&cur_addr) {
+                Some(val) => {data.sim.unset_memory_watchpoint(val);},
+                None => {match data.sim.set_memory_watchpoint(cur_addr) {
+                    Ok(val) => {data.wp.insert(cur_addr, val);},
+                    Err(_e) => {},
+                }},
+            };
+        }
 
         match event {
             Focus(FocusEvent::GotFocus) => true,
@@ -211,34 +240,9 @@ where
                     data.log(format!("[Addr] {}\n", self.input), Colour::Green);
                 } else if self.mode == 1 {
                     if self.input == "b" {
-                        match data.sim.set_breakpoint(self.mem_addr) {
-                            Ok(val) => {
-                                data.bp.insert(self.mem_addr, val);
-                            }
-                            Err(_e) => {},
-                        }
+                        set_bp(self.mem_addr, data);
                     } else if self.input == "w" {
-                        match data.sim.set_memory_watchpoint(self.mem_addr) {
-                            Ok(val) => {
-                                data.wp.insert(self.mem_addr, val);
-                            }
-                            Err(_e) => {},
-                        }
-
-                    } else if self.input == "rb" {
-                        match data.bp.remove(&self.mem_addr) {
-                            Some(val) => {
-                                data.sim.unset_breakpoint(val);
-                            }
-                            None => {},
-                        }
-                    } else if self.input == "rw" {
-                        match data.wp.remove(&self.mem_addr) {
-                            Some(val) => {
-                                data.sim.unset_memory_watchpoint(val);
-                            }
-                            None => {},
-                        }
+                        set_wp(self.mem_addr, data);
                     } else if self.input == "j" {
                         //offset = data.sim.get_pc().wrapping_sub(self.mem_addr - 2);
                     } else if self.input == "e" {
@@ -280,34 +284,9 @@ where
                     }
 
                     if self.input == "b" {
-                        match data.sim.set_breakpoint(addr) {
-                            Ok(val) => {
-                                data.bp.insert(addr, val);
-                            }
-                            Err(_e) => {},
-                        }
+                        set_bp(addr, data);
                     } else if self.input == "w" {
-                        match data.sim.set_memory_watchpoint(addr) {
-                            Ok(val) => {
-                                data.wp.insert(addr, val);
-                            }
-                            Err(_e) => {},
-                        }
-
-                    } else if self.input == "rb" {
-                        match data.bp.remove(&addr) {
-                            Some(val) => {
-                                data.sim.unset_breakpoint(val);
-                            }
-                            None => {},
-                        }
-                    } else if self.input == "rw" {
-                        match data.wp.remove(&addr) {
-                            Some(val) =>  {
-                                data.sim.unset_memory_watchpoint(val);
-                            }
-                            None => {},
-                        }
+                        set_wp(addr, data);
                     } else if self.input == "j" {
                         //offset = data.sim.get_pc().wrapping_sub(self.mem_addr - 2);
                     } else if self.input == "e" {
