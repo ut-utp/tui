@@ -110,6 +110,7 @@ impl LoadButton {
                     let dl = DisplayList::from(snippet);
                     error_string = format!("{}\n{}", error_string, dl);
                 }
+                let error_string = error_string.replace("\n", "\n|");
                 return Err(error_string);
             }
             let background = Some(lc3_os::OS_IMAGE.clone());
