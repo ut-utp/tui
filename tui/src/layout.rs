@@ -119,7 +119,7 @@ where
         .add_widget(Constraint::Percentage(60), middle, None)
         .add_widget(Constraint::Percentage(20), empty.focusable(false), None);
 
-    let mut memory = Widgets::new(vert.clone());
+    /*let mut memory = Widgets::new(vert.clone());
     let mut memory_main = Widgets::new(horz.clone());
 
     let mem = Mem::default();
@@ -146,7 +146,7 @@ where
         .add_widget(Constraint::Percentage(50), buttons, None);
 
     let _ = memory.add_widget(Constraint::Percentage(85), memory_main, None)
-       .add_widget(Constraint::Percentage(15), footer, None);
+       .add_widget(Constraint::Percentage(15), footer, None);*/
 
     let mut big_console_tab  = Widgets::new(vert.clone());
 
@@ -199,7 +199,7 @@ where
 
     let mut tabs = Tabs::new(root, "Root")
         .add(peripherals, "Peripherals")
-        .add(memory, "Mem")
+        //.add(memory, "Mem")
         .add(big_console_tab, "Console")
         .add(debug, "Debug")
         .add(help, "Help")
