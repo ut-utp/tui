@@ -168,7 +168,7 @@ where
                                     let gpio_pin = gpio_pins[vec[1].parse::<u8>().unwrap() as usize];
                                     match gpio_states[gpio_pin] {
 
-                                                GpioState::Input => {
+                                                GpioState::Input | GpioState::Interrupt => {
                                                     match vec[2] {
                                                         "0" => {
                                                             lock.unwrap().set_pin(gpio_pin, false);

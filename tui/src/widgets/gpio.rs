@@ -69,11 +69,18 @@ where
                     s1.push_str(&format!("{}\n",
                     disabled_string, ));
                 }
-                _ => {
+                GpioState::Output => {
+                    let output_string = "Output";
+                    s1.push_str(&format!("{}\n", 
+                    output_string, ));
+                },
+
+
+                GpioState::Input => {
                     match gpioin[gpio_pins_1[i]] {
                         Ok(val) => {
                                 s1.push_str(&format!(
-                                "{}\n",
+                                "Input: {}\n",
                                 val,
 
                                 ));
@@ -81,7 +88,27 @@ where
                         _ => {
                             let err_string = "-";
                             s1.push_str(&format!(
-                                "{}\n",
+                                "Input: {}\n",
+                                err_string,
+
+                                ));
+                        }
+                        }
+                },
+
+                GpioState::Interrupt => {
+                    match gpioin[gpio_pins_1[i]] {
+                        Ok(val) => {
+                                s1.push_str(&format!(
+                                "Interrupt: {}\n",
+                                val,
+
+                                ));
+                            }
+                        _ => {
+                            let err_string = "-";
+                            s1.push_str(&format!(
+                                "Interrupt: {}\n",
                                 err_string,
 
                                 ));
@@ -122,7 +149,12 @@ where
                         let disabled_string = "Disabled";
                         s2.push_str(&format!("{}\n",
                         disabled_string, ));
-                    }
+                    },
+                    GpioState::Output => {
+                        let output_string = "Output";
+                        s2.push_str(&format!("{}\n", 
+                        output_string, ));
+                    },
                     _ => {
                         match gpioin[gpio_pins_2[i]] {
                             Ok(val) => {

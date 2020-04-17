@@ -9,6 +9,14 @@ use std::time::{Duration, Instant};
 use std::sync::mpsc;
 
 use crossbeam::thread::scope;
+use std::fs;
+use lc3_assembler::lexer::Lexer;
+use lc3_assembler::parser::{parse, LeniencyLevel};
+use lc3_assembler::error::extract_file_errors;
+use lc3_assembler::assembler::assemble;
+use lc3_shims::memory::FileBackedMemoryShim;
+use annotate_snippets::display_list::{DisplayList, FormatOptions};
+use annotate_snippets::snippet::{Snippet, Annotation, Slice, AnnotationType, SourceAnnotation};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum Attempt {
@@ -36,8 +44,8 @@ impl Attempt {
         match self {
             // Self::Failure(_) => TuiText::styled("Failed to Load!", Style::default().fg(Colour::Red)),
             // Self::Success(_) => TuiText::styled("Successfully Loaded!", Style::default().fg(Colour::Green)),
-            Self::Failure(_) => TuiText::styled("❌ Failed!", Style::default().fg(Colour::Red)),
-            Self::Success(_) => TuiText::styled("✔️  Successful!", Style::default().fg(Colour::Green)),
+            Self::Failure(_) => TuiText::styled("Failed!", Style::default().fg(Colour::Red)),
+            Self::Success(_) => TuiText::styled("Successful!", Style::default().fg(Colour::Green)),
         }
     }
 }
@@ -83,7 +91,41 @@ impl LoadButton {
             return Err(format!("`{}` does not exist!", p))
         }
 
-        let shim = lc3_shims::memory::FileBackedMemoryShim::from_existing_file(path)
+        let assembled_file_path = if file_requires_assembly(path) {
+            let path_str = path.clone().into_os_string().into_string().unwrap();
+            let string = fs::read_to_string(path).unwrap();
+            let src = string.as_str();
+            let lexer = Lexer::new(src);
+            let cst = parse(lexer, LeniencyLevel::Lenient);
+
+            let errors = extract_file_errors(cst.clone());
+            if errors.len() > 0 {
+                let mut error_string = String::new();
+                for error in errors {
+                    let label_string = error.message();
+                    let label = label_string.as_str();
+                    let annotations = error.annotations();
+                    let slices = slices(annotations, src, Some(path_str.as_str()));
+                    let snippet = create_snippet(label, slices);
+                    let dl = DisplayList::from(snippet);
+                    error_string = format!("{}\n{}", error_string, dl);
+                }
+                let error_string = error_string.replace("\n", "\n|");
+                return Err(error_string);
+            }
+            let background = Some(lc3_os::OS_IMAGE.clone());
+            let mem = assemble(cst.objects, background);  // TODO: can still fail. fix in assembler.
+
+            let mut output_path = PathBuf::from(path_str);
+            output_path.set_extension("mem");
+            let mut file_backed_mem = FileBackedMemoryShim::with_initialized_memory(output_path.clone(), mem);
+            file_backed_mem.flush_all_changes().unwrap();
+            output_path.clone()
+        } else {
+            path.clone()
+        };
+
+        let shim = lc3_shims::memory::FileBackedMemoryShim::from_existing_file(&assembled_file_path)
             .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", p, e))?;
 
         let progress = Progress::new_with_time().unwrap();
@@ -171,6 +213,42 @@ impl LoadButton {
         .map_err(|e| format!("Error during load: {:?}", e))
         .map(|_| format!("Successful Load (`{}`)! Finished in {}.", p, chrono::Duration::from_std(progress.time_elapsed().unwrap()).unwrap()))
     }
+}
+
+fn file_requires_assembly(path: &PathBuf) -> bool {
+    return match path.extension() {
+        Some(ext) => ext == "asm",
+        _ => false,
+    }
+}
+
+fn create_snippet<'input>(label: &'input str, slices: Vec<Slice<'input>>) -> Snippet<'input> {
+    Snippet {
+        title: Some(Annotation {
+            label: Some(label),
+            id: None,
+            annotation_type: AnnotationType::Error
+        }),
+        footer: vec![],
+        slices,
+        opt: FormatOptions { color: true, anonymized_line_numbers: false }
+    }
+}
+
+fn slices<'input>(annotations: Vec<SourceAnnotation<'input>>, source: &'input str, origin: Option<&'input str>) -> Vec<Slice<'input>> {
+    let mut slices = Vec::new();
+    if !annotations.is_empty() {
+        slices.push(
+            Slice {
+                source,
+                origin,
+                line_start: 1,
+                fold: true,
+                annotations,
+            }
+        );
+    }
+    slices
 }
 
 impl TuiWidget for LoadButton {

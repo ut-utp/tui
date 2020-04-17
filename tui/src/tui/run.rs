@@ -38,8 +38,8 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         // here; if we're told to run with an empty widget tree we shall.)
         let _ = root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data, term);
 
-        self.data.log("Hello! 👋\n", Color::Cyan);
-        self.data.log("We're up! 🚀\n", Color::Magenta);
+        self.data.log("Hello!\n", Color::Cyan);
+        self.data.log("We're up!\n", Color::Magenta);
 
         let mut last_window_size = None;
 
