@@ -197,13 +197,13 @@ where
     let _ = debug.add_widget(Constraint::Percentage(50), left, None)
         .add_widget(Constraint::Percentage(50), right, None);
 
-    let mut tabs = Tabs::new(root, "🌴 Root")
-        .add(peripherals, "🎛️  Peripherals")
-        .add(memory, "😀 Mem")
-        .add(big_console_tab, "😲 Console")
-        .add(debug, "😉 Debug")
-        .add(help, "ℹ️  Help")
-        .add(log, "📜 Log")
+    let mut tabs = Tabs::new(root, "Root")
+        .add(peripherals, "Peripherals")
+        .add(memory, "Mem")
+        .add(big_console_tab, "Console")
+        .add(debug, "Debug")
+        .add(help, "Help")
+        .add(log, "Log")
         .with_tabs_bar(|| {
             TabsBar::default()
                 .block(Block::default().title("Tabs").borders(Borders::ALL).border_style(Style::default().fg(Color::Blue)))
@@ -224,7 +224,7 @@ where
             .add_widget(Constraint::Percentage(100), events, Some(b.clone().border_style(Style::default().fg(Color::Green)).title("Event Log")));
 
         tabs = tabs
-            .add(debug, "🐛 Debug Info");
+            .add(debug, "Debug Info");
     }
 
 
