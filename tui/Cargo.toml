@@ -32,6 +32,7 @@ lc3-isa = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tes
 lc3-macros = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tests", version = "0.1.0" }
 lc3-shims = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tests", version = "0.1.0" }
 lc3-traits = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tests", version = "0.1.0", default-features = false, features = [] } # Enable std features
+lc3-assembler = { git = "https://github.com/ut-utp/assembler", branch = "master", version = "0.1.0" }
 # TODO: change all of the above to grab the crates from crates.io instead of git
 # TODO: get rid of the feat-trap-tests branch thing
 
