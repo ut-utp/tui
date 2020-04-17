@@ -13,6 +13,7 @@ pub struct Mem
     offset: u16,
     focus: u16,
     position: Rect,
+    reset_flag: u8,
 }
 
 impl Default for Mem {
@@ -21,6 +22,7 @@ impl Default for Mem {
             offset: 2,
             focus: 0,
             position: Rect::new(0,0,0,0),
+            reset_flag:0,
         }
     }
 }
@@ -41,6 +43,12 @@ where
     B: Backend,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+        if self.reset_flag != data.reset_flag{
+            self.offset = 2;
+            self.focus = 0;
+            self.reset_flag = data.reset_flag;
+        }
+
         self.position = area;
 
         if self.offset > area.height.saturating_sub(1) {

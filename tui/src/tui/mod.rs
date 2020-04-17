@@ -15,6 +15,8 @@ use std::sync::Mutex;
 use std::time::Duration;
 use std::collections::HashMap;
 use std::string::ToString;
+use std::cell::RefCell;
+
 
 use tui::widgets::Text as TuiText;
 use tui::style::{Style, Color};
@@ -34,8 +36,12 @@ where
 {
     pub sim: &'a mut C,
     pub input: Option<&'a I>,
+    pub input_string: RefCell<String>,
     pub output: Option<&'a O>,
+    pub history_vec: RefCell<Vec<String>>,
     pub shims: Option<Shims<'int>>,
+
+    pub reset_flag: u8,
 
     pub(in crate) program_path: Option<PathBuf>,
 
@@ -104,8 +110,12 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
             data: TuiData {
                 sim,
                 input: None,
+                input_string: RefCell::new(String::from("")),
                 output: None,
+                history_vec: RefCell::new(Vec::<String>::new()),
                 shims: None,
+
+                reset_flag: 0,
 
                 program_path: None,
 

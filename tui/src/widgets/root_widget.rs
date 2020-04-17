@@ -160,6 +160,15 @@ where
                 KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::CONTROL } => {
                     self.propagate_to_footer(event, data, terminal)
                 }
+                KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::ALT } => {
+                    self.drop_extra_focus(0, data, terminal);
+                    self.cur_focus = 1;
+                    self.give_focus(1, data, terminal);
+                    self.propagate_to_footer(event, data, terminal)
+                }
+                KeyEvent { code: KeyCode::Char('l'), modifiers: KeyModifiers::CONTROL } => {
+                    self.propagate_to_footer(event, data, terminal)
+                }
 
                 KeyEvent { code: KeyCode::Down, modifiers: KeyModifiers::CONTROL } => {
                     if self.cur_focus == 0 {

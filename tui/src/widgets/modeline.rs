@@ -51,6 +51,8 @@ where
     button1: Rect,
     button2: Rect,
     button3: Rect,
+    button4: Rect,
+    reset_flag: bool,
     loadB: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
     focus: u8,
 }
@@ -73,6 +75,8 @@ where
             button1: Rect::default(),
             button2: Rect::default(),
             button3: Rect::default(),
+            button4: Rect::default(),
+            reset_flag: false,
             loadB: vec![Box::new(button)],
             focus: 0,
         }
@@ -113,6 +117,9 @@ where
 
     fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
         data.sim.reset();
+        data.input_string.replace(String::from(""));
+        data.history_vec.borrow_mut().clear();
+        data.reset_flag += 1;
 
         // Resolve the pending future, if there is one.
         if let Some(e) = self.event_fut.take() {
@@ -149,10 +156,15 @@ where
         let mut mColour = self.colour;
         let mut b1Colour = Colour::Green;
         let mut b2Colour = Colour::Magenta;
-        let mut b3Colour = Colour::White;
+        let mut b3Colour = Colour::Yellow;
+        let mut b4Colour = Colour::White;
 
         if self.focus > 0 {
             bColour = Colour::Red
+        }
+
+        if self.focus != 4 {
+            self.reset_flag = false;
         }
 
         if data.sim.get_state() == State::RunningUntilEvent {
@@ -164,6 +176,7 @@ where
             2 => b1Colour = Colour::Red,
             3 => b2Colour = Colour::Red,
             4 => b3Colour = Colour::Red,
+            5 => b4Colour = Colour::Red,
             _ => {},
         }
 
@@ -185,37 +198,31 @@ where
 
         self.button1 = Rect::new(area.width + area.width/12, area.y, area.width*2/12, area.height);
         self.button2 = Rect::new(area.width + area.width/12*4, area.y, area.width*2/12, area.height);
-        self.button3 = Rect::new(area.width + area.width/12*7, area.y, area.width*5/12, area.height);
+        self.button3 = Rect::new(area.width + area.width/12*7, area.y, area.width*2/12, area.height);
+        self.button4 = Rect::new(area.width + area.width/12*10, area.y, area.width*2/12, area.height);
+
+        let mut vec = Vec::new();
 
         if data.sim.get_state() == State::RunningUntilEvent{
-            let text = [TuiText::styled("Pause", Style::default().fg(Colour::Yellow))];
-            let mut para = Paragraph::new(text.iter())
-                .style(Style::default())
-                .block(Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(b1Colour))
-                    .title(""))
-                .alignment(Alignment::Center)
-                .wrap(true);
-            para.draw(self.button1,buf);
+            vec.push(TuiText::styled("Pause", Style::default().fg(Colour::Yellow)));
         } else {
-            let text = [TuiText::styled("Run", Style::default().fg(Colour::Green))];
-            let mut para = Paragraph::new(text.iter())
-                .style(Style::default())
-                .block(Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(b1Colour))
-                    .title(""))
-                .alignment(Alignment::Center)
-                .wrap(true);
-            para.draw(self.button1,buf);
+            vec.push(TuiText::styled("Run", Style::default().fg(Colour::Green)));
         }
+        let mut para = Paragraph::new(vec.iter())
+            .style(Style::default())
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(b1Colour))
+                .title(""))
+            .alignment(Alignment::Center)
+            .wrap(true);
+        para.draw(self.button1,buf);
         
             
 
 
         let text = [TuiText::styled("Step", Style::default().fg(Colour::Magenta))];
-        let mut para = Paragraph::new(text.iter())
+        para = Paragraph::new(text.iter())
             .style(Style::default())
             .block(Block::default()
                 .borders(Borders::ALL)
@@ -227,14 +234,33 @@ where
 
         para.draw(self.button2,buf);
 
+        let mut vec = Vec::new();
+
+        if self.reset_flag {
+            vec.push(TuiText::styled("Are You Sure", Style::default().fg(Colour::Red)));
+        } else {
+            vec.push(TuiText::styled("Reset", Style::default().fg(Colour::Yellow)));
+        }
+        para = Paragraph::new(vec.iter())
+            .style(Style::default())
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(b3Colour))
+                .title(""))
+            .alignment(Alignment::Center)
+            .wrap(true);
+            
+
+        para.draw(self.button3,buf);
+
         bg_block = Block::default()
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(b3Colour))
+            .border_style(Style::default().fg(b4Colour))
             .title("");
 
-        bg_block.draw(self.button3, buf);
+        bg_block.draw(self.button4, buf);
 
-        Widget::draw(&mut *self.loadB[0], data, bg_block.inner(self.button3), buf);
+        Widget::draw(&mut *self.loadB[0], data, bg_block.inner(self.button4), buf);
 
     }
 
@@ -278,6 +304,14 @@ where
                     self.step(data);
                 } else if self.button3.intersects(Rect::new(x,y,1,1)) {
                     self.focus = 4;
+                    if self.reset_flag{
+                        self.reset(data);
+                        self.reset_flag = false;
+                    } else {
+                        self.reset_flag = true;
+                    }
+                } else if self.button4.intersects(Rect::new(x,y,1,1)) {
+                    self.focus = 5;
                     self.loadB[0].update(event, data, terminal);
                 }
                 true
@@ -296,6 +330,20 @@ where
                     self.run(data);
                     true
                 }
+                KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::ALT } => {
+                    self.focus = 4;
+                    if self.reset_flag{
+                        self.reset(data);
+                        self.reset_flag = false;
+                    } else {
+                        self.reset_flag = true;
+                    }
+                    true
+                }
+                KeyEvent { code: KeyCode::Char('l'), modifiers: KeyModifiers::CONTROL } => {
+                    self.loadB[0].update(event, data, terminal);
+                    true
+                }
                 KeyEvent { code: KeyCode::Enter, modifiers: EMPTY } => {
                     match self.focus {
                         2 => {
@@ -306,13 +354,21 @@ where
                             }
                         },
                         3 => self.step(data),
-                        4 => {self.loadB[0].update(event, data, terminal);},
+                        4 => {
+                             if self.reset_flag{
+                                self.reset(data);
+                                self.reset_flag = false;
+                            } else {
+                                self.reset_flag = true;
+                            }
+                        }
+                        5 => {self.loadB[0].update(event, data, terminal);},
                         _ => {},
                     }
                     true
                 }
                 KeyEvent { code: KeyCode::Right, modifiers: KeyModifiers::CONTROL } => {
-                    if self.focus < 4 {
+                    if self.focus < 5 {
                         self.focus += 1;;
                     }
                     true

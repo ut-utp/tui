@@ -245,7 +245,7 @@ where
             Focus(FocusEvent::LostFocus) => false,
             Mouse(MouseEvent::Up(_, _, _, _)) => data.program_path.is_some(),
 
-            Key(KeyEvent { code: KeyCode::Enter, .. } ) | Mouse(MouseEvent::Down(_, _, _, _)) => {
+            Key(KeyEvent { code: KeyCode::Char('l'), modifiers: KeyModifiers::CONTROL } ) | Key(KeyEvent { code: KeyCode::Enter, .. } ) | Mouse(MouseEvent::Down(_, _, _, _)) => {
                 // Timeout so we don't repeated try again on key mashes / accidental
                 // double clicks
                 if self.attempt.is_some() {

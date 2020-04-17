@@ -2,19 +2,17 @@
 
 use super::widget_impl_support::*;
 
+use std::convert::TryInto;
+use std::cell::RefCell;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Console
 {
-    history_vec: Vec<String>,
-    input: String,
 }
 
 impl Default for Console {
     fn default() -> Self {
         Self {
-            history_vec: Vec::<String>::new(),
-            input: String::from(""),
         }
     }
 }
@@ -66,14 +64,22 @@ where
                "".to_string()
            }
    
-         };
+        };
         if console_output != "" {
-            self.history_vec.push(console_output); // collect from output source
+            //let vector = RefCell::new(data.history_vec);
+           data.history_vec.borrow_mut().push(console_output); // collect from output source
         }
 
+        while data.history_vec.borrow_mut().len() > 100{
+            data.history_vec.borrow_mut().remove(0);
+        }
 
-            
-        let text_history = [TuiText::styled(self.history_vec.join("\n"), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+        let mut temp = data.history_vec.borrow_mut().clone();
+        while temp.len() > (area.y/2).try_into().unwrap() {
+            temp.remove(0);
+        }
+           
+        let text_history = [TuiText::styled(temp.join("\n"), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
         let mut para_history = Paragraph::new(text_history.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
@@ -94,7 +100,7 @@ where
             let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
             para.draw(area, buf);
 
-            let text = [TuiText::styled(self.input.clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+            let text = [TuiText::styled(data.input_string.borrow_mut().clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
             para = Paragraph::new(text.iter())
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
@@ -113,7 +119,7 @@ where
             let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
             para.draw(area, buf);
 
-            let text = [TuiText::styled(self.input.clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+            let text = [TuiText::styled(data.input_string.borrow_mut().clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
             para = Paragraph::new(text.iter())
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
@@ -130,7 +136,7 @@ where
 
     }
 
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
@@ -144,14 +150,14 @@ where
 
             Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
                 
-                match _data.input {
+                match data.input {
                     Some(input) => {
                         let fallible = input.put_char(c);  // put characters into input sink
 
                         match fallible {
                             Some(some) => {
                                 let x = format!("{}", c);
-                                self.input.push_str(&x);
+                                data.input_string.borrow_mut().push_str(&x);
                                 true
                             },
 
@@ -169,7 +175,7 @@ where
 
             },
             Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
-                self.input = String::from("");
+                data.input_string.replace(String::from(""));
                 
                 true
             },
