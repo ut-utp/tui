@@ -38,7 +38,7 @@ fn block_on<F: Future/* + Unpin*/>(f: F) -> F::Output {
     }
 }
 
-#[allow(explicit_outlives_requirement)]
+#[allow(explicit_outlives_requirements)]
 pub struct Modeline<'a, 'int, C, I, O, B>
 where
     C: Control + ?Sized + 'a,
@@ -100,7 +100,7 @@ where
             if let Some(e) = self.event_fut.take() {
                 // If we're calling this (i.e. if we're not actively running
                 // until an event) blocking on this should return _immediately_.
-                block_on(e);
+                data.current_event = Some(block_on(e));
             }
 
             self.event_fut = Some(data.sim.run_until_event());

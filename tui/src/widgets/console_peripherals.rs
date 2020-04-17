@@ -52,7 +52,7 @@ where
 
         let peripheral_help = format!("Hello! To write to ADC or GPIO from the peripheral console,\nyou must write a line below separated by colons (:) then press ENTER to submit!\nex. gpio:1:1 will set GPIO pin 1 to True");
         let text_help = [TuiText::styled(peripheral_help, Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))];
-        
+
         let mut para_help = Paragraph::new(text_help.iter())
             .style(Style::default().fg(Color::White).bg(Color::Reset))
             .alignment(Alignment::Left)
@@ -127,15 +127,15 @@ where
 
                     }
 
-                    
+
                     Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
 
                         let mut x = format!("{}", c);
                         self.input.push_str(&x);
                         true
-                        
+
                     }
-        
+
                     Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
                         let x = self.input.clone();
                         let vec: Vec<&str> = x.split(":").collect();
@@ -155,33 +155,33 @@ where
                                                     lock.unwrap().set_value(adc_pin, value);
                                                 },
                                                 AdcState::Disabled => {
-                                                    
+
                                                 }
 
                                             }
                                     },
-                                       
+
                                 "gpio" => {
                                     let gpio_states = _data.sim.get_gpio_states();
                                     let lock = RwLock::write(&shim.gpio);
-                                    
+
                                     let gpio_pin = gpio_pins[vec[1].parse::<u8>().unwrap() as usize];
                                     match gpio_states[gpio_pin] {
-                                                
+
                                                 GpioState::Input => {
                                                     match vec[2] {
                                                         "0" => {
-                                                            lock.unwrap().set_pin(gpio_pin, false); 
+                                                            lock.unwrap().set_pin(gpio_pin, false);
                                                         },
                                                         "1" => {
-                                                            lock.unwrap().set_pin(gpio_pin, true); 
+                                                            lock.unwrap().set_pin(gpio_pin, true);
                                                         },
                                                         _ => {}
                                                     }
                                                 },
                                                 _ => {}
                                             }
-                                            
+
                                      },
                                         _ => {}
 
@@ -189,7 +189,7 @@ where
 
 
                             }
-            
+
                         true
                     }
                      _ => false,
@@ -200,6 +200,6 @@ where
             _ => false,
 
         }
-        
+
     }
 }
