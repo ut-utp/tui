@@ -196,10 +196,10 @@ where
 
         let state_block = Rect::new(area.width/24, area.y, area.width*5/24, area.height);
         let cur_event_block = Rect::new(area.width/24*8, area.y, area.width*17/24, area.height);
-        self.execution_control_button = Rect::new(area.width + area.width/24, area.y, area.width*5/24, area.height);
-        self.step_button = Rect::new(area.width + area.width/24*8, area.y, area.width*5/24, area.height);
-        self.reset_button = Rect::new(area.width + area.width/24*15, area.y, area.width*5/24, area.height);
-        self.load_button = Rect::new(area.width + area.width/24*22, area.y, area.width*5/24, area.height);
+        self.execution_control_button = Rect::new(area.width + area.width/24, area.y, area.width*4/24, area.height);
+        self.step_button = Rect::new(area.width + area.width/24*6, area.y, area.width*4/24, area.height);
+        self.reset_button = Rect::new(area.width + area.width/24*12, area.y, area.width*4/24, area.height);
+        self.load_button = Rect::new(area.width + area.width/24*18, area.y, area.width*4/24, area.height);
 
         let state = match data.sim.get_state() {
             State::Halted => "HALTED",
