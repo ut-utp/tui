@@ -69,6 +69,13 @@ where
                     s1.push_str(&format!("{}\n",
                     disabled_string, ));
                 }
+                GpioState::Output => {
+                    let output_string = "Output";
+                    s1.push_str(&format!("{}\n", 
+                    output_string, ));
+                },
+
+
                 _ => {
                     match gpioin[gpio_pins_1[i]] {
                         Ok(val) => {
@@ -122,7 +129,12 @@ where
                         let disabled_string = "Disabled";
                         s2.push_str(&format!("{}\n",
                         disabled_string, ));
-                    }
+                    },
+                    GpioState::Output => {
+                        let output_string = "Output";
+                        s2.push_str(&format!("{}\n", 
+                        output_string, ));
+                    },
                     _ => {
                         match gpioin[gpio_pins_2[i]] {
                             Ok(val) => {
