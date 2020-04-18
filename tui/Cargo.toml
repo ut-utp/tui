@@ -35,7 +35,9 @@ lc3-traits = { git = "https://github.com/ut-utp/prototype", branch = "staging", 
 lc3-assembler = { git = "https://github.com/ut-utp/assembler", branch = "master", version = "0.1.0" }
 lc3-os = { git = "https://github.com/ut-utp/prototype", branch = "staging", version = "0.1.0" }
 # TODO: change all of the above to grab the crates from crates.io instead of git
-# TODO: get rid of the feat-trap-tests branch thing
+# TODO: get rid of the staging branch thing
+lc3-assembler = { git = "https://github.com/ut-utp/assembler", branch = "master", version = "0.1.0" }
+# TODO: change the above to grab the crates from crates.io instead of git
 
 annotate-snippets = "0.8.0"
 chrono = "0.4"

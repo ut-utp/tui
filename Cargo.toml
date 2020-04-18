@@ -23,7 +23,7 @@ failure = "0.1.6"
 
 lc3-application-support = { git = "https://github.com/ut-utp/prototype", branch = "staging", version = "0.1.0" }
 # TODO: grab the above from crates.io instead of git
-# TODO: get rid of the feat-trap-tests thing
+# TODO: get rid of the staging thing
 lc3-tui = { path = "tui", version = "0.1.0" }
 # TODO: grab the above from crates.io instead of by path
 
