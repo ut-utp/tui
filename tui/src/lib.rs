@@ -51,5 +51,7 @@ pub mod debug;
 pub mod layout;
 pub mod widgets;
 
+pub mod env;
+
 mod tui;
 pub use crate::tui::{DynTui, Tui};
