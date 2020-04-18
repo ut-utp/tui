@@ -501,6 +501,7 @@ dependencies = [
  "crossbeam",
  "crossterm 0.17.3",
  "failure",
+ "lazy_static",
  "lc3-application-support",
  "lc3-assembler",
  "lc3-isa",

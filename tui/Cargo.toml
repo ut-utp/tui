@@ -45,6 +45,7 @@ crossbeam = "0.7.3"
 failure = "0.1.6"
 log = "0.4.8"
 pin-utils = "0.1.0-alpha.4"
+lazy_static = "1.4.0"
 
 crossterm = "0.17.1"
 
