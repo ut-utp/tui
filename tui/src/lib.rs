@@ -43,8 +43,27 @@
 macro_rules! specialize {
     (desktop => { $($d:item)* } web => { $($w:item)* }) => {
         $( #[cfg(not(target = "wasm32"))] $d )*
+
         $( #[cfg(target = "wasm32")] $w )*
     };
+
+    ([var: $var:ident] desktop => { $d:expr } web => { $w:expr }) => {
+        let $var = {
+            #[cfg(not(target = "wasm32"))]
+            let v = $d;
+
+            #[cfg(target = "wasm32")]
+            let v = $w;
+
+            v
+        };
+    };
+
+    // Does not yet work on stable.
+    ([expr] desktop => { $d:block } web => { $e:block }) => {
+        #[cfg(not(target = "wasm32"))] $d
+        #[cfg(target = "wasm32")] $e
+    }
 }
 
 pub mod debug;
@@ -52,6 +71,7 @@ pub mod layout;
 pub mod widgets;
 
 pub mod env;
+pub mod strings;
 
 mod tui;
 pub use crate::tui::{DynTui, Tui};
