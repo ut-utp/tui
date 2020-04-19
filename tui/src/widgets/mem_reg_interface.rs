@@ -3,14 +3,23 @@
 use super::widget_impl_support::*;
 
 use lc3_isa::{Addr, Instruction, Reg, Word};
+use MemRegMode::*;
+use std::convert::TryFrom;
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum MemRegMode {
+    INPUT_SOURCE,
+    MEMORY_MOD,
+    REGISTER_MOD,
+    PC_MOD,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MemRegInterface
 {
     mem_addr: Addr,
     reg_num: Reg,
-    mode: u8,
+    mode: MemRegMode,
     input: String,
 }
 
@@ -19,7 +28,7 @@ impl Default for MemRegInterface {
         Self {
             mem_addr: 0,
             reg_num: Reg::R0,
-            mode: 0,
+            mode: INPUT_SOURCE,
             input: String::from(""),
         }
     }
@@ -41,40 +50,39 @@ where
     B: Backend,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-        let mut t = TuiText::styled("\n", Style::default());
-        if self.mode == 0 {
-            t = TuiText::styled(
-                "INPUT ADDRESS\n",
-                Style::default().fg(Colour::Red).modifier(Modifier::BOLD),
-            );
-        } else if self.mode == 1 {
-            t = TuiText::styled(
-                format!("Current Addr: {:#06x}\n", self.mem_addr),
-                Style::default().fg(Colour::Gray),
-            );
-        } else if self.mode == 2 {
-            t = TuiText::styled(
-                format!("Current Reg: {}\n", self.reg_num),
-                Style::default().fg(Colour::Gray),
-            );
-        } else if self.mode == 3 {
-            t = TuiText::styled(
-                format!("Current Reg: PC\n"),
-                Style::default().fg(Colour::Gray),
-            );
-        } else if self.mode == 4 {
-            t = TuiText::styled(
-                format!("Current Reg: PSR\n Currently Defunct, may remove\n"),
-                Style::default().fg(Colour::Gray),
-            );
-        }
+        let prompt = match self.mode {
+            INPUT_SOURCE => {
+                TuiText::styled(
+                    "INPUT ADDRESS\n",
+                    Style::default().fg(Colour::Red).modifier(Modifier::BOLD),
+                )
+            },
+            MEMORY_MOD => {
+                TuiText::styled(
+                    format!("Current Address: {:#06x}\n", self.mem_addr),
+                    Style::default().fg(Colour::Gray),
+                )
+            },
+            REGISTER_MOD => {
+                TuiText::styled(
+                    format!("Current Register: {}\n", self.reg_num),
+                    Style::default().fg(Colour::Gray),
+                )
+            },
+            PC_MOD => {
+                TuiText::styled(
+                    format!("Current Register: PC\n"),
+                    Style::default().fg(Colour::Gray),
+                )
+            },
+        };
 
-        let text = [
-            t,
+        let prompt_input_text = [
+            prompt,
             TuiText::raw(self.input.clone()),
         ];
 
-        let mut para = Paragraph::new(text.iter())
+        let mut para = Paragraph::new(prompt_input_text.iter())
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
                 .wrap(true);
@@ -83,50 +91,24 @@ where
 
         let area = increment(25, Axis::X, area);
 
-        if self.mode == 0 {
-            let text = [
-              TuiText::raw("Enter an address or register to get started.\n You can use default decimal format,\n or add 0x for Hex, and 0b for binary.\n e.g. 16 = 0x10 = 0b10000\n For regs, can do R0 to R7 or PC"),
-            ];
+        let instructions = match self.mode {
+            INPUT_SOURCE => {
+                [TuiText::raw("Enter an address or register to get started.\n You can use default decimal format,\n or add 0x for Hex, and 0b for binary.\n e.g. 16 = 0x10 = 0b10000\n For regs, can do R0 to R7 or PC"), ]
+            },
+            MEMORY_MOD => {
+                [TuiText::styled("Memory Manipulation Help\nb to toggle breakpoint, w to toggle watchpoint\nj to jump to address\ne to enter a new address, or type a register to change directly\nType a value to change data at the address\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))), ]
+            },
+            REGISTER_MOD | PC_MOD => {
+                [TuiText::styled("Register Manipulation Help\nb to toggle breakpoint at reg address, w to toggle watchpoint\nj to jump to reg address\ne to enter a new address, or type a register to change directly\nType a value to change data in the reg\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))), ]
+            },
+        };
 
-            para = Paragraph::new(text.iter())
-                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-                .alignment(Alignment::Left)
-                .wrap(true);
+        para = Paragraph::new(instructions.iter())
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
+            .alignment(Alignment::Left)
+            .wrap(true);
 
-            para.draw(area, buf);
-
-        } else if self.mode == 1 {
-            let text = [
-                TuiText::styled("Memory Manipulation Help\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))),
-                TuiText::styled("b to set breakpoint, w to set watchpoint\n", Style::default().fg(Colour::LightCyan)),
-                TuiText::styled("rb to remove breakpoint, rw to remove watchpoint\n", Style::default().fg(Colour::LightRed)),
-                TuiText::styled("j to jump to address\n", Style::default().fg(Colour::Magenta)),
-                TuiText::styled("e to enter a new adress, or type a register to change directly\n", Style::default().fg(Colour::LightGreen)),
-                TuiText::styled("Type a value to change data at the addresss\n", Style::default().fg(Colour::Gray)),
-            ];
-
-            para = Paragraph::new(text.iter())
-                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-                .alignment(Alignment::Left)
-                .wrap(true);
-
-            para.draw(area, buf);       
-        } else if self.mode >= 2 {
-            let text = [
-                TuiText::styled("Register Manipulation Help\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))),
-                TuiText::styled("b to toggle breakpoint at reg address, w to toggle watchpoint\n", Style::default().fg(Colour::LightCyan)),
-                TuiText::styled("j to jump to reg address\n", Style::default().fg(Colour::Magenta)),
-                TuiText::styled("e to enter a new address, or type a register to change directly\n", Style::default().fg(Colour::LightGreen)),
-                TuiText::styled("Type a value to change data in the reg\n", Style::default().fg(Colour::Gray)),
-            ];
-
-            para = Paragraph::new(text.iter())
-                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-                .alignment(Alignment::Left)
-                .wrap(true);
-
-            para.draw(area, buf);   
-        }
+        para.draw(area, buf);
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
@@ -163,6 +145,59 @@ where
             };
         }
 
+        macro_rules! parse_addr {
+            ($on_success:block, $value:ident) => {
+                if self.input.starts_with("0x") {
+                    match Addr::from_str_radix(&self.input[2..], 16) {
+                        Ok(word) => {
+                            $value = word;
+                            $on_success;
+                        }
+                        Err(_e) => {
+                            data.log(format!("[Addr] Invalid hex value: {}\n", self.input), Colour::Red);
+                        }
+                    }
+                } else if self.input.starts_with("0b") {
+                    match Addr::from_str_radix(&self.input[2..], 2) {
+                        Ok(word) => {
+                            $value = word;
+                            $on_success;
+                        }
+                        Err(_e) => {
+                            data.log(format!("[Addr] Invalid binary value: {}\n", self.input), Colour::Red);
+                        }
+                    }
+                } else {
+                    match self.input.parse::<Addr>() {
+                        Ok(word) => {
+                            $value = word;
+                            $on_success;
+                        }
+                        Err(e) => {data.log(format!("[Addr] Invalid value: {}\n", self.input), Colour::Red)}
+                    }
+                }
+            }
+        }
+
+        macro_rules! modify_addr {
+            ($addr:ident, $word:ident, $on_write:block) => {
+                if self.input == String::from("b") {
+                    set_bp($addr, data);
+                } else if self.input == String::from("w") {
+                    set_wp($addr, data);
+                } else if self.input == String::from("j") {
+                    //offset = data.sim.get_pc().wrapping_sub(self.mem_addr - 2);
+                } else if self.input == String::from("e") {
+                    self.mode = INPUT_SOURCE;
+                } else {
+                    parse_addr!(
+                        $on_write,
+                        $word
+                    )
+                }
+            }
+        }
+
         match event {
             Focus(FocusEvent::GotFocus) => true,
             Focus(FocusEvent::LostFocus) => true,
@@ -180,175 +215,83 @@ where
                 true
             }
 
-            Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
-                self.input = self.input.to_lowercase();
-                if self.input.len() == 2 {
-                    if self.input.starts_with("r") {
-                        self.input.remove(0);
-                        match self.input.parse() {
-                            Ok(r) => {
-                                self.mode = 2;
-                                self.reg_num = match r {
-                                    0 => Reg::R0,
-                                    1 => Reg::R1,
-                                    2 => Reg::R2,
-                                    3 => Reg::R3,
-                                    4 => Reg::R4,
-                                    5 => Reg::R5,
-                                    6 => Reg::R6,
-                                    7 => Reg::R7,
-                                    _ => {self.mode = 0; Reg::R0},
-                                };
-                                data.log(format!("[Reg] {}\n", r), Colour::Green);
-                            }
-                            Err(e) => {data.log(format!("[Reg] {}\n", e), Colour::Red)}
-                        }
-                    } else if self.input == "pc" {
-                        self.mode = 3;
-                    } else if self.input == "psr" {
-                        self.mode = 4;
-                    }
-                } else if self.mode == 0 {
-                    match self.input.parse::<Addr>() {
-                        Ok(a) => {
-                            self.mode = 1;
-                            self.mem_addr = a;
-                            data.log(format!("[Addr] {}\n", a), Colour::Green);
-                        }
-                        Err(e) => {data.log(format!("[Addr] {}\n", e), Colour::Red)}
-                    }
-                    if self.input.len() > 2 {
-                        let val = self.input.split_off(2);
-                        if self.input == "0x" {
-                            match Addr::from_str_radix(&val, 16) {
-                                Ok(a) => {
-                                    self.mode = 1;
-                                    self.mem_addr = a;
-                                }
-                                Err(_e) => {}
-                            }
-                        } else if self.input == "0b" {
-                            match Addr::from_str_radix(&val, 2) {
-                                Ok(a) => {
-                                    self.mode = 1;
-                                    self.mem_addr = a;
-                                }
-                                Err(_e) => {}
-                            }
-                        }
-                    }
-                    data.log(format!("[Addr] {}\n", self.input), Colour::Green);
-                } else if self.mode == 1 {
-                    if self.input == "b" {
-                        set_bp(self.mem_addr, data);
-                    } else if self.input == "w" {
-                        set_wp(self.mem_addr, data);
-                    } else if self.input == "j" {
-                        //offset = data.sim.get_pc().wrapping_sub(self.mem_addr - 2);
-                    } else if self.input == "e" {
-                        self.mode = 0;
-                    } else {
-                        match self.input.parse::<Word>() {
-                            Ok(w) => {
-                                data.sim.write_word(self.mem_addr, w);
-                            }
-                            Err(_e) => {}
-                        }
-                        if self.input.len() > 2 {
-                            let val = self.input.split_off(2);
-                            if self.input == "0x" {
-                                match Word::from_str_radix(&val, 16) {
-                                    Ok(w) => {
-                                        data.sim.write_word(self.mem_addr, w);
-                                    }
-                                    Err(_e) => {}
-                                }   
-                            } else if self.input == "0b" {
-                                match Word::from_str_radix(&val, 2) {
-                                    Ok(w) => {
-                                        data.sim.write_word(self.mem_addr, w);
-                                    }
-                                    Err(_e) => {}
-                                }
-                            }
-                        }
-                    }
-                } else if self.mode >= 2 {
-                    self.input = self.input.to_lowercase();
-                    let mut addr = 0;
-
-                    if self.mode == 2 {
-                        addr = data.sim.get_register(self.reg_num);
-                    } else {
-                        addr = data.sim.get_pc();
-                    }
-
-                    if self.input == "b" {
-                        set_bp(addr, data);
-                    } else if self.input == "w" {
-                        set_wp(addr, data);
-                    } else if self.input == "j" {
-                        //offset = data.sim.get_pc().wrapping_sub(self.mem_addr - 2);
-                    } else if self.input == "e" {
-                        self.mode = 0;
-                    } else {
-                        if self.mode == 2 {
-                            match self.input.parse::<Word>() {
-                                Ok(w) => {
-                                    data.sim.set_register(self.reg_num, w);
-                                }
-                                Err(_e) => {}
-                            }
-                            if self.input.len() > 2 {
-                                let val = self.input.split_off(2);
-                                if self.input == "0x" {
-                                    match Word::from_str_radix(&val, 16) {
-                                        Ok(w) => {
-                                            data.sim.set_register(self.reg_num, w);
-                                        }
-                                        Err(_e) => {}
-                                    }   
-                                } else if self.input == "0b" {
-                                    match Word::from_str_radix(&val, 2) {
-                                        Ok(w) => {
-                                            data.sim.set_register(self.reg_num, w);
-                                        }
-                                        Err(_e) => {}
-                                    }
-                                }
-                            }
-                        } else if self.mode == 3 {
-                            match self.input.parse::<Word>() {
-                                Ok(w) => {
-                                    data.sim.set_pc(w);
-                                }
-                                Err(_e) => {}
-                            }
-                            if self.input.len() > 2 {
-                                let val = self.input.split_off(2);
-                                if self.input == "0x" {
-                                    match Word::from_str_radix(&val, 16) {
-                                        Ok(w) => {
-                                            data.sim.set_pc(w);
-                                        }
-                                        Err(_e) => {}
-                                    }   
-                                } else if self.input == "0b" {
-                                    match Word::from_str_radix(&val, 2) {
-                                        Ok(w) => {
-                                            data.sim.set_pc(w);
-                                        }
-                                        Err(_e) => {}
-                                    }
-                                }
-                            }
-                        }
-                    }
+            Key(KeyEvent {code: KeyCode::Esc, modifiers: EMPTY}) => {
+                // If input is non-empty, clear input
+                if self.input.len() > 0 {
+                    self.input = String::from("");
+                } else {
+                    // Else, change to INPUT_SOURCE mode
+                    self.mode = INPUT_SOURCE;
                 }
+                true
+            }
+
+            Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
+                self.input = self.input.trim().to_lowercase();
+                match self.mode {
+                    INPUT_SOURCE => {
+                        if self.input.starts_with("r") {
+                            match self.input[1..].parse::<u8>() {
+                                Ok(value) => {
+                                    match Reg::try_from(value) {
+                                        Ok(reg) => {
+                                            self.mode = REGISTER_MOD;
+                                            self.reg_num = reg;
+                                        },
+                                        Err(e) => {
+                                            data.log(format!("[Reg] Invalid register: {}\n", self.input), Colour::Red);
+                                        }
+                                    };
+                                },
+                                Err(e) => {
+                                    data.log(format!("[Reg] Invalid register: {}\n", self.input), Colour::Red);
+                                }
+                            }
+                        } else if self.input == String::from("pc") {
+                            self.mode = PC_MOD;
+                        } else {
+                            let mut addr: Word;
+                            parse_addr!(
+                                {
+                                    self.mode = MEMORY_MOD;
+                                    self.mem_addr = addr;
+                                },
+                                addr
+                            )
+                        }
+                    },
+                    MEMORY_MOD => {
+                        let addr = self.mem_addr;
+                        let mut word: Word;
+                        modify_addr!(
+                            addr,
+                            word,
+                            {data.sim.write_word(addr, word);}
+                        );
+                    },
+                    REGISTER_MOD => {
+                        let addr_from_reg = data.sim.get_register(self.reg_num);
+                        let mut word: Word;
+                        modify_addr!(
+                            addr_from_reg,
+                            word,
+                            {data.sim.set_register(self.reg_num, word);}
+                        );
+                    },
+                    PC_MOD => {
+                        let addr_from_pc = data.sim.get_pc();
+                        let mut word: Word;
+                        modify_addr!(
+                            addr_from_pc,
+                            word,
+                            {data.sim.set_pc(word);}
+                        );
+                    },
+                };
                 self.input = String::from("");
                 true
             }
-             _ => false,
+            _ => false,
         }
     }
 }
