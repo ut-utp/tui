@@ -50,20 +50,20 @@ where
         
         let console_output = match data.output{ // collect from the output source 
             Some(output) => {
-                match output.get_chars() { 
+                match output.get_chars() {
                     Some(s) => {
-                        s 
+                        s
                     },
                     None => {
                        "".to_string()
-                    },  
+                    },
 
                 }
             },
            None => {
                "".to_string()
            }
-   
+
         };
         if console_output != "" {
             //let vector = RefCell::new(data.history_vec);
@@ -84,7 +84,7 @@ where
             bottom_area = increment(1, Axis::Y, area);
         }
 
-        let mut temp = data.history_vec.borrow().clone();   
+        let mut temp = data.history_vec.borrow().clone();
         let mut temp = temp.join("\n");
         let mut temp_clone = temp.clone();
         let mut lines = 0;
@@ -101,13 +101,13 @@ where
        /* while temp.len() > (area.y*3/4).try_into().unwrap() {
             temp.remove(0);
         }*/
-           
+
         let text_history = [TuiText::styled(temp, Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
         let mut para = Paragraph::new(text_history.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
-        
+
         para.draw(area, buf); // the idea of this is to write the output before the ">", but I'm not sure this accomplishes that...
 
         let text = [TuiText::styled(">", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
@@ -133,7 +133,7 @@ where
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
                 .wrap(true);
-            para.draw(bottom_area,buf); 
+            para.draw(bottom_area,buf);
         }
 
     }
@@ -142,7 +142,7 @@ where
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
-        
+
         match event {
             Focus(FocusEvent::GotFocus) => true,
             Focus(FocusEvent::LostFocus) => true,
@@ -151,7 +151,7 @@ where
 
 
             Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
-                
+
                 match data.input {
                     Some(input) => {
                         let fallible = input.put_char(c);  // put characters into input sink
@@ -167,7 +167,7 @@ where
                                 false
                             }
 
-                        } 
+                        }
                     },
                     None => {
                         false
@@ -178,7 +178,7 @@ where
             },
             Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
                 data.input_string.replace(String::from(""));
-                
+
                 true
             },
              _ => false,

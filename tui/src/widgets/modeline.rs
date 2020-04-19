@@ -117,8 +117,8 @@ where
     fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
         data.sim.reset();
         data.input_string.replace(String::from(""));
-        data.history_vec.borrow_mut().clear();
-        data.reset_flag += 1;
+        data.console_hist.borrow_mut().clear();
+        data.reset_flag.wrapping_add(1);
 
         // Resolve the pending future, if there is one.
         if let Some(e) = self.event_fut.take() {
