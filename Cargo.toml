@@ -21,7 +21,7 @@ flexi_logger = { version = "0.14", default_features = false }
 structopt = { version = "0.3", default-features = false }
 failure = "0.1.6"
 
-lc3-application-support = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tests", version = "0.1.0" }
+lc3-application-support = { git = "https://github.com/ut-utp/prototype", branch = "staging", version = "0.1.0" }
 # TODO: grab the above from crates.io instead of git
 # TODO: get rid of the feat-trap-tests thing
 lc3-tui = { path = "tui", version = "0.1.0" }
