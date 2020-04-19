@@ -165,6 +165,7 @@ where
                         Ok(word) => {
                             $value = word;
                             $on_success;
+                            self.mode = INPUT_SOURCE;
                         }
                         Err(_e) => {
                             data.log(format!("[Addr] Invalid binary value: {}\n", self.input), Colour::Red);
@@ -186,8 +187,10 @@ where
             ($addr:ident, $word:ident, $on_write:block) => {
                 if self.input == String::from("b") {
                     set_bp($addr, data);
+                    self.mode = INPUT_SOURCE;
                 } else if self.input == String::from("w") {
                     set_wp($addr, data);
+                    self.mode = INPUT_SOURCE;
                 } else if self.input == String::from("j") {
                     //offset = data.sim.get_pc().wrapping_sub(self.mem_addr - 2);
                 } else if self.input == String::from("e") {
@@ -196,7 +199,7 @@ where
                     parse_addr!(
                         $on_write,
                         $word
-                    )
+                    );
                 }
             }
         }
