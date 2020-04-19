@@ -285,7 +285,7 @@ where
 
         let mut vec = Vec::new();
         if self.reset_flag {
-            vec.push(TuiText::styled("Are You Sure?", Style::default().fg(Colour::Red)));
+            vec.push(TuiText::styled(s!(ResetConfirmationMsg), Style::default().fg(Colour::Red)));
         } else {
             vec.push(TuiText::styled("Reset", Style::default().fg(Colour::Yellow)));
         }
@@ -321,7 +321,7 @@ where
             if State::RunningUntilEvent != data.sim.get_state() {
                 let event = block_on(self.event_fut.take().unwrap());
 
-                data.log(format!("[mode] Got an event! {:?}\n", event), Color::Blue);
+                data.log(format!("[modeline] Got an event! {:?}\n", event), Color::Blue);
 
                 assert!(data.current_event.is_none()); // We're being defensive; I thini this holds.
                 data.current_event = Some(event);

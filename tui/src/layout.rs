@@ -159,14 +159,16 @@ where
     let _ = debug.add_widget(Constraint::Percentage(50), left, None)
         .add_widget(Constraint::Percentage(50), right, None);
 
-    let mut tabs = Tabs::new(root, "Root")
-        .add(peripherals, "Peripherals")
-        .add(memory, "Mem")
-        .add(big_console_tab, "Console")
-        .add(debug, "Debug")
-        .add(help, "Help")
-        .add(log, "Log")
-        .with_tabs_bar(|| {
+    use crate::strings::*;
+
+    let mut tabs = Tabs::new(root, s!(RootTab))
+        .add(peripherals, s!(PeripheralsTab))
+        .add(memory, s!(MemTab))
+        .add(big_console_tab, s!(ConsoleTab))
+        .add(debug, s!(DebugTab))
+        .add(help, s!(HelpTab))
+        .add(log, s!(LogTab))
+        .with_tabs_bar(move || {
             TabsBar::default()
                 .block(Block::default().title(name.unwrap_or(s!(TabBarName))).borders(Borders::ALL).border_style(Style::default().fg(Color::Blue)))
                 .style(Style::default().fg(Color::White))
@@ -181,12 +183,12 @@ where
     if crate::debug::in_debug_mode() {
         let events = Text::new(|t| t.debug_log.as_ref().unwrap());
 
-        let mut debug = Widgets::new(vert.clone());
-        let _ = debug
+        let mut event_log = Widgets::new(vert.clone());
+        let _ = event_log
             .add_widget(Constraint::Percentage(100), events, Some(b.clone().border_style(Style::default().fg(Color::Green)).title("Event Log")));
 
         tabs = tabs
-            .add(debug, "Debug Info");
+            .add(event_log, s!(EventLogTab));
     }
 
 

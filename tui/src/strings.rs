@@ -6,7 +6,7 @@ macro_rules! register_strings {
     ( $table:ident <- {
         $($nom:ident => (
             $regular:literal $(,)?
-            $(unicode: $unicode:literal)? $(,)?
+            $($(unicode:)? $unicode:literal)? $(,)?
         ) $(,)?)*
     }) => {
         register_strings! { munch:begin $($nom)* }
@@ -26,7 +26,9 @@ macro_rules! register_strings {
         $nom1:ident
         $($rest:tt)*
     ) => {
-        pub const $nom1: StringId = 0;
+        #[deny(unused)]
+        #[allow(non_upper_case_globals)]
+        pub(crate) const $nom1: StringId = 0;
         register_strings!{ munch:continue $nom1 $($rest)* }
     };
 
@@ -39,7 +41,9 @@ macro_rules! register_strings {
         $nom2:ident
         $($rest:tt)*
     ) => {
-        pub const $nom2: StringId = $nom1 + 1;
+        #[deny(unused)]
+        #[allow(non_upper_case_globals)]
+        pub(crate) const $nom2: StringId = $nom1 + 1;
         register_strings!{ munch:continue $nom2 $($rest)* }
     };
 
@@ -47,13 +51,35 @@ macro_rules! register_strings {
         $nom1:ident
         $nom2:ident
     ) => {
+        #[deny(unused)]
         #[allow(non_upper_case_globals)]
-        pub const $nom2: StringId = $nom1 + 1;
+        pub(crate) const $nom2: StringId = $nom1 + 1;
     };
 }
 
 register_strings! { STR_TABLE <- {
-    PeripheralsTab => ("FOO"),
+    // Tabs:
+    TabBarName => ("UTP LC-3 Simulator"),
+    RootTab => ("Root", "🌴 Root"),
+    PeripheralsTab => ("Peripherals", "🕹️  Peripherals"),
+    MemTab => ("Memory", "💽 Memory"),
+    ConsoleTab => ("Console", "🖥️  Console"),
+    DebugTab => ("Debug", "🐛 Debug"),
+    HelpTab => ("Help", "❔ Help"),
+    LogTab => ("Log", "📜 Log"),
+    EventLogTab => ("Internal Event Log", "🦠 Internal Event Log"),
+    // InfoTab => ("Info", "ℹ️ Info"), // TODO!
+
+    // Load Button:
+    FailureMsg => ("Failed!", "❌ Failed!"),
+    SuccessMsg => ("Success!", "✔️  Successful!"),
+
+    // Modeline:
+    ResetConfirmationMsg => ("Are You Sure?", "⚠️  Are You Sure? ⚠️"),
+
+    // Log messages:
+    HelloMsg => ("Hello\n", "Hello! 👋\n"),
+    StartupMsg => ("We're up!\n", "We're up! 🚀\n"),
 }}
 
 #[inline]
@@ -71,17 +97,7 @@ use crate::env::{UNICODE_DISABLE_ENV_VAR, UNICODE_ENABLE_ENV_VAR};
 // (which we can manually pass in when running in the browser).
 lazy_static::lazy_static! {
     static ref PLATFORM_SUPPORTS_UNICODE: bool = {
-        // let default = specialize! { [expr]
-        //     desktop => {{
-        //         match std::env::consts::OS {
-        //             "linux" | "macos" => true,
-        //             "windows" => false,
-        //             _ => true,
-        //         }
-        //     }}
-
-        //     web => {{ true }}
-        // };
+        use std::env::var_os;
 
         specialize! { [var: default]
             desktop => {
@@ -95,16 +111,18 @@ lazy_static::lazy_static! {
             web => { true }
         }
 
-        let manually_enabled = std::env::var_os(UNICODE_ENABLE_ENV_VAR)
-            .is_some();
+        let manually_enabled = var_os(UNICODE_ENABLE_ENV_VAR).is_some();
+        let manually_disabled = var_os(UNICODE_DISABLE_ENV_VAR).is_some();
+        let lang_var_hint = matches!(var_os("LANG"), Some(s) if
+            matches!(s.to_str(), Some(s) if s.ends_with("UTF-8"))
+        );
 
-        let manually_disabled = std::env::var_os(UNICODE_DISABLE_ENV_VAR)
-            .is_some();
-
-        (default || manually_enabled) && !manually_disabled
+        (default || manually_enabled || lang_var_hint) && !manually_disabled
     };
 }
 
 #[macro_export]
 #[doc(hidden)]
 macro_rules! s { ($nom:ident) => { $crate::strings::get_string($nom) }; }
+
+pub use crate::s;

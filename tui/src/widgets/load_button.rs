@@ -42,10 +42,8 @@ impl Attempt {
 
     fn message(&self) -> TuiText<'static> {
         match self {
-            // Self::Failure(_) => TuiText::styled("Failed to Load!", Style::default().fg(Colour::Red)),
-            // Self::Success(_) => TuiText::styled("Successfully Loaded!", Style::default().fg(Colour::Green)),
-            Self::Failure(_) => TuiText::styled("Failed!", Style::default().fg(Colour::Red)),
-            Self::Success(_) => TuiText::styled("Successful!", Style::default().fg(Colour::Green)),
+            Self::Failure(_) => TuiText::styled(s!(FailureMsg), Style::default().fg(Colour::Red)),
+            Self::Success(_) => TuiText::styled(s!(SuccessMsg), Style::default().fg(Colour::Green)),
         }
     }
 }
@@ -276,7 +274,7 @@ where
 
         match &data.program_path {
             None => {
-                let msg = TuiText::styled("No Program File!\n", Style::default().fg(Colour::Red));
+                let msg = TuiText::styled("No File Given!\n", Style::default().fg(Colour::Red));
 
                 Paragraph::new([msg].iter())
                     .style(Style::default().fg(Colour::White))
