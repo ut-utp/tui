@@ -19,6 +19,7 @@ use tui::style::{Style, Color};
 // but that could change in the future.
 // TODO: potentially parameterize this from with user configurable options!
 pub fn layout<'a, 'int: 'a, C, I, O, B: 'a>(
+    name: Option<&'a str>,
     extra_tabs: Vec<(Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, String)>,
 ) -> impl Widget<'a, 'int, C, I, O, B>
 where
@@ -28,15 +29,15 @@ where
     B: Backend,
     Terminal<B>: Send,
 {
-    let mut root = RootWidget::new(layout_tabs(extra_tabs))
+    let mut root = RootWidget::new(layout_tabs(name, extra_tabs))
         .add(Modeline::new(LoadButton::new()));
 
     root
-
 }
 
 
 pub fn layout_tabs<'a, 'int: 'a, C, I, O, B: 'a>(
+    name: Option<&'a str>,
     extra_tabs: Vec<(Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, String)>,
 ) -> Tabs<'a, 'int, C, I, O, B, impl Fn() -> TabsBar<'a, String>>
 where
@@ -125,7 +126,7 @@ where
     let regs = Regs::default();
     let _ = memory.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory")))
         .add_widget(Constraint::Percentage(20), regs, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Registers + PC+ PSR").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
-    
+
 
     let mut big_console_tab  = Widgets::new(vert.clone());
     let _ = big_console_tab.add_widget(Constraint::Percentage(100), Console::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Console")));
@@ -167,7 +168,7 @@ where
         .add(log, "Log")
         .with_tabs_bar(|| {
             TabsBar::default()
-                .block(Block::default().title("Tabs").borders(Borders::ALL).border_style(Style::default().fg(Color::Blue)))
+                .block(Block::default().title(name.unwrap_or(s!(TabBarName))).borders(Borders::ALL).border_style(Style::default().fg(Color::Blue)))
                 .style(Style::default().fg(Color::White))
                 .highlight_style(Style::default().fg(Color::LightCyan))
                 // .divider(tui::symbols::DOT)
