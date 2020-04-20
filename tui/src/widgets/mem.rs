@@ -438,10 +438,14 @@ where
 
             Key(KeyEvent { code: KeyCode::PageUp, modifiers: EMPTY }) => {
                 self.focus = self.focus.wrapping_add(self.position.height).wrapping_sub(1);
+                self.follow = false;
+                self.addr = self.addr.wrapping_add(self.position.height).wrapping_sub(1);
                 true
             }
             Key(KeyEvent { code: KeyCode::PageDown, modifiers: EMPTY }) => {
                 self.focus = self.focus.wrapping_sub(self.position.height).wrapping_add(1);
+                self.follow = false;
+                self.addr = self.addr.wrapping_sub(self.position.height).wrapping_add(1);
                 true
             }
 

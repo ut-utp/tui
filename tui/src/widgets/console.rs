@@ -70,10 +70,6 @@ where
            data.console_hist.borrow_mut().push(console_output); // collect from output source
         }
 
-        while data.console_hist.borrow_mut().len() > 50{
-            data.console_hist.borrow_mut().remove(0);
-        }
-
         let mut bottom_area = area;
         if area.height <= 1 {
         } else if area.height <= 4 {
@@ -85,7 +81,9 @@ where
         }
 
         let mut temp = data.console_hist.borrow().clone();
-        let mut temp = temp.join("\n");
+        let mut temp = temp.concat();
+        let mut hist = data.console_hist.borrow().clone();
+        let mut hist = hist.concat();
         let mut temp_clone = temp.clone();
         let mut lines = 0;
         while temp_clone != "" {
@@ -94,13 +92,20 @@ where
             }
         }
         while lines > bottom_area.y-area.y {
+            if lines > 100 {
+                hist.remove(0);
+            }
+
             if temp.remove(0) == '\n' {
                 lines -=1;
             }
+
         }
-       /* while temp.len() > (area.y*3/4).try_into().unwrap() {
-            temp.remove(0);
-        }*/
+
+        let mut hist_2 = Vec::new();
+        hist_2.push(hist);
+
+        data.console_hist.replace(hist_2);
 
         let text_history = [TuiText::styled(temp, Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
         let mut para = Paragraph::new(text_history.iter())
