@@ -188,11 +188,11 @@ where
                         }
                         Event::Error {err} => {
                             if cur_addr == pc {
-                                bp_colour = Colour::Red;
-                                wp_colour = Colour::Red;
-                                addr_colour = Colour::Red;
-                                data_colour = Colour::Red;
-                                inst_colour = Colour::Red;
+                                bp_colour = Colour::LightRed;
+                                wp_colour = Colour::LightRed;
+                                addr_colour = Colour::LightRed;
+                                data_colour = Colour::LightRed;
+                                inst_colour = Colour::LightRed;
                             }
                         },
                         Event::Interrupted => {
