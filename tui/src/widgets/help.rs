@@ -17,7 +17,7 @@ pub struct Help
 impl Default for Help {
     fn default() -> Self {
         Self {
-            focusable: false,
+            focusable: true,
         }
     }
 }

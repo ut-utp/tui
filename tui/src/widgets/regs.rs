@@ -50,6 +50,7 @@ pub struct Regs
 {
     state: RegDiff,
     debug: bool,
+    reset_flag: u8,
 }
 
 impl Regs {
@@ -61,6 +62,7 @@ impl Regs {
         Self {
             state: RegDiff::default(),
             debug,
+            reset_flag: 0,
         }
     }
 }
@@ -82,7 +84,14 @@ where
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let regs_psr_pc = data.sim.get_registers_psr_and_pc();
+        let (regs, psr, pc) = regs_psr_pc;
+        if self.reset_flag != data.reset_flag{
+            self.state.push((regs, psr, pc-1));
+            self.reset_flag = data.reset_flag;
+        }
+
         self.state.push(regs_psr_pc);
+        
         let mut colours = self.state.diff();
 
         if self.debug && data.mem_reg_inter.0 == 2 {
@@ -94,7 +103,7 @@ where
             }
         }
 
-        let (regs, psr, pc) = regs_psr_pc;
+        
 
         let text = [
             TuiText::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(Color::Gray)),
