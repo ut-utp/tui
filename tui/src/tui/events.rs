@@ -55,7 +55,10 @@ impl From<CrosstermEvent> for WidgetEvent {
     }
 }
 
-pub(in crate::tui) fn start_event_threads<T>(term: &mut T, tick: Duration) -> Result<(Receiver<Event>, Sender<Event>)>
+pub(in crate::tui) fn start_event_threads<T>(
+    term: &mut T,
+    tick: Duration
+) -> Result<(Receiver<Event>, Sender<Event>)>
 where
     T: ExecutableCommand<&'static str>
 {
@@ -69,7 +72,10 @@ where
 
 // You don't have to be using a crossterm backend with `tui` to use this. I
 // think. (TODO)
-fn start_crossterm_event_thread<T>(term: &mut T, tx: Sender<Event>) -> Result<()>
+fn start_crossterm_event_thread<T>(
+    term: &mut T,
+    tx: Sender<Event>
+) -> Result<()>
 where
     T: ExecutableCommand<&'static str>
 {
@@ -80,13 +86,6 @@ where
     // make sense if we were using async functions in other places in the
     // application but we're not and most of our operations are synchronous
     // anyways).
-
-    // Ideally this would be a const, but BitOr isn't const and bitflags offers
-    // us no way to generate the below in a const context. As such, we compute
-    // it out here (outside of the loop) so there's no chance it gets computed
-    // repeatedly.
-    use crossterm::event::{KeyCode, KeyModifiers as Km};
-    let ctrl_shift_q: KeyEvent = KeyEvent { code: KeyCode::Char('q'), modifiers: Km::ALT};
 
     fn exit() -> Result<()> {
         let mut out = std::io::stdout();
@@ -116,13 +115,18 @@ where
             // terminated so we exit gracefully rather than panic).
             if let Err(_) = match crossterm::event::read() {
                 Ok(e) => {
-                    if let CrosstermEvent::Key(key) = e {
-                        if key == ctrl_shift_q {
-                            exit().unwrap();
+                    use crossterm::event::{KeyCode, KeyModifiers as Km};
 
-                            eprintln!("Force Quit!");
-                            std::process::exit(1);
-                        }
+                    // Ideally this would be Ctrl + Shift + Q but crossterm
+                    // doesn't seem to do a good job actually relaying Ctrl +
+                    // Shift key events. So, we'll do Alt + Q.
+                    if let CrosstermEvent::Key(KeyEvent {
+                        code: KeyCode::Char('q'), modifiers: Km::ALT
+                    }) = e {
+                        exit().unwrap();
+
+                        eprintln!("Force Quit!");
+                        std::process::exit(1);
                     }
 
                     tx.send(Event::ActualEvent(e))
@@ -130,7 +134,8 @@ where
                 Err(err) => tx.send(Event::Error(err)),
             } {
                 exit().unwrap();
-                let _ = crate::debug::run_if_debugging(|| eprintln!("Event thread exiting!"));
+                let _ = crate::debug::run_if_debugging(||
+                    eprintln!("Event thread exiting!"));
                 break
             }
         })?;
@@ -145,7 +150,8 @@ fn start_tick_thread(period: Duration, tx: Sender<Event>) -> Result<()> {
         .spawn(move || loop {
             // Same deal here as above; exit if the channel fails.
             if let Err(_) = tx.send(Event::Tick) {
-                crate::debug::run_if_debugging(|| eprintln!("Tick thread exiting!"));
+                crate::debug::run_if_debugging(||
+                    eprintln!("Tick thread exiting!"));
                 break
             }
             std::thread::sleep(period);
