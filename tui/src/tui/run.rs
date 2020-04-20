@@ -169,6 +169,11 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
         // TODO: v should maybe happen when the Crossterm Event Thread exits, but this
         // is okay for now.
+        //
+        // Right now we duplicate this logic in the crossterm event thread's exit since
+        // it can also trigger a quit and when we quit from here, there's no guarantee
+        // that the crossterm event thread doesn't die before it gets to reset the
+        // screen.
         execute!(std::io::stdout(), DisableMouseCapture)?;
 
         terminal.show_cursor()?;
