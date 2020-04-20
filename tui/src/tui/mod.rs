@@ -21,6 +21,8 @@ use std::cell::RefCell;
 use tui::widgets::Text as TuiText;
 use tui::style::{Style, Color};
 
+pub mod ansi;
+
 pub mod run;
 pub mod events;
 pub mod widget;
@@ -38,14 +40,14 @@ where
     pub input: Option<&'a I>,
     pub input_string: RefCell<String>,
     pub output: Option<&'a O>,
-    pub history_vec: RefCell<Vec<String>>,
     pub shims: Option<Shims<'int>>,
 
-    pub reset_flag: u8,
 
     pub(in crate) program_path: Option<PathBuf>,
 
+    pub(in crate) reset_flag: u8,
     pub(in crate) debug_log: Option<Vec<TuiText<'a>>>,
+    pub(in crate) console_hist: RefCell<Vec<TuiText<'a>>>,
     pub(in crate) log: Vec<TuiText<'a>>,
     pub(in crate) bp: HashMap<Addr, usize>,
     pub(in crate) wp: HashMap<Addr, usize>,
@@ -112,18 +114,19 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 input: None,
                 input_string: RefCell::new(String::from("")),
                 output: None,
-                history_vec: RefCell::new(Vec::<String>::new()),
                 shims: None,
-
-                reset_flag: 0,
 
                 program_path: None,
 
+                reset_flag: 0,
+
                 debug_log: if crate::debug::in_debug_mode() {
-                    Some(Vec::with_capacity(128 * 1024 * 1024))
+                    Some(Vec::with_capacity(32 * 1024 * 1024))
                 } else {
                     None
                 },
+
+                console_hist: RefCell::new(Vec::<TuiText<'a>>::with_capacity(500)),
 
                 log: Vec::with_capacity(16 * 1024 * 1024),
 
