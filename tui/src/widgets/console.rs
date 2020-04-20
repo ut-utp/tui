@@ -33,22 +33,22 @@ where
     B: Backend,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-        let Console_psr_pc = data.sim.get_registers_psr_and_pc();
-        let (Console, psr, pc) = Console_psr_pc;
+        if matches!((data.output, data.input), (None, None)) {
+            return Block::default()
+                .style(Style::default().bg(Colour::Gray).fg(Colour::Gray))
+                .draw(area, buf);
+        }
 
-        /*let text = [
-            TuiText::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(Colour::Gray)),
-            TuiText::styled("PSR:\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))),
-        ];
+        // TODO(rrbutani): redo this to use the text container.
 
-        let mut para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-            .alignment(Alignment::Left)
-            .wrap(true);
+        // Append any new output we have:
+        if let Some(out) = data.output {
+            if let Some(s) = out.get_chars() {
+                data.console_hist.borrow_mut().push(s);
+            }
+        }
 
-        para.draw(area, buf);*/
-        
-        let console_output = match data.output{ // collect from the output source 
+        let console_output = match data.output{ // collect from the output source
             Some(output) => {
                 match output.get_chars() {
                     Some(s) => {
@@ -67,11 +67,11 @@ where
         };
         if console_output != "" {
             //let vector = RefCell::new(data.history_vec);
-           data.history_vec.borrow_mut().push(console_output); // collect from output source
+           data.console_hist.borrow_mut().push(console_output); // collect from output source
         }
 
-        while data.history_vec.borrow_mut().len() > 50{
-            data.history_vec.borrow_mut().remove(0);
+        while data.console_hist.borrow_mut().len() > 50{
+            data.console_hist.borrow_mut().remove(0);
         }
 
         let mut bottom_area = area;
@@ -84,7 +84,7 @@ where
             bottom_area = increment(1, Axis::Y, area);
         }
 
-        let mut temp = data.history_vec.borrow().clone();
+        let mut temp = data.console_hist.borrow().clone();
         let mut temp = temp.join("\n");
         let mut temp_clone = temp.clone();
         let mut lines = 0;

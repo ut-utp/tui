@@ -47,7 +47,8 @@ where
 
     pub(in crate) reset_flag: u8,
     pub(in crate) debug_log: Option<Vec<TuiText<'a>>>,
-    pub(in crate) console_hist: RefCell<Vec<TuiText<'a>>>,
+    pub(in crate) console_hist: RefCell<Vec<String>>,
+    // pub(in crate) console_hist: AnsiTextContainer<'a>, // TODO!
     pub(in crate) log: Vec<TuiText<'a>>,
     pub(in crate) bp: HashMap<Addr, usize>,
     pub(in crate) wp: HashMap<Addr, usize>,
@@ -126,7 +127,10 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                     None
                 },
 
-                console_hist: RefCell::new(Vec::<TuiText<'a>>::with_capacity(500)),
+                // TODO(rrbutani)!
+                // console_hist: RefCell::new(Vec::<TuiText<'a>>::with_capacity(500)),
+
+                console_hist: RefCell::new(Vec::<String>::with_capacity(500)),
 
                 log: Vec::with_capacity(16 * 1024 * 1024),
 
