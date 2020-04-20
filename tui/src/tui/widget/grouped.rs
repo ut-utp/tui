@@ -198,7 +198,8 @@ where
                                 // Already focused so no need to sent the focused
                                 // event.
                                 self.focused = Some(i);
-                                self.propagate_to_focused(Key(event), data, terminal)
+                                self.propagate_to_focused(Key(event), data, terminal);
+                                true
                             }
                             None => false,
                         }
