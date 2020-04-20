@@ -2,6 +2,7 @@
 
 use super::widget_impl_support::*;
 use super::load_button::*;
+use ModelineFocus::*;
 
 use tui::widgets::{Paragraph};
 use tui::style::{Color, Style};
@@ -12,6 +13,15 @@ use core::future::Future;
 use core::task::{Context, Waker, Poll};
 
 use lc3_traits::control::{Event, State};
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ModelineFocus {
+    NONE,
+    EXECUTION_CONTROL,
+    STEP,
+    RESET,
+    LOAD,
+}
 
 // A fake Future executor that is capable of doing exactly no work.
 //
@@ -54,7 +64,7 @@ where
     load_button: Rect,
     reset_flag: bool,
     loadB: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
-    focus: u8,
+    focus: ModelineFocus,
 }
 
 impl<'a, 'int, C, I, O, B> Modeline<'a, 'int, C, I, O, B>
@@ -78,7 +88,7 @@ where
             load_button: Rect::default(),
             reset_flag: false,
             loadB: vec![Box::new(button)],
-            focus: 0,
+            focus: NONE,
         }
     }
 
@@ -176,11 +186,11 @@ where
         let mut b3Colour = Colour::Yellow;
         let mut b4Colour = Colour::White;
 
-        if self.focus > 0 {
+        if self.focus != NONE {
             bColour = Colour::Red
         }
 
-        if self.focus != 4 {
+        if self.focus != RESET {
             self.reset_flag = false;
         }
 
@@ -189,12 +199,11 @@ where
         }
 
         match self.focus {
-            1 => mColour = Colour::Red,
-            2 => b1Colour = Colour::Red,
-            3 => b2Colour = Colour::Red,
-            4 => b3Colour = Colour::Red,
-            5 => b4Colour = Colour::Red,
-            _ => {},
+            EXECUTION_CONTROL => b1Colour = Colour::Red,
+            STEP => b2Colour = Colour::Red,
+            RESET => b3Colour = Colour::Red,
+            LOAD  => b4Colour = Colour::Red,
+            NONE => {},
         }
 
         let mut bg_block = Block::default()
@@ -342,29 +351,29 @@ where
             }
         }
 
-        if self.focus == 0 {
+        if self.focus == NONE {
             if event != WidgetEvent::Update {
-                self.focus = 2;
+                self.focus = EXECUTION_CONTROL;
             }
         }
 
         match event {
             Focus(FocusEvent::GotFocus) => {true},
-            Focus(FocusEvent::LostFocus) => {self.focus = 0; false},
+            Focus(FocusEvent::LostFocus) => {self.focus = NONE; false},
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, x, y, _)) => {
                 if self.execution_control_button.intersects(Rect::new(x,y,1,1)) {
-                    self.focus = 2;
+                    self.focus = EXECUTION_CONTROL;
                     if data.sim.get_state() == State::RunningUntilEvent{
                         self.pause(data)
                     } else {
                         self.run(data);
                     }
                 } else if self.step_button.intersects(Rect::new(x,y,1,1)) {
-                    self.focus = 3;
+                    self.focus = STEP;
                     self.step(data);
                 } else if self.reset_button.intersects(Rect::new(x,y,1,1)) {
-                    self.focus = 4;
+                    self.focus = RESET;
                     if self.reset_flag{
                         self.reset(data);
                         self.reset_flag = false;
@@ -373,7 +382,7 @@ where
                     }
                 } else if self.load_button.intersects(Rect::new(x,y,1,1)) {
                     self.load(event, data, terminal);
-                    self.focus = 5;
+                    self.focus = LOAD;
                 }
                 true
             }
@@ -392,7 +401,7 @@ where
                     true
                 }
                 KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::ALT } => {
-                    self.focus = 4;
+                    self.focus = RESET;
                     if self.reset_flag{
                         self.reset(data);
                         self.reset_flag = false;
@@ -407,15 +416,15 @@ where
                 }
                 KeyEvent { code: KeyCode::Enter, modifiers: EMPTY } => {
                     match self.focus {
-                        2 => {
+                        EXECUTION_CONTROL => {
                             if data.sim.get_state() == State::RunningUntilEvent{
                                 self.pause(data)
                             } else {
                                 self.run(data);
                             }
                         },
-                        3 => self.step(data),
-                        4 => {
+                        STEP => self.step(data),
+                        RESET => {
                              if self.reset_flag{
                                 self.reset(data);
                                 self.reset_flag = false;
@@ -423,21 +432,29 @@ where
                                 self.reset_flag = true;
                             }
                         }
-                        5 => {self.load(event, data, terminal)},
-                        _ => {},
+                        LOAD => {self.load(event, data, terminal)},
+                        NONE => {},
                     }
                     true
                 }
                 KeyEvent { code: KeyCode::Right, modifiers: KeyModifiers::CONTROL } => {
-                    if self.focus < 5 {
-                        self.focus += 1;;
-                    }
+                    self.focus = match self.focus {
+                        EXECUTION_CONTROL => STEP,
+                        STEP => RESET,
+                        RESET => LOAD,
+                        LOAD => LOAD,
+                        NONE => NONE,
+                    };
                     true
                 }
                 KeyEvent { code: KeyCode::Left, modifiers: KeyModifiers::CONTROL } => {
-                    if self.focus > 1 {
-                        self.focus -= 1;
-                    }
+                    self.focus = match self.focus {
+                        EXECUTION_CONTROL => EXECUTION_CONTROL,
+                        STEP => EXECUTION_CONTROL,
+                        RESET => STEP,
+                        LOAD => RESET,
+                        NONE => NONE,
+                    };
                     true
                 }
                 _ => false,
