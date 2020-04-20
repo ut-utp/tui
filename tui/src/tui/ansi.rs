@@ -280,8 +280,8 @@ pub fn ansi_string_to_tui_text<'s, 't>(
 
                             // The rest are variable length codes:
                             (a, b) => {
-                                let nums: Vec<u16> = Vec::new();
-                                let s = String::new();
+                                let mut nums: Vec<u16> = Vec::new();
+                                let mut s = String::new();
                                 s.push(a);
 
                                 let mut last = b;
@@ -324,16 +324,15 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         }
 
                                         // Cursor Backward
-                                        'D' if s.parse::<u16>().is_ok() && nums.len() == 0 {
+                                        'D' if s.parse::<u16>().is_ok() && nums.len() == 0 => {
                                             /* Unsupported */
                                             break;
                                         }
 
                                         // Report Device Code
-                                        'c' if s.last() == Some('0') && s.len() >= 2 {
-                                            let _ = s.pop();
+                                        'c' if s.pop() == Some('0') && s.len() >= 2 => {
 
-                                            if let Some(dev_code) = s.parse::<u16>() {
+                                            if let Ok(dev_code) = s.parse::<u16>() {
                                                 /* Unsupported */
                                                 break;
                                             } else {
@@ -345,7 +344,7 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         }
 
                                         // Report Cursor Position
-                                        'R' if s.parse::<u16>().is_ok() && nums.len() == 1 {
+                                        'R' if s.parse::<u16>().is_ok() && nums.len() == 1 => {
                                             let _row = nums[0];
                                             let _col = s.parse::<u16>().unwrap();
 
@@ -354,7 +353,7 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         }
 
                                         // Cursor Home
-                                        'H' if s.parse::<u16>().is_ok() && nums.len() == 1 {
+                                        'H' if s.parse::<u16>().is_ok() && nums.len() == 1 => {
                                             let _row = nums[0];
                                             let _col = s.parse::<u16>().unwrap();
 
@@ -363,7 +362,7 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         }
 
                                         // Force Cursor Position
-                                        'f' if s.parse::<u16>().is_ok() && nums.len() == 1 {
+                                        'f' if s.parse::<u16>().is_ok() && nums.len() == 1 => {
                                             let _row = nums[0];
                                             let _col = s.parse::<u16>().unwrap();
 
@@ -372,9 +371,9 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         }
 
                                         // Scroll part of the screen
-                                        'r' if s.parse::<u16>().is_ok() && nums.len() == 1 {
+                                        'r' if s.parse::<u16>().is_ok() && nums.len() == 1 => {
                                             let _start_row = nums[0];
-                                            let _end_row = s.parse::<u16>().unrwap();
+                                            let _end_row = s.parse::<u16>().unwrap();
 
                                             /* Unsupported */
                                             break;
@@ -383,7 +382,7 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         // Set Key Definition
                                         '"' if nums.len() == 1 => loop {
                                             let mut string = String::new();
-                                            let last = next!();
+                                            let mut last = next!();
 
                                             while last != '"' {
                                                 string.push(last);
@@ -399,8 +398,8 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                                 break;
                                             }
 
-                                            let key = nums[0];
-                                            let string = string;
+                                            let _key = nums[0];
+                                            let _string = string;
 
                                             /* Unsupported */
                                             break;
@@ -409,11 +408,12 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         // Set Attribute Mode
                                         // Details for this section are taken
                                         // from [here](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors)
-                                        'm' if s.parse::<u16>().is_ok() {
+                                        'm' if s.parse::<u16>().is_ok() => {
                                             nums.push(s.parse::<u16>().unwrap());
 
                                             for attr in nums.iter() {
-
+                                                todo!()
+                                                // TODO(rrbutani)!
                                             }
                                         }
 
@@ -425,7 +425,7 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         }
                                     }
 
-                                    last = next();
+                                    last = next!();
                                 }
                             }
                         }
