@@ -39,35 +39,16 @@ where
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let text = [
-            TuiText::styled("To control the TUI, you can use the following commands", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("S to Step ", Style::default().fg(Color::LightCyan)),
-            TuiText::styled("through instructions, ", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("P to Pause, ", Style::default().fg(Color::LightRed)),
-            TuiText::styled("R to Run, ", Style::default().fg(Color::LightYellow)),
-            TuiText::styled("and ", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("Q to Quit\n", Style::default().fg(Color::Gray)),
-            TuiText::styled("To set the peripherals use ", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("Ctrl + ", Style::default().fg(Color::White)),
-            TuiText::styled("g for GPIO, ", Style::default().fg(Color::Rgb(0xee, 0xee, 0xee))),
-            TuiText::styled("a for ADC, ", Style::default().fg(Color::Rgb(0xdd, 0xdd, 0xdd))),
-            TuiText::styled("p for PWM, ", Style::default().fg(Color::Rgb(0xcc, 0xcc, 0xcc))),
-            TuiText::styled("t for Timers, ", Style::default().fg(Color::Rgb(0xbb, 0xbb, 0xbb))),
-            TuiText::styled("and ", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("c for CLK\n", Style::default().fg(Color::Rgb(0xaa, 0xaa, 0xaa))),
-            TuiText::styled("To affect the simulator, use ", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("Alt + ", Style::default().fg(Color::White)),
-            TuiText::styled("p for PC, ", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
-            TuiText::styled("m for Memory, ", Style::default().fg(Color::LightCyan)),
-            TuiText::styled("and ", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("r to reset\n", Style::default().fg(Color::Gray)),
-            TuiText::styled("To control memory, use ", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("UP and DOWN ", Style::default().fg(Color::Gray)),
-            TuiText::styled("arrow keys. ", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("Shift + arrow ", Style::default().fg(Color::Gray)),
-            TuiText::styled("jumps 10, ", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("Control + arrow ", Style::default().fg(Color::Gray)),
-            TuiText::styled("jumps 100. ", Style::default().fg(Color::LightGreen)),
-            TuiText::styled("Ctrl + h returns to PC\n", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))
+            TuiText::styled("To control the TUI, you can click on any of the interactable interfaces.\n
+                Most will respond to mouse events, some will respond to sroll.\n
+                You can also use keyboard events to navigate.\n
+                Tab and Ctrl tab swaps back and forth between tabs.\n
+                FN + a number jumps to the tab of that number directly.\n
+                Ctrl + a diretional arrow also moves between widgets.\n
+                A lot of widgets have their own keybinds. See the full documentation for assistance.\n
+                Finally, there are universal keybinds:\n
+                Ctrl: + l to load, + r to run, + p to pause, + s to step\n 
+                Alt: + r twice to reset.\n", Style::default().fg(Color::LightGreen)),
         ];
 
         // TODO: allow parameterization of this in the usual way.

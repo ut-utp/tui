@@ -92,7 +92,7 @@ where
 
     fn load(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
         self.loadB[0].update(event, data, terminal);
-        data.reset_flag += 1;
+        data.reset_flag.wrapping_add(1);
         drop(data.current_event.take())
     }
     // TODO: should also call `drop(data.current_event.take())`
@@ -371,8 +371,8 @@ where
                         self.reset_flag = true;
                     }
                 } else if self.load_button.intersects(Rect::new(x,y,1,1)) {
+                    self.load(event, data, terminal);
                     self.focus = 5;
-                    
                 }
                 true
             }
