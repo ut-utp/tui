@@ -5,6 +5,7 @@ use super::widget_impl_support::*;
 use std::convert::TryInto;
 
 use lc3_isa::{Addr, Instruction, Reg, Word};
+use lc3_traits::control::control::{Event};
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -108,13 +109,13 @@ where
         }
 
         let mut arrow_v = Vec::new();
-        let mut bp_locs = String::from("");
-        let mut wp_locs = String::from("");
-        let mut addresses = String::from("");
-        let mut insts = String::from("");
-        let mut bin = String::from("");
-        let mut hex = String::from("");
-        let mut dec = String::from("");
+        let mut bp_v = Vec::new();
+        let mut wp_v = Vec::new();
+        let mut addresses_v = Vec::new();
+        let mut bin_v = Vec::new();
+        let mut hex_v = Vec::new();
+        let mut dec_v = Vec::new();
+        let mut insts_v = Vec::new();
         x = 0;
 
         while x != 50 {
@@ -131,7 +132,7 @@ where
             };
             //let inst = "TODO";
 
-            let addr = pc.wrapping_sub(self.offset).wrapping_add(x).wrapping_sub(self.focus);
+            let cur_addr = pc.wrapping_sub(self.offset).wrapping_add(x).wrapping_sub(self.focus);
             if x == self.offset.wrapping_add(self.focus) {
                 let x = String::from("-->\n");
                 arrow_v.push(TuiText::styled(x,Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))));
@@ -142,42 +143,110 @@ where
                 arrow_v.push(TuiText::raw("\n"));
             }
 
-            if data.bp.contains_key(&addr) {
-                bp_locs.push_str("<b>\n");
-            } else {
-                bp_locs.push_str("\n");
+            let mut bp_colour = Colour::Rgb(0xCC, 0x02, 0x02);
+            let mut wp_colour = Colour::Rgb(0x30, 0x49, 0xDE);
+            let mut addr_colour = Colour::Gray;
+            let mut data_colour = Colour::LightGreen;
+            let mut inst_colour = Colour::LightCyan;
+
+            if x == self.offset {
+                if cur_addr == pc {
+                    bp_colour = Colour::Rgb(0xFF, 0x97, 0x40);
+                    wp_colour = Colour::Rgb(0xFF, 0x97, 0x40);
+                    addr_colour = Colour::Rgb(0xFF, 0x97, 0x40);
+                    data_colour = Colour::Rgb(0xFF, 0x97, 0x40);
+                    inst_colour = Colour::Rgb(0xFF, 0x97, 0x40);
+                } else {
+                    bp_colour = Colour::Cyan;
+                    wp_colour = Colour::Cyan;
+                    addr_colour = Colour::Cyan;
+                    data_colour = Colour::Cyan;
+                    inst_colour = Colour::Cyan;
+                }
             }
 
-            if data.wp.contains_key(&addr) {
-                wp_locs.push_str("<w>\n");
+            match data.get_current_event() {
+                Some(event) => {
+                    match event {
+                        Event::Breakpoint {addr} => {
+                            if cur_addr == pc {
+                                bp_colour = Colour::Red;
+                                wp_colour = Colour::Red;
+                                addr_colour = Colour::Red;
+                                data_colour = Colour::Red;
+                                inst_colour = Colour::Red;
+                            }
+                        }
+                        Event::MemoryWatch {addr, data} => {
+                            if addr == cur_addr {
+                                bp_colour = Colour::Rgb(0x30, 0x49, 0xDE);
+                                wp_colour = Colour::Rgb(0x30, 0x49, 0xDE);
+                                addr_colour = Colour::Rgb(0x30, 0x49, 0xDE);
+                                data_colour = Colour::Rgb(0x30, 0x49, 0xDE);
+                                inst_colour = Colour::Rgb(0x30, 0x49, 0xDE);
+                            }
+                        }
+                        Event::Error {err} => {
+                            if cur_addr == pc {
+                                bp_colour = Colour::Red;
+                                wp_colour = Colour::Red;
+                                addr_colour = Colour::Red;
+                                data_colour = Colour::Red;
+                                inst_colour = Colour::Red;
+                            }
+                        },
+                        Event::Interrupted => {
+                            if cur_addr == pc {
+                                bp_colour = Colour::Yellow;
+                                wp_colour = Colour::Yellow;
+                                addr_colour = Colour::Yellow;
+                                data_colour = Colour::Yellow;
+                                inst_colour = Colour::Yellow;
+                            }
+                        }
+                        Event::Halted => {
+                            if cur_addr == pc {
+                                bp_colour = Colour::Gray;
+                                wp_colour = Colour::Gray;
+                                addr_colour = Colour::Gray;
+                                data_colour = Colour::Gray;
+                                inst_colour = Colour::Gray;
+                            }
+                        }
+                    }
+                },
+                None => {}
+            };
+
+            if data.bp.contains_key(&cur_addr) {
+                bp_v.push(TuiText::styled("<b>\n", Style::default().fg(bp_colour)));
             } else {
-                wp_locs.push_str("\n");
+                bp_v.push(TuiText::raw("\n"));
             }
 
-            addresses.push_str(&format!(
-                "{:#06x}\n",
-                addr
-            ));
+            if data.wp.contains_key(&cur_addr) {
+                wp_v.push(TuiText::styled("<w>\n", Style::default().fg(wp_colour)));
+            } else {
+                wp_v.push(TuiText::raw("\n"));
+            }
 
-            bin.push_str(&format!(
-                "{:#018b}\n",
-                mem[x as usize]
-            ));
+            let s = format!("{:#06x}\n", cur_addr);
+            addresses_v.push(TuiText::styled(s, Style::default().fg(addr_colour)));
 
-            hex.push_str(&format!(
-                "{:#06x}\n",
-                mem[x as usize]
-            ));
+            let s = format!("{:#018b}\n", mem[x as usize]);
+            bin_v.push(TuiText::styled(s, Style::default().fg(data_colour)));
 
-            dec.push_str(&format!(
-                "{:#05}\n",
-                mem[x as usize]
-            ));
+            let s = format!("{:#06x}\n", mem[x as usize]);
+            hex_v.push(TuiText::styled(s, Style::default().fg(data_colour)));
+
+            let s = format!("{:#05}\n", mem[x as usize]);
+            dec_v.push(TuiText::styled(s, Style::default().fg(data_colour)));
 
             if inst_f {
-                insts.push_str(&format!("{}\n", inst));
+                let s = format!("{}\n", inst);
+                insts_v.push(TuiText::styled(s, Style::default().fg(inst_colour)));
             } else {
-                insts.push_str(&format!("\n"))
+                insts_v.push(TuiText::raw("\n"))
             }
             x = x + 1;
         }
@@ -189,12 +258,7 @@ where
 
         para.draw(area, buf);
 
-        let text = [TuiText::styled(
-            bp_locs,
-            Style::default().fg(Colour::Rgb(0xCC, 0x02, 0x02)),
-        )];
-
-        para = Paragraph::new(text.iter())
+        para = Paragraph::new(bp_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
@@ -205,12 +269,7 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(
-            wp_locs,
-            Style::default().fg(Colour::Rgb(0x30, 0x49, 0xDE)),
-        )];
-
-        para = Paragraph::new(text.iter())
+        para = Paragraph::new(wp_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
@@ -221,9 +280,7 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(addresses, Style::default().fg(Colour::Gray))];
-
-        para = Paragraph::new(text.iter())
+        para = Paragraph::new(addresses_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
@@ -234,9 +291,7 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(bin, Style::default().fg(Colour::LightGreen))];
-
-        para = Paragraph::new(text.iter())
+        para = Paragraph::new(bin_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(false);
@@ -247,9 +302,7 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(hex, Style::default().fg(Colour::LightGreen))];
-
-        para = Paragraph::new(text.iter())
+        para = Paragraph::new(hex_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(false);
@@ -260,9 +313,7 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(dec, Style::default().fg(Colour::LightGreen))];
-
-        para = Paragraph::new(text.iter())
+        para = Paragraph::new(dec_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(false);
@@ -273,9 +324,7 @@ where
         }
         para.draw(area, buf);
 
-        let text = [TuiText::styled(insts, Style::default().fg(Colour::LightCyan))];
-
-        para = Paragraph::new(text.iter())
+        para = Paragraph::new(insts_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);

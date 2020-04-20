@@ -90,7 +90,11 @@ where
         data.sim.pause();
     }
 
-    // fn load
+    fn load(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
+        self.loadB[0].update(event, data, terminal);
+        data.reset_flag += 1;
+        drop(data.current_event.take())
+    }
     // TODO: should also call `drop(data.current_event.take())`
 
     fn run(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
@@ -359,7 +363,7 @@ where
                     }
                 } else if self.load_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = 5;
-                    self.loadB[0].update(event, data, terminal);
+                    
                 }
                 true
             }
@@ -388,7 +392,7 @@ where
                     true
                 }
                 KeyEvent { code: KeyCode::Char('l'), modifiers: KeyModifiers::CONTROL } => {
-                    self.loadB[0].update(event, data, terminal);
+                    self.load(event, data, terminal);
                     true
                 }
                 KeyEvent { code: KeyCode::Enter, modifiers: EMPTY } => {
@@ -409,7 +413,7 @@ where
                                 self.reset_flag = true;
                             }
                         }
-                        5 => {self.loadB[0].update(event, data, terminal);},
+                        5 => {self.load(event, data, terminal)},
                         _ => {},
                     }
                     true
