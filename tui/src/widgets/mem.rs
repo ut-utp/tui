@@ -206,17 +206,27 @@ where
                         }
                         Event::Halted => {
                             if cur_addr == pc {
-                                bp_colour = Colour::Gray;
-                                wp_colour = Colour::Gray;
-                                addr_colour = Colour::Gray;
-                                data_colour = Colour::Gray;
-                                inst_colour = Colour::Gray;
+                                bp_colour = Colour::White;
+                                wp_colour = Colour::White;
+                                addr_colour = Colour::White;
+                                data_colour = Colour::White;
+                                inst_colour = Colour::White;
                             }
                         }
                     }
                 },
                 None => {}
             };
+
+            if self.debug.0 && data.mem_reg_inter.0 == 1 {
+                if cur_addr == data.mem_reg_inter.1 {
+                    bp_colour = Colour::Gray;
+                    wp_colour = Colour::Gray;
+                    addr_colour = Colour::Gray;
+                    data_colour = Colour::Gray;
+                    inst_colour = Colour::Gray;
+                }
+            }
 
             if data.bp.contains_key(&cur_addr) {
                 bp_v.push(TuiText::styled("<b>\n", Style::default().fg(bp_colour)));

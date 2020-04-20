@@ -45,7 +45,8 @@ where
     pub(in crate) program_path: Option<PathBuf>,
 
     pub(in crate) reset_flag: u8,
-    pub(in crate) jump: (u8,Addr),
+    pub(in crate) jump: (u8, Addr),
+    pub(in crate) mem_reg_inter: (u8, Addr),
     pub(in crate) debug_log: Option<Vec<TuiText<'a>>>,
     pub(in crate) console_hist: RefCell<Vec<String>>,
     // pub(in crate) console_hist: AnsiTextContainer<'a>, // TODO!
@@ -121,6 +122,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
                 reset_flag: 0,
                 jump: (0,0x200),
+                mem_reg_inter: (0, 0),
 
                 debug_log: if crate::debug::in_debug_mode() {
                     Some(Vec::with_capacity(32 * 1024 * 1024))

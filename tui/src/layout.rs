@@ -142,7 +142,7 @@ where
         .add_widget(Constraint::Percentage(70), WatchWindow::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Watchpoints").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
 
     let mem = Mem::new_with_debug(true);
-    let regs = Regs::default();
+    let regs = Regs::new_with_debug(true);
     let mut left = Widgets::new(vert.clone());
     let _ = left.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory")))
         .add_widget(Constraint::Percentage(20), regs, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Registers + PC+ PSR").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));

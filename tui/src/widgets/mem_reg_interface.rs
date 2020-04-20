@@ -24,6 +24,7 @@ pub struct MemRegInterface
     reg_num: Reg,
     mode: MemRegMode,
     input: String,
+    reset_flag: u8,
 }
 
 impl Default for MemRegInterface {
@@ -33,6 +34,7 @@ impl Default for MemRegInterface {
             reg_num: Reg::R0,
             mode: INPUT_SOURCE,
             input: String::from(""),
+            reset_flag: 0,
         }
     }
 }
@@ -53,6 +55,11 @@ where
     B: Backend,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+        if self.reset_flag != data.reset_flag {
+            self.mode = INPUT_SOURCE;
+            self.reset_flag = data.reset_flag;
+        }
+
         let prompt = match self.mode {
             INPUT_SOURCE => {
                 TuiText::styled(
@@ -160,6 +167,16 @@ where
                             data.log(format!("[Addr] Invalid hex value: {}\n", self.input), Colour::Red);
                         }
                     }
+                } else if self.input.starts_with("x") {
+                    match Addr::from_str_radix(&self.input[1..], 16) {
+                        Ok(word) => {
+                            $value = word;
+                            $on_success;
+                        }
+                        Err(_e) => {
+                            data.log(format!("[Addr] Invalid hex value: {}\n", self.input), Colour::Red);
+                        }
+                    }
                 } else if self.input.starts_with("0b") {
                     match Addr::from_str_radix(&self.input[2..], 2) {
                         Ok(word) => {
@@ -195,6 +212,7 @@ where
                     data.jump = (data.jump.0+1,$addr);
                 } else if self.input == String::from("e") {
                     self.mode = INPUT_SOURCE;
+                    data.mem_reg_inter = (0,0);
                 } else {
                     parse_addr!(
                         $on_write,
@@ -245,6 +263,7 @@ where
                                         Ok(reg) => {
                                             self.mode = REGISTER_MOD;
                                             self.reg_num = reg;
+                                            data.mem_reg_inter = (2, value.into());
                                         },
                                         Err(e) => {
                                             data.log(format!("[Reg] Invalid register: {}\n", self.input), Colour::Red);
@@ -257,12 +276,14 @@ where
                             }
                         } else if self.input == String::from("pc") {
                             self.mode = PC_MOD;
+                            data.mem_reg_inter = (2, 10);
                         } else {
                             let mut addr: Word;
                             parse_addr!(
                                 {
                                     self.mode = MEMORY_MOD;
                                     self.mem_addr = addr;
+                                    data.mem_reg_inter = (1, addr);
                                 },
                                 addr
                             )

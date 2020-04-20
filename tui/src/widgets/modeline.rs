@@ -92,7 +92,7 @@ where
 
     fn load(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
         self.loadB[0].update(event, data, terminal);
-        data.reset_flag.wrapping_add(1);
+        data.reset_flag = data.reset_flag.wrapping_add(1);
         drop(data.current_event.take())
     }
     // TODO: should also call `drop(data.current_event.take())`
@@ -119,11 +119,12 @@ where
     }
 
     fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
-        data.log("[modeline] Reseting Sim\n", Color::Magenta);
+        data.log("[modeline] Resetting Sim\n", Color::Magenta);
         data.sim.reset();
         data.input_string.replace(String::from(""));
         data.console_hist.borrow_mut().clear();
-        data.reset_flag.wrapping_add(1);
+        data.mem_reg_inter = (0,0);
+        data.reset_flag = data.reset_flag.wrapping_add(1);
 
         // Resolve the pending future, if there is one.
         if let Some(e) = self.event_fut.take() {
