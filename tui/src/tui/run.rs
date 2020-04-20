@@ -4,6 +4,7 @@ use super::Res as Result;
 use super::Tui;
 use super::events::{self, Event, WidgetEvent, FocusEvent, CrosstermEvent};
 use super::widget::Widget;
+use crate::strings::{s, HelloMsg, StartupMsg};
 
 use lc3_traits::control::Control;
 use lc3_application_support::event_loop::Backoff;
@@ -38,8 +39,8 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         // here; if we're told to run with an empty widget tree we shall.)
         let _ = root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data, term);
 
-        self.data.log("Hello!\n", Color::Cyan);
-        self.data.log("We're up!\n", Color::Magenta);
+        self.data.log(s!(HelloMsg), Color::Cyan);
+        self.data.log(s!(StartupMsg), Color::Magenta);
 
         let mut last_window_size = None;
 
@@ -146,7 +147,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         B: ExecutableCommand<&'static str>,
         Terminal<B>: Send,
     {
-        self.run_with_custom_layout(term, crate::layout::layout(vec![]))
+        self.run_with_custom_layout(term, crate::layout::layout(None, vec![]))
     }
 
     // Run with crossterm; with or without your own special layout.

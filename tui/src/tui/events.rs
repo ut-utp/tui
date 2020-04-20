@@ -90,11 +90,14 @@ where
             //
             // We do, however, terminate if the mpsc channel returns an error
             // (we assume that if this happens it means that the recipient
-            // terminated).
-            match crossterm::event::read() {
+            // terminated so we exit gracefully rather than panic).
+            if let Err(_) = match crossterm::event::read() {
                 Ok(e) => tx.send(Event::ActualEvent(e)),
                 Err(err) => tx.send(Event::Error(err)),
-            }.unwrap()
+            } {
+                crate::debug::run_if_debugging(|| eprintln!("Event thread exiting!"));
+                break
+            }
         })?;
 
     Ok(())
@@ -105,8 +108,11 @@ fn start_tick_thread(period: Duration, tx: Sender<Event>) -> Result<()> {
     let _ = ThreadBuilder::new()
         .name("TUI: Tick Thread".to_string())
         .spawn(move || loop {
-            // Same deal here as above; terminate if the channel fails.
-            tx.send(Event::Tick).unwrap();
+            // Same deal here as above; exit if the channel fails.
+            if let Err(_) = tx.send(Event::Tick) {
+                crate::debug::run_if_debugging(|| eprintln!("Tick thread exiting!"));
+                break
+            }
             std::thread::sleep(period);
         })?;
 

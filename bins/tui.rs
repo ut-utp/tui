@@ -14,6 +14,7 @@ use flexi_logger::{Logger, opt_format};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Duration;
+use std::fmt::{self, Display};
 
 #[derive(Debug)]
 enum DeviceType {
@@ -35,6 +36,28 @@ impl FromStr for DeviceType {
             "websocket" => unimplemented!(), // TODO!
             _ => Err("Could not parse device type!")
         }
+    }
+}
+
+impl Display for DeviceType {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use DeviceType::*;
+
+        let s = if fmt.alternate() {
+            match self {
+                Board => "on a board",
+                Sim => "locally",
+                SimWithRpc => "locally via rpc",
+            }
+        } else {
+            match self {
+                Board => "Board",
+                Sim => "Simulator",
+                SimWithRpc => "Simulator With RPC",
+            }
+        };
+
+        write!(fmt, "{}", s)
     }
 }
 
@@ -119,10 +142,13 @@ fn main() -> Result<(), failure::Error> {
             tui.set_program_path(p);
         }
 
-        // TODO: have this take extra tabs we want to add!
-        // let layout = layout::layout_tabs();
+        let name = format!("UTP LC-3 Simulator (running {:#})", options.device);
+
         let no_extra_tabs = Vec::new();
-        let layout = layout::layout(no_extra_tabs);
+        let layout = layout::layout(
+            Some(name.as_ref()),
+            no_extra_tabs
+        );
 
         tui.set_update_period(options.update_period.into());
         tui.run_with_crossterm(Some(layout))?;

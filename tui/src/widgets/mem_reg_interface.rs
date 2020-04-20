@@ -6,6 +6,9 @@ use lc3_isa::{Addr, Instruction, Reg, Word};
 use MemRegMode::*;
 use std::convert::TryFrom;
 
+// Arbitrary maximum, fits all valid commands
+const MAX_INPUT_LEN: u16 = 24;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum MemRegMode {
     INPUT_SOURCE,
@@ -89,17 +92,17 @@ where
 
         para.draw(area, buf);
 
-        let area = increment(25, Axis::X, area);
+        let area = increment(MAX_INPUT_LEN+1, Axis::X, area);
 
         let instructions = match self.mode {
             INPUT_SOURCE => {
-                [TuiText::raw("Enter an address or register to get started.\n You can use default decimal format,\n or add 0x for Hex, and 0b for binary.\n e.g. 16 = 0x10 = 0b10000\n For regs, can do R0 to R7 or PC"), ]
+                [TuiText::raw("Enter an address or register to get started.\n You can use default decimal format,\n or add 0x for hexadecimal, and 0b for binary.\n e.g. 16 = 0x10 = 0b10000\n For registers, enter R0 to R7 or PC"), ]
             },
             MEMORY_MOD => {
-                [TuiText::styled("Memory Manipulation Help\nb to toggle breakpoint, w to toggle watchpoint\nj to jump to address\ne to enter a new address, or type a register to change directly\nType a value to change data at the address\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))), ]
+                [TuiText::styled("Memory Manipulation Help\nb to toggle breakpoint\nw to toggle watchpoint\nj to jump to address\ne to enter a new address\nType a value to change data at the address\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))), ]
             },
             REGISTER_MOD | PC_MOD => {
-                [TuiText::styled("Register Manipulation Help\nb to toggle breakpoint at reg address, w to toggle watchpoint\nj to jump to reg address\ne to enter a new address, or type a register to change directly\nType a value to change data in the reg\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))), ]
+                [TuiText::styled("Register Manipulation Help\nb to toggle breakpoint at reg address\nw to toggle watchpoint\nj to jump to reg address\ne to enter a new address\nType a value to change data in the register\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))), ]
             },
         };
 
@@ -162,6 +165,7 @@ where
                         Ok(word) => {
                             $value = word;
                             $on_success;
+                            self.mode = INPUT_SOURCE;
                         }
                         Err(_e) => {
                             data.log(format!("[Addr] Invalid binary value: {}\n", self.input), Colour::Red);
@@ -183,8 +187,10 @@ where
             ($addr:ident, $word:ident, $on_write:block) => {
                 if self.input == String::from("b") {
                     set_bp($addr, data);
+                    self.mode = INPUT_SOURCE;
                 } else if self.input == String::from("w") {
                     set_wp($addr, data);
+                    self.mode = INPUT_SOURCE;
                 } else if self.input == String::from("j") {
                     data.jump = (data.jump.0+1,$addr);
                 } else if self.input == String::from("e") {
@@ -193,7 +199,7 @@ where
                     parse_addr!(
                         $on_write,
                         $word
-                    )
+                    );
                 }
             }
         }
@@ -206,7 +212,9 @@ where
 
             Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
                 let x = format!("{}", c);
-                self.input.push_str(&x);
+                if self.input.len() < MAX_INPUT_LEN as usize {
+                    self.input.push_str(&x);
+                }
                 true
             }
 

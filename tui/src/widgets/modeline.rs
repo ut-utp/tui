@@ -119,11 +119,11 @@ where
     }
 
     fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
-        data.log("[mode] Reseting Sim\n", Color::Magenta);
+        data.log("[modeline] Reseting Sim\n", Color::Magenta);
         data.sim.reset();
         data.input_string.replace(String::from(""));
-        data.history_vec.borrow_mut().clear();
-        data.reset_flag += 1;
+        data.console_hist.borrow_mut().clear();
+        data.reset_flag.wrapping_add(1);
 
         // Resolve the pending future, if there is one.
         if let Some(e) = self.event_fut.take() {
@@ -131,7 +131,7 @@ where
             block_on(e);
         }
 
-        data.log("[mode] Reset Complete\n", Color::Green);
+        data.log("[modeline] Reset Complete\n", Color::Green);
         drop(data.current_event.take())
     }
 }
@@ -291,7 +291,7 @@ where
 
         let mut vec = Vec::new();
         if self.reset_flag {
-            vec.push(TuiText::styled("Are You Sure?", Style::default().fg(Colour::Red)));
+            vec.push(TuiText::styled(s!(ResetConfirmationMsg), Style::default().fg(Colour::Red)));
         } else {
             vec.push(TuiText::styled("Reset", Style::default().fg(Colour::Yellow)));
         }
@@ -327,9 +327,16 @@ where
             if State::RunningUntilEvent != data.sim.get_state() {
                 let event = block_on(self.event_fut.take().unwrap());
                 
-                data.log(format!("[mode] Got an event! {:?}\n", event), Color::Blue);
-
                 assert!(data.current_event.is_none()); // We're being defensive; I thini this holds.
+                let event_colour = match event {
+                    Event::Breakpoint {addr} => Colour::Red,
+                    Event::MemoryWatch {addr, data} => Colour::Rgb(0x30, 0x49, 0xDE),
+                    Event::Error {err} => Colour::LightRed,
+                    Event::Interrupted => Colour::Yellow,
+                    Event::Halted => Colour::Gray,
+                    _ => Colour::DarkGray,
+                };
+                data.log(format!("[modeline] Got an event! {:?}\n", event), event_colour);
                 data.current_event = Some(event);
             }
         }
