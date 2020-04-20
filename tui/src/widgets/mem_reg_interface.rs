@@ -186,7 +186,7 @@ where
                 } else if self.input == String::from("w") {
                     set_wp($addr, data);
                 } else if self.input == String::from("j") {
-                    //offset = data.sim.get_pc().wrapping_sub(self.mem_addr - 2);
+                    data.jump = (data.jump.0+1,$addr);
                 } else if self.input == String::from("e") {
                     self.mode = INPUT_SOURCE;
                 } else {

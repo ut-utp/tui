@@ -42,6 +42,7 @@ where
     pub shims: Option<Shims<'int>>,
 
     pub reset_flag: u8,
+    pub jump: (u8,Addr),
 
     pub(in crate) program_path: Option<PathBuf>,
 
@@ -116,6 +117,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 shims: None,
 
                 reset_flag: 0,
+                jump: (0,0x200),
 
                 program_path: None,
 

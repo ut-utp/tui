@@ -14,16 +14,46 @@ pub struct Mem
     focus: u16,
     position: Rect,
     reset_flag: u8,
+    addr: Addr,
+    follow: bool,
+    debug: (bool, u8)
 }
 
-impl Default for Mem {
-    fn default() -> Self {
+impl Mem {
+    pub fn default() -> Self {
+        Self::new_with_debug(false)
+    }
+
+    pub fn new_with_debug(toggle: bool) -> Self {
         Self {
             offset: 2,
             focus: 0,
             position: Rect::new(0,0,0,0),
             reset_flag:0,
+            addr: 0x200,
+            follow: true,
+            debug: (toggle, 0),
         }
+    }
+
+    pub fn scroll_up(&mut self, increment: u16) {
+        self.offset = self.offset.saturating_sub(increment);
+        self.focus = self.focus.wrapping_add(increment);
+        self.addr = self.addr.wrapping_sub(increment);
+        self.follow = false;
+    }
+
+    pub fn scroll_down(&mut self, increment: u16) {
+        self.offset = self.offset.wrapping_add(increment);
+        self.focus = self.focus.wrapping_sub(increment);
+        self.addr = self.addr.wrapping_add(increment);
+        self.follow = false;
+    }
+
+    pub fn home(&mut self) {
+        self.offset = 2;
+        self.focus = 0;
+        self.follow = true;
     }
 }
 
@@ -44,8 +74,7 @@ where
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         if self.reset_flag != data.reset_flag{
-            self.offset = 2;
-            self.focus = 0;
+            self.home();
             self.reset_flag = data.reset_flag;
         }
 
@@ -55,7 +84,22 @@ where
             self.offset = area.height.saturating_sub(1);
         }
 
+        if self.debug.0 && data.jump.0 != self.debug.1 {
+            self.addr = data.jump.1;
+            self.follow = false;
+            self.debug.1 = data.jump.0;
+        }
+
         let pc = data.sim.get_pc();
+
+        if self.follow {
+            self.addr = pc;
+        } else { 
+            let position = pc.wrapping_sub(self.focus);
+            let diff = self.addr.wrapping_sub(position);
+            self.focus = self.focus.wrapping_sub(diff);
+        }
+
         let mut mem: [Word; 50] = [0; 50];
         let mut x: u16 = 0;
         while x != 50 {
@@ -63,8 +107,7 @@ where
             x = x + 1;
         }
 
-        let mut pc_arrow = String::from("");
-        let mut loc_arrow = String::from("");
+        let mut arrow_v = Vec::new();
         let mut bp_locs = String::from("");
         let mut wp_locs = String::from("");
         let mut addresses = String::from("");
@@ -89,16 +132,14 @@ where
             //let inst = "TODO";
 
             let addr = pc.wrapping_sub(self.offset).wrapping_add(x).wrapping_sub(self.focus);
-            if x == self.offset {
-                loc_arrow.push_str("-->\n");
-            } else {
-                loc_arrow.push_str("\n");
-            }
-
             if x == self.offset.wrapping_add(self.focus) {
-                pc_arrow.push_str("-->\n");
+                let x = String::from("-->\n");
+                arrow_v.push(TuiText::styled(x,Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))));
+            } else if x == self.offset {
+                let x = String::from("-->\n");
+                arrow_v.push(TuiText::styled(x,Style::default().fg(Colour::Cyan)));
             } else {
-                pc_arrow.push_str("\n");
+                arrow_v.push(TuiText::raw("\n"));
             }
 
             if data.bp.contains_key(&addr) {
@@ -117,6 +158,7 @@ where
                 "{:#06x}\n",
                 addr
             ));
+
             bin.push_str(&format!(
                 "{:#018b}\n",
                 mem[x as usize]
@@ -140,24 +182,7 @@ where
             x = x + 1;
         }
 
-        let text = [TuiText::styled(
-            loc_arrow,
-            Style::default().fg(Colour::Rgb(0x73, 0xB7, 0xE8)),
-        )];
-
-        let mut para = Paragraph::new(text.iter())
-                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-                .alignment(Alignment::Left)
-                .wrap(true);
-
-        para.draw(area, buf);
-
-        let text = [TuiText::styled(
-            pc_arrow,
-            Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)),
-        )];
-
-        let mut para = Paragraph::new(text.iter())
+        let mut para = Paragraph::new(arrow_v.iter())
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
                 .wrap(true);
@@ -314,41 +339,41 @@ where
                     set_wp(self.focus.wrapping_sub(y).wrapping_add(self.offset), data)
                 } else if (15 <= x) && (x <= 55) {
                     self.focus = self.focus.wrapping_add(self.offset).wrapping_sub(y);
-                    self.offset = y;
+                    if y > 60{
+                        self.offset = 0;
+                    } else {
+                        self.offset = y;
+                    }
+                    self.follow = false;
+                    self.addr = data.sim.get_pc().wrapping_sub(self.focus);
                 }
                 true
             }
 
             Mouse(MouseEvent::ScrollUp(_, _, _)) => {
-                self.offset = self.offset.saturating_sub(1);
-                self.focus = self.focus.wrapping_add(1);
+                self.scroll_up(1);
                 true
             }
             Mouse(MouseEvent::ScrollDown(_, _, _)) => {
-                self.offset = self.offset.wrapping_add(1);
-                self.focus = self.focus.wrapping_sub(1);
+                self.scroll_down(1);
                 true
             }
 
             Key(KeyEvent { code: KeyCode::Up, modifiers: EMPTY }) => {
-                self.offset = self.offset.saturating_sub(1);
-                self.focus = self.focus.wrapping_add(1);
+                self.scroll_up(1);
                 true
             }
             Key(KeyEvent { code: KeyCode::Down, modifiers: EMPTY }) => {
-                self.offset = self.offset.wrapping_add(1);
-                self.focus = self.focus.wrapping_sub(1);
+                self.scroll_down(1);
                 true
             }
 
             Key(KeyEvent { code: KeyCode::Up, modifiers: KeyModifiers::SHIFT }) => {
-                self.offset = self.offset.saturating_sub(10);
-                self.focus = self.focus.wrapping_add(10);
+                self.scroll_up(10);
                 true
             }
             Key(KeyEvent { code: KeyCode::Down, modifiers: KeyModifiers::SHIFT }) => {
-                self.offset = self.offset.wrapping_add(10);
-                self.focus = self.focus.wrapping_sub(10);
+                self.scroll_down(10);
                 true
             }
 
@@ -362,8 +387,7 @@ where
             }
 
             Key(KeyEvent { code: KeyCode::Home, modifiers: EMPTY }) => {
-                self.offset = 2;
-                self.focus = 0;
+                self.home();
                 true
             }
 
@@ -380,8 +404,7 @@ where
                     }
 
                     'h' => {
-                        self.offset = 2;
-                        self.focus = 0;
+                        self.home();
                         true
                     }
 

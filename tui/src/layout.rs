@@ -140,7 +140,7 @@ where
     let _ = top_right.add_widget(Constraint::Percentage(30), BreakWindow::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Breakpoints")))
         .add_widget(Constraint::Percentage(70), WatchWindow::default(), Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Watchpoints").title_style(Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40)))));
 
-    let mem = Mem::default();
+    let mem = Mem::new_with_debug(true);
     let regs = Regs::default();
     let mut left = Widgets::new(vert.clone());
     let _ = left.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(Color::Blue)).title("Memory")))
