@@ -119,6 +119,7 @@ where
     }
 
     fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+        data.log("[mode] Reseting Sim\n", Color::Magenta);
         data.sim.reset();
         data.input_string.replace(String::from(""));
         data.history_vec.borrow_mut().clear();
@@ -130,6 +131,7 @@ where
             block_on(e);
         }
 
+        data.log("[mode] Reset Complete\n", Color::Green);
         drop(data.current_event.take())
     }
 }
@@ -324,7 +326,7 @@ where
         if let Some(_) = self.event_fut {
             if State::RunningUntilEvent != data.sim.get_state() {
                 let event = block_on(self.event_fut.take().unwrap());
-
+                
                 data.log(format!("[mode] Got an event! {:?}\n", event), Color::Blue);
 
                 assert!(data.current_event.is_none()); // We're being defensive; I thini this holds.
