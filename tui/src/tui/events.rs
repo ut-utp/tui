@@ -2,14 +2,17 @@
 
 use super::Res as Result;
 
-use crossterm::event::EnableMouseCapture;
-use crossterm::ExecutableCommand;
+use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
+use crossterm::terminal::LeaveAlternateScreen;
+use crossterm::cursor::Show;
+use crossterm::{ExecutableCommand, execute};
 use crossterm::ErrorKind as CrosstermError;
 pub use crossterm::event::{Event as CrosstermEvent, KeyEvent, MouseEvent};
 
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::Builder as ThreadBuilder;
 use std::time::Duration;
+use std::io::Write;
 
 /// All events that our event threads produce.
 #[derive(Debug)]
@@ -78,6 +81,26 @@ where
     // application but we're not and most of our operations are synchronous
     // anyways).
 
+    // Ideally this would be a const, but BitOr isn't const and bitflags offers
+    // us no way to generate the below in a const context. As such, we compute
+    // it out here (outside of the loop) so there's no chance it gets computed
+    // repeatedly.
+    use crossterm::event::{KeyCode, KeyModifiers as Km};
+    let ctrl_shift_q: KeyEvent = KeyEvent { code: KeyCode::Char('q'), modifiers: Km::ALT};
+
+    fn exit() -> Result<()> {
+        let mut out = std::io::stdout();
+
+        // This is roughly copied from `tui/run.rs`
+        execute!(out, DisableMouseCapture)?;
+        execute!(out, Show)?; // Show cursor.
+
+        crossterm::terminal::disable_raw_mode()?;
+        execute!(out, LeaveAlternateScreen)?;
+
+        Ok(())
+    }
+
     let _ = ThreadBuilder::new()
         .name("TUI: Crossterm Event Thread".to_string())
         .spawn(move || loop {
@@ -92,10 +115,22 @@ where
             // (we assume that if this happens it means that the recipient
             // terminated so we exit gracefully rather than panic).
             if let Err(_) = match crossterm::event::read() {
-                Ok(e) => tx.send(Event::ActualEvent(e)),
+                Ok(e) => {
+                    if let CrosstermEvent::Key(key) = e {
+                        if key == ctrl_shift_q {
+                            exit().unwrap();
+
+                            eprintln!("Force Quit!");
+                            std::process::exit(1);
+                        }
+                    }
+
+                    tx.send(Event::ActualEvent(e))
+                },
                 Err(err) => tx.send(Event::Error(err)),
             } {
-                crate::debug::run_if_debugging(|| eprintln!("Event thread exiting!"));
+                exit().unwrap();
+                let _ = crate::debug::run_if_debugging(|| eprintln!("Event thread exiting!"));
                 break
             }
         })?;
