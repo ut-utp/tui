@@ -89,6 +89,15 @@ impl LoadButton {
             return Err(format!("`{}` does not exist!", p))
         }
 
+        // TODO: don't bother writing out the assembled program to a file; just
+        // use the already in-memory MemoryDump.
+        //
+        // Better yet use the loadable iterator thing.
+
+        // TODO: spin this off into its own module and introduce an abstraction
+        // over the program source (i.e. can come from files, URLs, etc; should
+        // work on wasm too).
+
         let assembled_file_path = if file_requires_assembly(path) {
             let path_str = path.clone().into_os_string().into_string().unwrap();
             let string = fs::read_to_string(path).unwrap();
