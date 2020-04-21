@@ -1,14 +1,11 @@
 //! TODO!
 
 use super::widget_impl_support::*;
-use super::load_button::*;
 use ModelineFocus::*;
 
-use tui::widgets::{Paragraph};
+use tui::widgets::Paragraph;
 use tui::style::{Color, Style};
 
-use core::marker::{PhantomData, Unpin};
-use core::pin::Pin;
 use core::future::Future;
 use core::task::{Context, Waker, Poll};
 
@@ -16,11 +13,13 @@ use lc3_traits::control::{Event, State};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ModelineFocus {
-    NONE,
-    EXECUTION_CONTROL,
-    STEP,
-    RESET,
-    LOAD,
+    NoFocus,
+    ExecutionControl,
+    StepOver,
+    StepIn,
+    StepOut,
+    Reset,
+    Load,
 }
 
 // A fake Future executor that is capable of doing exactly no work.
@@ -57,13 +56,15 @@ where
     B: Backend,
 {
     event_fut: Option<C::EventFuture>,
-    colour: Color,
+    color: Color,
     execution_control_button: Rect,
-    step_button: Rect,
+    step_over_button: Rect,
+    step_in_button: Rect,
+    step_out_button: Rect,
     reset_button: Rect,
     load_button: Rect,
     reset_flag: bool,
-    loadB: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
+    load_b: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
     focus: ModelineFocus,
 }
 
@@ -75,20 +76,22 @@ where
     B: Backend,
 {
     pub fn new<W: Widget<'a, 'int, C, I, O, B> + 'a>(button: W) -> Self {
-        Self::new_with_colour(button, Color::Blue)
+        Self::new_with_color(button, Color::Blue)
     }
 
-    pub fn new_with_colour<W: Widget<'a, 'int, C, I, O, B> + 'a>(button: W, colour:Color) -> Self {
+    pub fn new_with_color<W: Widget<'a, 'int, C, I, O, B> + 'a>(button: W, color:Color) -> Self {
         Self {
             event_fut: None,
-            colour,
+            color,
             execution_control_button: Rect::default(),
-            step_button: Rect::default(),
+            step_over_button: Rect::default(),
+            step_in_button: Rect::default(),
+            step_out_button: Rect::default(),
             reset_button: Rect::default(),
             load_button: Rect::default(),
             reset_flag: false,
-            loadB: vec![Box::new(button)],
-            focus: NONE,
+            load_b: vec![Box::new(button)],
+            focus: NoFocus,
         }
     }
 
@@ -101,7 +104,7 @@ where
     }
 
     fn load(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
-        self.loadB[0].update(event, data, terminal);
+        self.load_b[0].update(event, data, terminal);
         data.reset_flag = data.reset_flag.wrapping_add(1);
         drop(data.current_event.take())
     }
@@ -162,8 +165,8 @@ where
 // Divides rect into NUM_SEGMENTS equal segments
 // Creates a rect based on index and size (# of segments)
 fn create_rect(index: u16, size: u16, area:Rect) -> Rect {
-    const NUM_SEGMENTS: u16 = 8;
-    const MARGIN_FRACTION: u16 = 200;
+    const NUM_SEGMENTS: u16 = 10;
+    const MARGIN_FRACTION: u16 = 400;
     Rect::new(
         area.width/NUM_SEGMENTS*index + area.width/MARGIN_FRACTION,
         area.y,
@@ -179,36 +182,40 @@ where
     B: Backend,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-        let mut bColour = self.colour;
-        let mut mColour = self.colour;
-        let mut b1Colour = Colour::Green;
-        let mut b2Colour = Colour::Magenta;
-        let mut b3Colour = Colour::Yellow;
-        let mut b4Colour = Colour::White;
+        let mut box_color = self.color;
+        let mut execution_color = Color::Green;
+        let mut step_over_color = Color::Cyan;
+        let mut step_in_color = Color::Cyan;
+        let mut step_out_color = Color::Cyan;
+        let mut reset_color = Color::Yellow;
+        let mut load_color = Color::White;
 
-        if self.focus != NONE {
-            bColour = Colour::Red
+        if self.focus != NoFocus {
+            box_color = Color::Red
         }
 
-        if self.focus != RESET {
+        if self.focus != Reset {
             self.reset_flag = false;
         }
 
         if data.sim.get_state() == State::RunningUntilEvent {
-            b1Colour = Colour::Yellow;
+            execution_color = Color::Yellow;
         }
 
+        let focus_color = Color::Red;
         match self.focus {
-            EXECUTION_CONTROL => b1Colour = Colour::Red,
-            STEP => b2Colour = Colour::Red,
-            RESET => b3Colour = Colour::Red,
-            LOAD  => b4Colour = Colour::Red,
-            NONE => {},
-        }
+            ExecutionControl => execution_color = focus_color,
+            StepOver => step_over_color = focus_color,
+            StepIn => step_in_color = focus_color,
+            StepOut => step_out_color = focus_color,
+            Reset => reset_color = focus_color,
+            Load => load_color = focus_color,
+            NoFocus => {},
+        };
 
         let mut bg_block = Block::default()
             .borders(Borders::TOP)
-            .border_style(Style::default().fg(bColour))
+            .border_style(Style::default().fg(box_color))
             .title("");
 
         bg_block.draw(area, buf);
@@ -217,17 +224,19 @@ where
         let area = Rect::new(area.x, area.y, area.width, area.height);
 
 //        let mut bg_block = Block::default()
-//            .style(Style::default().bg(mColour))
+//            .style(Style::default().bg(mColor))
 //            .title("");
 //
 //        bg_block.draw(area, buf);
 
         let state_block = create_rect(0, 1, area);
         let cur_event_block = create_rect(1, 3, area);
-        self.execution_control_button = create_rect(4, 1, area);
-        self.step_button = create_rect(5, 1, area);
-        self.reset_button = create_rect(6, 1, area);
-        self.load_button = create_rect(7, 1, area);
+        self.step_over_button = create_rect(4, 1, area);
+        self.step_in_button = create_rect(5, 1, area);
+        self.step_out_button = create_rect(6, 1, area);
+        self.execution_control_button = create_rect(7, 1, area);
+        self.reset_button = create_rect(8, 1, area);
+        self.load_button = create_rect(9, 1, area);
 
         let mut state_color = Color::White;
         let state = match data.sim.get_state() {
@@ -274,44 +283,66 @@ where
             .wrap(true);
         para.draw(cur_event_block, buf);
 
+        let text = [TuiText::styled("Step Over", Style::default().fg(step_over_color))];
+        para = Paragraph::new(text.iter())
+            .style(Style::default())
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(step_over_color))
+                .title(""))
+            .alignment(Alignment::Center)
+            .wrap(true);
+        para.draw(self.step_over_button,buf);
+
+        let text = [TuiText::styled("Step In", Style::default().fg(step_in_color))];
+        para = Paragraph::new(text.iter())
+            .style(Style::default())
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(step_in_color))
+                .title(""))
+            .alignment(Alignment::Center)
+            .wrap(true);
+        para.draw(self.step_in_button,buf);
+
+        let text = [TuiText::styled("Step Out", Style::default().fg(step_out_color))];
+        para = Paragraph::new(text.iter())
+            .style(Style::default())
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(step_out_color))
+                .title(""))
+            .alignment(Alignment::Center)
+            .wrap(true);
+        para.draw(self.step_out_button,buf);
+
         let mut vec = Vec::new();
         if data.sim.get_state() == State::RunningUntilEvent{
-            vec.push(TuiText::styled("Pause", Style::default().fg(Colour::Yellow)));
+            vec.push(TuiText::styled("Pause", Style::default().fg(Color::Yellow)));
         } else {
-            vec.push(TuiText::styled("Run", Style::default().fg(Colour::Green)));
+            vec.push(TuiText::styled("Run", Style::default().fg(Color::Green)));
         }
         let mut para = Paragraph::new(vec.iter())
             .style(Style::default())
             .block(Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(b1Colour))
+                .border_style(Style::default().fg(execution_color))
                 .title(""))
             .alignment(Alignment::Center)
             .wrap(true);
         para.draw(self.execution_control_button,buf);
 
-        let text = [TuiText::styled("Step", Style::default().fg(Colour::Magenta))];
-        para = Paragraph::new(text.iter())
-            .style(Style::default())
-            .block(Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(b2Colour))
-                .title(""))
-            .alignment(Alignment::Center)
-            .wrap(true);
-        para.draw(self.step_button,buf);
-
         let mut vec = Vec::new();
         if self.reset_flag {
-            vec.push(TuiText::styled(s!(ResetConfirmationMsg), Style::default().fg(Colour::Red)));
+            vec.push(TuiText::styled(s!(ResetConfirmationMsg), Style::default().fg(Color::Red)));
         } else {
-            vec.push(TuiText::styled("Reset", Style::default().fg(Colour::Yellow)));
+            vec.push(TuiText::styled("Reset", Style::default().fg(Color::Yellow)));
         }
         para = Paragraph::new(vec.iter())
             .style(Style::default())
             .block(Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(b3Colour))
+                .border_style(Style::default().fg(reset_color))
                 .title(""))
             .alignment(Alignment::Center)
             .wrap(true);
@@ -319,11 +350,11 @@ where
 
         bg_block = Block::default()
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(b4Colour))
+            .border_style(Style::default().fg(load_color))
             .title("");
         bg_block.draw(self.load_button, buf);
 
-        Widget::draw(&mut *self.loadB[0], data, bg_block.inner(self.load_button), buf);
+        Widget::draw(&mut *self.load_b[0], data, bg_block.inner(self.load_button), buf);
 
     }
 
@@ -340,42 +371,50 @@ where
                 let event = block_on(self.event_fut.take().unwrap());
                 
                 assert!(data.current_event.is_none()); // We're being defensive; I thini this holds.
-                let event_colour = match event {
-                    Event::Breakpoint {addr} => Colour::Red,
-                    Event::MemoryWatch {addr, data} => Colour::Rgb(0x30, 0x49, 0xDE),
-                    Event::Error {err} => Colour::LightRed,
-                    Event::Interrupted => Colour::Yellow,
-                    Event::Halted => Colour::Gray,
-                    _ => Colour::DarkGray,
+                let event_color = match event {
+                    Event::Breakpoint {addr} => Color::Red,
+                    Event::MemoryWatch {addr, data} => Color::Rgb(0x30, 0x49, 0xDE),
+                    Event::Error {err} => Color::LightRed,
+                    Event::Interrupted => Color::Yellow,
+                    Event::Halted => Color::Gray,
+                    _ => Color::DarkGray,
                 };
-                data.log(format!("[modeline] Got an event! {:?}\n", event), event_colour);
+                data.log(format!("[modeline] Got an event! {:?}\n", event), event_color);
                 data.current_event = Some(event);
             }
         }
 
-        if self.focus == NONE {
-            if event != WidgetEvent::Update {
-                self.focus = EXECUTION_CONTROL;
+        if self.focus == NoFocus {
+            if event != Update {
+                self.focus = ExecutionControl;
             }
         }
 
         match event {
             Focus(FocusEvent::GotFocus) => {true},
-            Focus(FocusEvent::LostFocus) => {self.focus = NONE; false},
+            Focus(FocusEvent::LostFocus) => {self.focus = NoFocus; false},
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, x, y, _)) => {
                 if self.execution_control_button.intersects(Rect::new(x,y,1,1)) {
-                    self.focus = EXECUTION_CONTROL;
+                    self.focus = ExecutionControl;
                     if data.sim.get_state() == State::RunningUntilEvent{
                         self.pause(data)
                     } else {
                         self.run(data);
                     }
-                } else if self.step_button.intersects(Rect::new(x,y,1,1)) {
-                    self.focus = STEP;
+                } else if self.step_over_button.intersects(Rect::new(x,y,1,1)) {
+                    self.focus = StepOver;
+                    data.sim.set_relative_depth_breakpoint(0);
+                    self.run(data);
+                } else if self.step_in_button.intersects(Rect::new(x,y,1,1)) {
+                    self.focus = StepIn;
                     self.step(data);
+                } else if self.step_out_button.intersects(Rect::new(x,y,1,1)) {
+                    self.focus = StepOut;
+                    data.sim.set_relative_depth_breakpoint(-1);
+                    self.run(data);
                 } else if self.reset_button.intersects(Rect::new(x,y,1,1)) {
-                    self.focus = RESET;
+                    self.focus = Reset;
                     if self.reset_flag{
                         self.reset(data);
                         self.reset_flag = false;
@@ -384,7 +423,7 @@ where
                     }
                 } else if self.load_button.intersects(Rect::new(x,y,1,1)) {
                     self.load(event, data, terminal);
-                    self.focus = LOAD;
+                    self.focus = Load;
                 }
                 true
             }
@@ -403,7 +442,7 @@ where
                     true
                 }
                 KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::ALT } => {
-                    self.focus = RESET;
+                    self.focus = Reset;
                     if self.reset_flag{
                         self.reset(data);
                         self.reset_flag = false;
@@ -418,15 +457,23 @@ where
                 }
                 KeyEvent { code: KeyCode::Enter, modifiers: EMPTY } => {
                     match self.focus {
-                        EXECUTION_CONTROL => {
+                        ExecutionControl => {
                             if data.sim.get_state() == State::RunningUntilEvent{
                                 self.pause(data)
                             } else {
                                 self.run(data);
                             }
                         },
-                        STEP => self.step(data),
-                        RESET => {
+                        StepOver => self.step(data),
+                        StepIn => {
+                            data.sim.set_relative_depth_breakpoint(0);
+                            self.run(data);
+                        }
+                        StepOut => {
+                            data.sim.set_relative_depth_breakpoint(-1);
+                            self.run(data);
+                        },
+                        Reset => {
                              if self.reset_flag{
                                 self.reset(data);
                                 self.reset_flag = false;
@@ -434,28 +481,32 @@ where
                                 self.reset_flag = true;
                             }
                         }
-                        LOAD => {self.load(event, data, terminal)},
-                        NONE => {},
+                        Load => {self.load(event, data, terminal)},
+                        NoFocus => {},
                     }
                     true
                 }
                 KeyEvent { code: KeyCode::Right, modifiers: KeyModifiers::CONTROL } => {
                     self.focus = match self.focus {
-                        EXECUTION_CONTROL => STEP,
-                        STEP => RESET,
-                        RESET => LOAD,
-                        LOAD => LOAD,
-                        NONE => NONE,
+                        StepOver => StepIn,
+                        StepIn => StepOut,
+                        StepOut => ExecutionControl,
+                        ExecutionControl => Reset,
+                        Reset => Load,
+                        Load => Load,
+                        NoFocus => NoFocus,
                     };
                     true
                 }
                 KeyEvent { code: KeyCode::Left, modifiers: KeyModifiers::CONTROL } => {
                     self.focus = match self.focus {
-                        EXECUTION_CONTROL => EXECUTION_CONTROL,
-                        STEP => EXECUTION_CONTROL,
-                        RESET => STEP,
-                        LOAD => RESET,
-                        NONE => NONE,
+                        StepOver => StepOver,
+                        StepIn => StepOver,
+                        StepOut => StepIn,
+                        ExecutionControl => StepOut,
+                        Reset => ExecutionControl,
+                        Load => Reset,
+                        NoFocus => NoFocus,
                     };
                     true
                 }
