@@ -186,6 +186,15 @@ where
                                 inst_colour = Colour::Rgb(0x30, 0x49, 0xDE);
                             }
                         }
+                        Event::DepthBreakpoint => {     // TODO: maybe pick some other color for this?
+                            if cur_addr == pc {
+                                bp_colour = Colour::Red;
+                                wp_colour = Colour::Red;
+                                addr_colour = Colour::Red;
+                                data_colour = Colour::Red;
+                                inst_colour = Colour::Red;
+                            }
+                        }
                         Event::Error {err} => {
                             if cur_addr == pc {
                                 bp_colour = Colour::LightRed;
@@ -213,6 +222,7 @@ where
                                 inst_colour = Colour::White;
                             }
                         }
+                        _ => {}
                     }
                 },
                 None => {}

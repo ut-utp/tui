@@ -251,12 +251,14 @@ where
                 match event {
                     Event::Breakpoint {addr} => format!("Breakpoint at {:#x}!", addr),
                     Event::MemoryWatch {addr, data} => format!("Watchpoint at {:#x} with data {:#x}!", addr, data),
+                    Event::DepthBreakpoint => format!(""),      // TODO: Decide whether or not to show event on depth breakpoint
                     Event::Error {err} => {
                         state_color = Color::LightRed;
                         format!("Error: {}!", err)
                     },
                     Event::Interrupted => format!("Interrupted!"),
                     Event::Halted => format!("Halted!"),
+                    _ => format!("")
                 }
             },
             None => format!(""),
