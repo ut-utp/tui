@@ -197,7 +197,31 @@ impl<'a> DynTui<'a, 'static> {
         <I as Init<'a>>::Input: Sized,
         <I as Init<'a>>::Output: Sized,
     {
-        let (sim, shims, input, output) = I::init(b);
+        Self::new_boxed_from_init_with_config_inner::<I>(b, None)
+    }
+
+    pub fn new_boxed_from_init_with_config<I: Init<'a>>(b: &'a mut BlackBox, config: I::Config) -> Self
+    where
+        <I as Init<'a>>::ControlImpl: Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>> + 'a,
+        <I as Init<'a>>::ControlImpl: Sized,
+        <I as Init<'a>>::Input: Sized,
+        <I as Init<'a>>::Output: Sized,
+    {
+        Self::new_boxed_from_init_with_config_inner::<I>(b, Some(config))
+    }
+
+    fn new_boxed_from_init_with_config_inner<I: Init<'a>>(b: &'a mut BlackBox, config: Option<I::Config>) -> Self
+    where
+        <I as Init<'a>>::ControlImpl: Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>> + 'a,
+        <I as Init<'a>>::ControlImpl: Sized,
+        <I as Init<'a>>::Input: Sized,
+        <I as Init<'a>>::Output: Sized,
+    {
+        let (sim, shims, input, output) = if let Some(config) = config {
+            I::init_with_config(b, config)
+        } else {
+            I::init(b)
+        };
 
         let mut tui = Self::new_boxed::<<I as Init<'a>>::ControlImpl>(sim);
 
