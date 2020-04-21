@@ -182,7 +182,6 @@ where
                         Ok(word) => {
                             $value = word;
                             $on_success;
-                            self.mode = INPUT_SOURCE;
                         }
                         Err(_e) => {
                             data.log(format!("[Addr] Invalid binary value: {}\n", self.input), Colour::Red);
@@ -210,6 +209,7 @@ where
                     self.mode = INPUT_SOURCE;
                 } else if self.input == String::from("j") {
                     data.jump = (data.jump.0+1,$addr);
+                    self.mode = INPUT_SOURCE;
                 } else if self.input == String::from("e") {
                     self.mode = INPUT_SOURCE;
                     data.mem_reg_inter = (0,0);
