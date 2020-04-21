@@ -10,7 +10,7 @@ macro_rules! palette {
 
         #[allow(non_snake_case)]
         pub struct CurrentPalette {
-            $($field: TuiColour,)*
+            $(pub $field: TuiColour,)*
         }
 
         impl CurrentPalette {
@@ -69,7 +69,7 @@ declare_palette! { DefaultPalette = { }}
 // }}
 
 lazy_static::lazy_static! {
-    static ref PALETTE: CurrentPalette = {
+    pub static ref PALETTE: CurrentPalette = {
         // TODO: select based on env vars!
         DefaultPalette.into()
     };
@@ -77,6 +77,6 @@ lazy_static::lazy_static! {
 
 #[macro_export]
 #[doc(hidden)]
-macro_rules! c { ($nom:tt) => { *CurrentPalette.$nom }; }
+macro_rules! c { ($nom:tt) => { (*$crate::colours::PALETTE).$nom }; }
 
 pub use crate::c;

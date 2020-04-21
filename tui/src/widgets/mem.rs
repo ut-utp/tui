@@ -95,7 +95,7 @@ where
 
         if self.follow {
             self.addr = pc;
-        } else { 
+        } else {
             let position = pc.wrapping_sub(self.focus);
             let diff = self.addr.wrapping_sub(position);
             self.focus = self.focus.wrapping_sub(diff);
@@ -426,7 +426,7 @@ where
                     KeyModifiers::ALT => self.scroll_up(20),
                     _ => self.scroll_up(1),
                 }
-                
+
                 true
             }
             Mouse(MouseEvent::ScrollDown(_, _, modif)) => {
