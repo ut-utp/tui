@@ -6,19 +6,21 @@ extern crate flexi_logger;
 
 use lc3_tui::DynTui;
 use lc3_tui::layout;
-use lc3_application_support::init::{BlackBox, SimDevice, SimWithRpcDevice};
+use lc3_application_support::init::{
+    BlackBox, BoardDevice, SimDevice, SimWithRpcDevice
+};
 
 use structopt::StructOpt;
 use flexi_logger::{Logger, opt_format};
 
-use std::path::PathBuf;
+use std::path::{PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
 use std::fmt::{self, Display};
 
 #[derive(Debug)]
 enum DeviceType {
-    Board,
+    Board /*{ path: Path, baud_rate: u32 }*/, // TODO: options?
     Sim,
     SimWithRpc,
 }
@@ -66,7 +68,7 @@ impl DeviceType {
         use DeviceType::*;
 
         match self {
-            Board => unimplemented!(),
+            Board => DynTui::new_boxed_from_init::<BoardDevice<'_, _, PathBuf>>(b), // TODO: config!
             DeviceType::Sim => DynTui::new_boxed_from_init::<SimDevice>(b),
             DeviceType::SimWithRpc => DynTui::<'b, 'static>::new_boxed_from_init::<SimWithRpcDevice>(b),
         }
