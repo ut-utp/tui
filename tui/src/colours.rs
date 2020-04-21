@@ -40,9 +40,24 @@ macro_rules! declare_palette {
 }
 
 palette! {
+    Data = TuiColour::Green,
+    Insts = TuiColour::LightCyan,
     MemoryView = TuiColour::Gray,
-    Error = TuiColour::Red,
+
+    Breakpoint = TuiColour::Red,
+    Watchpoint = TuiColour::Rgb(0xFF, 0x97, 0x40),
+
+    Pause = TuiColour::Yellow,
+    Error = TuiColour::LightRed,
     Success = TuiColour::Green,
+
+    Highlight = TuiColour::Cyan,
+
+    Focus = TuiColour::Red,
+    Reset = TuiColour::Red,
+
+    Title = TuiColour::Rgb(0xFF, 0x97, 0x40),
+
 }
 
 declare_palette! { DefaultPalette = { }}

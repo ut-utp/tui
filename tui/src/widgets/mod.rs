@@ -9,6 +9,7 @@ pub(in self) mod widget_impl_support {
     pub use crate::tui::events::{WidgetEvent, FocusEvent};
 
     pub use crate::debug::{in_debug_mode, run_if_debugging};
+    pub use crate::colours::c;
     pub use crate::strings::*;
 
     pub use lc3_application_support::io_peripherals::{InputSink, OutputSource};
