@@ -419,12 +419,23 @@ where
                 true
             }
 
-            Mouse(MouseEvent::ScrollUp(_, _, _)) => {
-                self.scroll_up(1);
+            Mouse(MouseEvent::ScrollUp(_, _, modif)) => {
+                match modif {
+                    KeyModifiers::SHIFT => self.scroll_up(5),
+                    KeyModifiers::CONTROL =>self.scroll_up(10),
+                    KeyModifiers::ALT => self.scroll_up(20),
+                    _ => self.scroll_up(1),
+                }
+                
                 true
             }
-            Mouse(MouseEvent::ScrollDown(_, _, _)) => {
-                self.scroll_down(1);
+            Mouse(MouseEvent::ScrollDown(_, _, modif)) => {
+                match modif {
+                    KeyModifiers::SHIFT => self.scroll_down(5),
+                    KeyModifiers::CONTROL =>self.scroll_down(10),
+                    KeyModifiers::ALT => self.scroll_down(20),
+                    _ => self.scroll_down(1),
+                }
                 true
             }
 

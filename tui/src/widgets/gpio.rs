@@ -1,9 +1,7 @@
 //! TODO!
 
 use super::widget_impl_support::*;
-use tui::widgets::{Text as TuiText, Paragraph};
-use tui::style::{Color, Style};
-use tui::layout::Alignment;
+
 use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -46,11 +44,11 @@ where
 
 
         let text = [
-            TuiText::styled("GPIO 0: \nGPIO 1: \nGPIO 2: \nGPIO 3: \n", Style::default().fg(Color::Gray)),
+            TuiText::styled("GPIO 0: \nGPIO 1: \nGPIO 2: \nGPIO 3: \n", Style::default().fg(Colour::Gray)),
         ];
 
         let mut para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
@@ -118,9 +116,9 @@ where
             }
         }
 
-        let text = [TuiText::styled(s1, Style::default().fg(Color::LightGreen))];
+        let text = [TuiText::styled(s1, Style::default().fg(Colour::LightGreen))];
         para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
         let area = increment(10, Axis::X, area);
@@ -129,11 +127,11 @@ where
 
 
         let text = [
-            TuiText::styled("GPIO 4: \nGPIO 5: \nGPIO 6: \nGPIO 7: \n", Style::default().fg(Color::Gray)),
+            TuiText::styled("GPIO 4: \nGPIO 5: \nGPIO 6: \nGPIO 7: \n", Style::default().fg(Colour::Gray)),
             ];
 
         let mut para = Paragraph::new(text.iter())
-        .style(Style::default().fg(Color::White).bg(Color::Reset))
+        .style(Style::default().fg(Colour::White).bg(Colour::Reset))
         .alignment(Alignment::Left)
         .wrap(true);
         let area = increment(40, Axis::X, area);
@@ -177,9 +175,9 @@ where
                 }
             }
 
-            let text = [TuiText::styled(s2, Style::default().fg(Color::LightGreen))];
+            let text = [TuiText::styled(s2, Style::default().fg(Colour::LightGreen))];
             para = Paragraph::new(text.iter())
-                .style(Style::default().fg(Color::White).bg(Color::Reset))
+                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
                 .wrap(true);
 

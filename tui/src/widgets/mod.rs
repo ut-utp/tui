@@ -7,6 +7,7 @@ pub(in self) mod widget_impl_support {
     pub use crate::tui::ansi::AnsiTextContainer;
     pub use crate::tui::TuiData;
     pub use crate::tui::events::{WidgetEvent, FocusEvent};
+
     pub use crate::debug::{in_debug_mode, run_if_debugging};
     pub use crate::strings::*;
 
@@ -21,6 +22,8 @@ pub(in self) mod widget_impl_support {
     pub use tui::style::{Color as Colour, Style, Modifier};
     pub use tui::layout::Alignment;
 
+    //pub use TuiColour;
+
     pub use crossterm::event::{KeyEvent, KeyCode, KeyModifiers, MouseEvent, MouseButton};
 }
 
@@ -32,9 +35,6 @@ pub use tabs::*;
 
 mod text;
 pub use text::*;
-
-mod footer;
-pub use footer::*;
 
 mod help;
 pub use help::*;

@@ -4,10 +4,6 @@ use super::widget_impl_support::*;
 
 use super::super::Tui;
 
-use tui::widgets::{Text as TuiText, Paragraph};
-use tui::style::{Color, Style};
-use tui::layout::Alignment;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Help
 {
@@ -48,12 +44,12 @@ where
                 A lot of widgets have their own keybinds. See the full documentation for assistance.\n
                 Finally, there are universal keybinds:\n
                 Ctrl: + l to load, + r to run, + p to pause, + s to step\n 
-                Alt: + r twice to reset.\n", Style::default().fg(Color::LightGreen)),
+                Alt: + r twice to reset.\n", Style::default().fg(Colour::LightGreen)),
         ];
 
         // TODO: allow parameterization of this in the usual way.
         let mut para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 

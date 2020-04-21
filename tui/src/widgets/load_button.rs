@@ -297,9 +297,14 @@ where
                     .and_then(|f| f.to_str())
                     .unwrap_or("<unprintable>");
 
-                let msg1 = TuiText::styled(format!("Load Program (from: `{}`)", file_name), Style::default().fg(Colour::Cyan));
+                let msg1 = TuiText::styled(format!("Load `{}`", file_name), Style::default().fg(Colour::Cyan));
 
-                let (text, gauge) = Self::split_for_text_and_gauge(area);
+                Paragraph::new([msg1].iter())
+                    .style(Style::default().fg(Colour::White))
+                    .alignment(Alignment::Center)
+                    .wrap(true)
+                    .draw(area, buf);
+                /*let (text, gauge) = Self::split_for_text_and_gauge(area);
 
                 Paragraph::new([msg1].iter())
                     .style(Style::default().fg(Colour::White))
@@ -319,7 +324,7 @@ where
                         .style(Style::default().fg(Colour::Cyan).modifier(Modifier::ITALIC | Modifier::DIM))
                         .percent(0)
                         .draw(gauge, buf)
-                }
+                }*/
             }
         }
     }

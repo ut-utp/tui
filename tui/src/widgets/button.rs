@@ -2,10 +2,6 @@
 
 use super::widget_impl_support::*;
 
-use tui::widgets::{Text as TuiText, Paragraph};
-use tui::style::{Color, Style};
-use tui::layout::Alignment;
-
 use std::marker::PhantomData;
 
 use lc3_isa::{Addr, Instruction, Reg, Word};
@@ -21,7 +17,7 @@ where
 {
     title: String,
     func: F,
-    colour: Color,
+    colour: Colour,
     _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
 }
 
@@ -36,7 +32,7 @@ where
         Self {
             title: String::from(""),
             func,
-            colour: Color::Red,
+            colour: Colour::Red,
             _p: PhantomData,
         }
     }
@@ -45,12 +41,12 @@ where
         Self {
             title,
             func,
-            colour: Color::Red,
+            colour: Colour::Red,
             _p: PhantomData,
         }
     }
 
-    pub fn new_sans_title(colour:Color, func:F) -> Self {
+    pub fn new_sans_title(colour:Colour, func:F) -> Self {
         Self {
             title: String::from(""),
             func,
@@ -59,7 +55,7 @@ where
         }
     }
 
-    pub fn new(title:String, colour:Color, func:F) -> Self {
+    pub fn new(title:String, colour:Colour, func:F) -> Self {
         Self {
             title,
             func,
@@ -96,7 +92,7 @@ where
         ];
 
         let mut para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Center)
             .wrap(true);
 

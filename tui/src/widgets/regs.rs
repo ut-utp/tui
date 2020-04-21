@@ -2,10 +2,6 @@
 
 use super::widget_impl_support::*;
 
-use tui::widgets::{Text as TuiText, Paragraph};
-use tui::style::{Color, Style};
-use tui::layout::Alignment;
-
 use lc3_isa::{Addr, Instruction, Reg, Word};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -106,12 +102,12 @@ where
         
 
         let text = [
-            TuiText::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(Color::Gray)),
-            TuiText::styled("PSR:\n", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+            TuiText::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(Colour::Gray)),
+            TuiText::styled("PSR:\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))),
         ];
 
         let mut para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
@@ -129,7 +125,7 @@ where
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1)));
 
         para = Paragraph::new(reg_v.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
@@ -137,12 +133,12 @@ where
         para.draw(area, buf);
 
         let text = [
-            TuiText::styled("R4:\nR5:\nR6:\nR7:\n", Style::default().fg(Color::Gray)),
-            TuiText::styled("PC:\n", Style::default().fg(Color::Rgb(0xFF, 0x97, 0x40))),
+            TuiText::styled("R4:\nR5:\nR6:\nR7:\n", Style::default().fg(Colour::Gray)),
+            TuiText::styled("PC:\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))),
         ];
 
         para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
@@ -161,7 +157,7 @@ where
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.2)));
 
         para = Paragraph::new(reg_v.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 

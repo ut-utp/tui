@@ -1,9 +1,7 @@
 //! TODO!
 
 use super::widget_impl_support::*;
-use tui::widgets::{Text as TuiText, Paragraph};
-use tui::style::{Color, Style};
-use tui::layout::Alignment;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Clock {
     pub focusable: bool,
@@ -41,11 +39,11 @@ where
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
 
         let text = [
-            TuiText::styled("Clock: \n", Style::default().fg(Color::Gray)),
+            TuiText::styled("Clock: \n", Style::default().fg(Colour::Gray)),
         ];
 
         let mut para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
@@ -57,9 +55,9 @@ where
         let mut s0 = String::from("");
         s0.push_str(&format!("{}ms\n", clock_val));
 
-        let text = [TuiText::styled(s0, Style::default().fg(Color::LightGreen))];
+        let text = [TuiText::styled(s0, Style::default().fg(Colour::LightGreen))];
         para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
         let area = increment(10, Axis::X, area);

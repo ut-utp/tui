@@ -2,10 +2,6 @@
 
 use super::widget_impl_support::*;
 
-use tui::widgets::{Text as TuiText, Paragraph};
-use tui::style::{Color, Style};
-use tui::layout::Alignment;
-
 use std::marker::PhantomData;
 
 // TODO: handle lines properly...
@@ -75,7 +71,7 @@ where
 
         // TODO: allow parameterization of this in the usual way.
         let mut para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Reset))
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .scroll(self.offset)
             .wrap(true);
