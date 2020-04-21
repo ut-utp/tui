@@ -66,6 +66,7 @@ macro_rules! specialize {
     }
 }
 
+pub mod colours;
 pub mod debug;
 pub mod layout;
 pub mod widgets;
