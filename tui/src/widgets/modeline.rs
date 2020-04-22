@@ -250,6 +250,7 @@ where
             .wrap(true);
         para.draw(state_block, buf);
 
+        let mut box_colour   = self.colour;
         let event = match data.get_current_event() {
             Some(event) => {
                 match event {
@@ -257,7 +258,7 @@ where
                     Event::MemoryWatch {addr, data} => format!("Watchpoint at {:#x} with data {:#x}!", addr, data),
                     Event::DepthReached { current_depth } => format!(""),      // TODO: Decide whether or not to show event on depth breakpoint
                     Event::Error {err} => {
-                        self.colour = c!(Error);
+                        box_colour = c!(Error);
                         format!("Error: {}!", err)
                     },
                     Event::Interrupted => format!("Interrupted!"),
@@ -267,12 +268,12 @@ where
             },
             None => format!(""),
         };
-        let event_text = [TuiText::styled(event, Style::default().fg(self.colour))];
+        let event_text = [TuiText::styled(event, Style::default().fg(box_colour))];
         let mut para = Paragraph::new(event_text.iter())
             .style(Style::default())
             .block(Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(self.colour))
+                .border_style(Style::default().fg(box_colour))
                 .title("Current Event"))
             .alignment(Alignment::Left)
             .wrap(true);
