@@ -186,7 +186,7 @@ where
                                 inst_colour = c!(Highlight);
                             }
                         }
-                        Event::DepthBreakpoint => {     // TODO: maybe pick some other color for this?
+                        Event::DepthReached {current_depth } => {     // TODO: maybe pick some other color for this?
                             if cur_addr == pc {
                                 bp_colour = Colour::Red;
                                 wp_colour = Colour::Red;
@@ -367,9 +367,9 @@ where
         {
             let cur_addr = data.sim.get_pc().wrapping_sub(offset);
             match data.bp.remove(&cur_addr) {
-                Some(val) => {data.sim.unset_breakpoint(val);},
+                Some(val) => {data.sim.unset_breakpoint(val as u8);},
                 None => {match data.sim.set_breakpoint(cur_addr) {
-                    Ok(val) => {data.bp.insert(cur_addr, val);},
+                    Ok(val) => {data.bp.insert(cur_addr, val as usize);},
                     Err(_e) => {},
                 }},
             };
@@ -383,9 +383,9 @@ where
         {
             let cur_addr = data.sim.get_pc().wrapping_sub(offset);
             match data.wp.remove(&cur_addr) {
-                Some(val) => {data.sim.unset_memory_watchpoint(val);},
+                Some(val) => {data.sim.unset_memory_watchpoint(val as u8);},
                 None => {match data.sim.set_memory_watchpoint(cur_addr) {
-                    Ok(val) => {data.wp.insert(cur_addr, val);},
+                    Ok(val) => {data.wp.insert(cur_addr, val as usize);},
                     Err(_e) => {},
                 }},
             };

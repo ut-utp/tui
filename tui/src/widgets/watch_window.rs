@@ -163,7 +163,7 @@ where
             Key(KeyEvent { code: KeyCode::Backspace, modifiers: EMPTY }) => {
                 if self.highlight < self.wp_len {
                     match data.wp.remove(&self.highlight_addr) {
-                        Some(val) =>  {data.sim.unset_memory_watchpoint(val);/*self.mode = 0;*/},
+                        Some(val) =>  {data.sim.unset_memory_watchpoint(val as u8);/*self.mode = 0;*/},
                         None => {},
                     };
                 }

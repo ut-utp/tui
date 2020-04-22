@@ -152,7 +152,7 @@ where
             Key(KeyEvent { code: KeyCode::Backspace, modifiers: EMPTY }) => {
                 if self.highlight < self.bp_len {
                     match data.bp.remove(&self.highlight_addr) {
-                        Some(val) =>  {data.sim.unset_breakpoint(val);/*self.mode = 0;*/},
+                        Some(val) =>  {data.sim.unset_breakpoint(val as u8);/*self.mode = 0;*/},
                         None => {},
                     };
                 }

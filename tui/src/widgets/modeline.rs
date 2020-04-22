@@ -6,7 +6,7 @@ use ModelineFocus::*;
 use core::future::Future;
 use core::task::{Context, Waker, Poll};
 
-use lc3_traits::control::{Event, State};
+use lc3_traits::control::{Event, State, StepControl};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ModelineFocus {
@@ -255,7 +255,7 @@ where
                 match event {
                     Event::Breakpoint {addr} => format!("Breakpoint at {:#x}!", addr),
                     Event::MemoryWatch {addr, data} => format!("Watchpoint at {:#x} with data {:#x}!", addr, data),
-                    Event::DepthBreakpoint => format!(""),      // TODO: Decide whether or not to show event on depth breakpoint
+                    Event::DepthReached { current_depth } => format!(""),      // TODO: Decide whether or not to show event on depth breakpoint
                     Event::Error {err} => {
                         self.colour = c!(Error);
                         format!("Error: {}!", err)
@@ -397,14 +397,15 @@ where
                     }
                 } else if self.step_over_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepOver;
-                    data.sim.set_relative_depth_breakpoint(0);
+                    StepControl::step_over(data.sim);
                     self.run(data);
                 } else if self.step_in_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepIn;
+                    StepControl::step_in(data.sim);
                     self.step(data);
                 } else if self.step_out_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepOut;
-                    data.sim.set_relative_depth_breakpoint(-1);
+                    StepControl::step_out(data.sim);
                     self.run(data);
                 } else if self.reset_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = Reset;
@@ -457,13 +458,16 @@ where
                                 self.run(data);
                             }
                         },
-                        StepOver => self.step(data),
-                        StepIn => {
-                            data.sim.set_relative_depth_breakpoint(0);
+                        StepOver => {
+                            StepControl::step_over(data.sim);
                             self.run(data);
+                        },
+                        StepIn => {
+                            StepControl::step_in(data.sim);
+                            self.step(data);
                         }
                         StepOut => {
-                            data.sim.set_relative_depth_breakpoint(-1);
+                            StepControl::step_out(data.sim);
                             self.run(data);
                         },
                         Reset => {
