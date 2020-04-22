@@ -154,13 +154,13 @@ where
                 KeyEvent { code: KeyCode::Char('s'), modifiers: KeyModifiers::CONTROL } => {
                     self.propagate_to_footer(event, data, terminal)
                 }
-                KeyEvent { code: KeyCode::Char('p'), modifiers: KeyModifiers::CONTROL } => {
+                /*KeyEvent { code: KeyCode::Char('p'), modifiers: KeyModifiers::CONTROL } => {
                     self.propagate_to_footer(event, data, terminal)
                 }
                 KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::CONTROL } => {
                     self.propagate_to_footer(event, data, terminal)
-                }
-                KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::ALT } => {
+                }*/
+                KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::CONTROL } => {
                     self.drop_extra_focus(0, data, terminal);
                     self.cur_focus = 1;
                     self.give_focus(1, data, terminal);

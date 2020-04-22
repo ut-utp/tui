@@ -121,7 +121,7 @@ where
                     // doesn't seem to do a good job actually relaying Ctrl +
                     // Shift key events. So, we'll do Alt + Q.
                     if let CrosstermEvent::Key(KeyEvent {
-                        code: KeyCode::Char('q'), modifiers: Km::ALT
+                        code: KeyCode::Char('q'), modifiers: Km::CONTROL
                     }) = e {
                         exit().unwrap();
 

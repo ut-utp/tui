@@ -125,7 +125,6 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
                 ActualEvent(e) => match e {
                     // Capture `ctrl + q`/`alt + f4` and forward everything else:
-                    Key(KeyEvent { code: KeyCode::Char('q'), modifiers: KeyModifiers::CONTROL }) |
                     Key(KeyEvent { code: KeyCode::Char('w'), modifiers: KeyModifiers::CONTROL }) |
                     Key(KeyEvent { code: KeyCode::F(4), modifiers: KeyModifiers::ALT }) => {
                         return false
