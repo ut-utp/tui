@@ -293,24 +293,13 @@ where
             },
 
             Some(p) => {
-                let file_name = p.file_name()
-                    .and_then(|f| f.to_str())
-                    .unwrap_or("<unprintable>");
+                let (text, gauge) = Self::split_for_text_and_gauge(area);
 
-                let msg1 = TuiText::styled(format!("Load `{}`", file_name), Style::default().fg(c!(Load)));
-
-                Paragraph::new([msg1].iter())
-                    .style(Style::default().fg(Colour::White))
-                    .alignment(Alignment::Center)
-                    .wrap(true)
-                    .draw(area, buf);
-                /*let (text, gauge) = Self::split_for_text_and_gauge(area);
-
-                Paragraph::new([msg1].iter())
-                    .style(Style::default().fg(Colour::White))
-                    .alignment(Alignment::Center)
-                    .wrap(true)
-                    .draw(text, buf);
+                // Paragraph::new([msg1].iter())
+                //     .style(Style::default().fg(Colour::White))
+                //     .alignment(Alignment::Center)
+                //     .wrap(true)
+                //     .draw(text, buf);
 
                 match &self.attempt {
                     Some(attempt) => Paragraph::new([attempt.message()].iter())
@@ -319,12 +308,20 @@ where
                         .wrap(true)
                         .draw(gauge, buf),
 
-                    None => Gauge::default()
-                        // .block(Block::default().borders(Borders::ALL))
-                        .style(Style::default().fg(Colour::Cyan).modifier(Modifier::ITALIC | Modifier::DIM))
-                        .percent(0)
-                        .draw(gauge, buf)
-                }*/
+                    None => {
+                        let file_name = p.file_name()
+                            .and_then(|f| f.to_str())
+                            .unwrap_or("<unprintable>");
+
+                        let msg1 = TuiText::styled(format!("Load `{}`", file_name), Style::default().fg(c!(Load)));
+
+                        Paragraph::new([msg1].iter())
+                            .style(Style::default().fg(Colour::White))
+                            .alignment(Alignment::Center)
+                            .wrap(true)
+                            .draw(area, buf);
+                    }
+                }
             }
         }
     }
