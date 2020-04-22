@@ -176,7 +176,7 @@ impl LoadButton {
                                 Gauge::default()
                                     // .block(Block::default().borders(Borders::ALL).title("Progress"))
                                     .style(Style::default().fg(Colour::Green).bg(Colour::Black).modifier(Modifier::ITALIC | Modifier::BOLD))
-                                    .ratio(progress.progress().max(0.0f32).into())
+                                    .ratio(progress.progress().min(1.0f32).max(0.0f32).into())
                                     .render(&mut f, gauge);
 
                                 let success_rate = format!("{:.2}%", progress.success_rate() * 100.0);
