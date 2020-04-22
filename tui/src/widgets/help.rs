@@ -44,7 +44,7 @@ where
                 A lot of widgets have their own keybinds. See the full documentation for assistance.\n
                 Finally, there are universal keybinds:\n
                 Ctrl: + l to load, + r to run, + p to pause, + s to step\n 
-                Alt: + r twice to reset.\n", Style::default().fg(Colour::LightGreen)),
+                Alt: + r twice to reset.\n", Style::default().fg(c!(Help))),
         ];
 
         // TODO: allow parameterization of this in the usual way.

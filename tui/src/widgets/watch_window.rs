@@ -85,34 +85,34 @@ where
 
             if i == event_highlight && i == self.highlight {
                 let x = format!("{}\n", i);
-                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Magenta)));
+                t_i.push(TuiText::styled(x,Style::default().fg(c!(BWHighlight))));
                 let x = format!("{:#06x}\n",wp_addr);
-                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Magenta)));
+                t_a.push(TuiText::styled(x, Style::default().fg(c!(BWHighlight))));
                 let x = format!("{:#018b} {:#06x} {:#05}\n",data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr));
-                t_v.push(TuiText::styled(x, Style::default().fg(Colour::Magenta)));
+                t_v.push(TuiText::styled(x, Style::default().fg(c!(BWHighlight))));
                 self.highlight_addr = *wp_addr;
             } else if i == event_highlight {
                 let x = format!("{}\n", i);
-                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Red)));
+                t_i.push(TuiText::styled(x,Style::default().fg(c!(Watchpoint))));
                 let x = format!("{:#06x}\n",wp_addr);
-                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Red)));
+                t_a.push(TuiText::styled(x, Style::default().fg(c!(Watchpoint))));
                 let x = format!("{:#018b} {:#06x} {:#05}\n",data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr));
-                t_v.push(TuiText::styled(x, Style::default().fg(Colour::Red)));
+                t_v.push(TuiText::styled(x, Style::default().fg(c!(Watchpoint))));
             } else if i == self.highlight { 
                 let x = format!("{}\n", i);
-                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Cyan)));
+                t_i.push(TuiText::styled(x,Style::default().fg(c!(Highlight))));
                 let x = format!("{:#06x}\n",wp_addr);
-                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Cyan)));
+                t_a.push(TuiText::styled(x, Style::default().fg(c!(Highlight))));
                 let x = format!("{:#018b} {:#06x} {:#05}\n",data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr));
-                t_v.push(TuiText::styled(x, Style::default().fg(Colour::Cyan)));
+                t_v.push(TuiText::styled(x, Style::default().fg(c!(Highlight))));
                 self.highlight_addr = *wp_addr;
             } else {
                 let x = format!("{}\n", i);
-                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))));
+                t_i.push(TuiText::styled(x,Style::default().fg(c!(Title))));
                 let x = format!("{:#06x}\n",wp_addr);
-                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Gray)));
+                t_a.push(TuiText::styled(x, Style::default().fg(c!(Name))));
                 let x = format!("{:#018b} {:#06x} {:#05}\n",data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr));
-                t_v.push(TuiText::styled(x, Style::default().fg(Colour::LightGreen)));
+                t_v.push(TuiText::styled(x, Style::default().fg(c!(Data))));
             }
 
             i = i + 1;

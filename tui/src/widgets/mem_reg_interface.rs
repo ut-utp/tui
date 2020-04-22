@@ -64,25 +64,25 @@ where
             INPUT_SOURCE => {
                 TuiText::styled(
                     "INPUT ADDRESS\n",
-                    Style::default().fg(Colour::Red).modifier(Modifier::BOLD),
+                    Style::default().fg(c!(ConsoleRequest)).modifier(Modifier::BOLD),
                 )
             },
             MEMORY_MOD => {
                 TuiText::styled(
                     format!("Current Address: {:#06x}\n", self.mem_addr),
-                    Style::default().fg(Colour::Gray),
+                    Style::default().fg(c!(Name)),
                 )
             },
             REGISTER_MOD => {
                 TuiText::styled(
                     format!("Current Register: {}\n", self.reg_num),
-                    Style::default().fg(Colour::Gray),
+                    Style::default().fg(c!(Name)),
                 )
             },
             PC_MOD => {
                 TuiText::styled(
                     format!("Current Register: PC\n"),
-                    Style::default().fg(Colour::Gray),
+                    Style::default().fg(c!(PC)),
                 )
             },
         };
@@ -103,13 +103,13 @@ where
 
         let instructions = match self.mode {
             INPUT_SOURCE => {
-                [TuiText::raw("Enter an address or register to get started.\n You can use default decimal format,\n or add 0x for hexadecimal, and 0b for binary.\n e.g. 16 = 0x10 = 0b10000\n For registers, enter R0 to R7 or PC"), ]
+                [TuiText::styled("Enter an address or register to get started.\n You can use default decimal format,\n or add 0x for hexadecimal, and 0b for binary.\n e.g. 16 = 0x10 = 0b10000\n For registers, enter R0 to R7 or PC", Style::default().fg(c!(ConsoleHelp))), ]
             },
             MEMORY_MOD => {
-                [TuiText::styled("Memory Manipulation Help\nb to toggle breakpoint\nw to toggle watchpoint\nj to jump to address\ne to enter a new address\nType a value to change data at the address\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))), ]
+                [TuiText::styled("Memory Manipulation Help\nb to toggle breakpoint\nw to toggle watchpoint\nj to jump to address\ne to enter a new address\nType a value to change data at the address\n", Style::default().fg(c!(Title))), ]
             },
             REGISTER_MOD | PC_MOD => {
-                [TuiText::styled("Register Manipulation Help\nb to toggle breakpoint at reg address\nw to toggle watchpoint\nj to jump to reg address\ne to enter a new address\nType a value to change data in the register\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))), ]
+                [TuiText::styled("Register Manipulation Help\nb to toggle breakpoint at reg address\nw to toggle watchpoint\nj to jump to reg address\ne to enter a new address\nType a value to change data in the register\n", Style::default().fg(c!(Title))), ]
             },
         };
 
@@ -164,7 +164,7 @@ where
                             $on_success;
                         }
                         Err(_e) => {
-                            data.log(format!("[Addr] Invalid hex value: {}\n", self.input), Colour::Red);
+                            data.log(format!("[Addr] Invalid hex value: {}\n", self.input), c!(InvalidInput));
                         }
                     }
                 } else if self.input.starts_with("x") {
@@ -174,7 +174,7 @@ where
                             $on_success;
                         }
                         Err(_e) => {
-                            data.log(format!("[Addr] Invalid hex value: {}\n", self.input), Colour::Red);
+                            data.log(format!("[Addr] Invalid hex value: {}\n", self.input), c!(InvalidInput));
                         }
                     }
                 } else if self.input.starts_with("0b") {
@@ -184,7 +184,7 @@ where
                             $on_success;
                         }
                         Err(_e) => {
-                            data.log(format!("[Addr] Invalid binary value: {}\n", self.input), Colour::Red);
+                            data.log(format!("[Addr] Invalid binary value: {}\n", self.input), c!(InvalidInput));
                         }
                     }
                 } else {
@@ -193,7 +193,7 @@ where
                             $value = word;
                             $on_success;
                         }
-                        Err(e) => {data.log(format!("[Addr] Invalid value: {}\n", self.input), Colour::Red)}
+                        Err(e) => {data.log(format!("[Addr] Invalid value: {}\n", self.input), c!(InvalidInput))}
                     }
                 }
             }
@@ -266,12 +266,12 @@ where
                                             data.mem_reg_inter = (2, value.into());
                                         },
                                         Err(e) => {
-                                            data.log(format!("[Reg] Invalid register: {}\n", self.input), Colour::Red);
+                                            data.log(format!("[Reg] Invalid register: {}\n", self.input), c!(InvalidInput));
                                         }
                                     };
                                 },
                                 Err(e) => {
-                                    data.log(format!("[Reg] Invalid register: {}\n", self.input), Colour::Red);
+                                    data.log(format!("[Reg] Invalid register: {}\n", self.input), c!(InvalidInput));
                                 }
                             }
                         } else if self.input == String::from("pc") {

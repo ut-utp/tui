@@ -40,23 +40,44 @@ macro_rules! declare_palette {
 }
 
 palette! {
-    Data = TuiColour::Green,
-    Insts = TuiColour::LightCyan,
-    MemoryView = TuiColour::Gray,
+    Data = TuiColour::LightGreen,
+    Inst = TuiColour::LightCyan,
+    Name = TuiColour::Gray,
+    PC = TuiColour::Rgb(0xFF, 0x97, 0x40),
 
-    Breakpoint = TuiColour::Red,
-    Watchpoint = TuiColour::Rgb(0xFF, 0x97, 0x40),
+    Breakpoint = TuiColour::Rgb(0xCC, 0x02, 0x02),
+    Watchpoint = TuiColour::Rgb(0x30, 0x49, 0xDE),
+    BWHighlight = TuiColour::Magenta,
 
+    MemRegHighlight = TuiColour::Gray,
+    RegHighlight = TuiColour::Magenta,
+
+    ConsoleIn = TuiColour::Rgb(0xFF, 0x97, 0x40),
+    ConsoleOut = TuiColour::Rgb(0xFF, 0x97, 0x40),
+    ConsoleHelp = TuiColour::Gray,
+    ConsoleRequest = TuiColour::Red,
+    InvalidInput = TuiColour:: Red,
+
+    Run = TuiColour::Green,
     Pause = TuiColour::Yellow,
     Error = TuiColour::LightRed,
     Success = TuiColour::Green,
+    Halted = TuiColour::White,
 
     Highlight = TuiColour::Cyan,
 
     Focus = TuiColour::Red,
     Reset = TuiColour::Red,
+    Load = TuiColour::Cyan,
 
     Title = TuiColour::Rgb(0xFF, 0x97, 0x40),
+    Border = TuiColour::Blue,
+    Help = TuiColour::Green,
+
+    Modeline = TuiColour::White,
+    StepB = TuiColour::Cyan,
+    LoadB = TuiColour::White,
+    mDefault = TuiColour::DarkGray,
 
 }
 

@@ -107,7 +107,7 @@ where
 
         data.console_hist.replace(hist_2);
 
-        let text_history = [TuiText::styled(temp, Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+        let text_history = [TuiText::styled(temp, Style::default().fg(c!(ConsoleOut)))];
         let mut para = Paragraph::new(text_history.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
@@ -115,7 +115,7 @@ where
 
         para.draw(area, buf); // the idea of this is to write the output before the ">", but I'm not sure this accomplishes that...
 
-        let text = [TuiText::styled(">", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+        let text = [TuiText::styled(">", Style::default().fg(c!(Title)))];
 
         para = Paragraph::new(text.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
@@ -133,7 +133,7 @@ where
         }
 
         if bottom_area.height >= 2 {
-            let text = [TuiText::styled(data.input_string.borrow_mut().clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+            let text = [TuiText::styled(data.input_string.borrow_mut().clone(), Style::default().fg(c!(ConsoleOut)))];
             para = Paragraph::new(text.iter())
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)

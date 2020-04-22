@@ -89,26 +89,26 @@ where
 
             if i == event_highlight && i == self.highlight {
                 let x = format!("{}\n", i);
-                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Magenta)));
+                t_i.push(TuiText::styled(x,Style::default().fg(c!(BWHighlight))));
                 let x = format!("{:#06x}\n",bp_addr);
-                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Magenta)));
+                t_a.push(TuiText::styled(x, Style::default().fg(c!(BWHighlight))));
                 self.highlight_addr = *bp_addr;
             } else if i == event_highlight {
                 let x = format!("{}\n", i);
-                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Red)));
+                t_i.push(TuiText::styled(x,Style::default().fg(c!(Breakpoint))));
                 let x = format!("{:#06x}\n",bp_addr);
-                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Red)));
+                t_a.push(TuiText::styled(x, Style::default().fg(c!(Breakpoint))));
             } else if i == self.highlight { 
                 let x = format!("{}\n", i);
-                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Cyan)));
+                t_i.push(TuiText::styled(x,Style::default().fg(c!(Highlight))));
                 let x = format!("{:#06x}\n",bp_addr);
-                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Cyan)));
+                t_a.push(TuiText::styled(x, Style::default().fg(c!(Highlight))));
                 self.highlight_addr = *bp_addr;
             } else {
                 let x = format!("{}\n", i);
-                t_i.push(TuiText::styled(x,Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))));
+                t_i.push(TuiText::styled(x,Style::default().fg(c!(Title))));
                 let x = format!("{:#06x}\n",bp_addr);
-                t_a.push(TuiText::styled(x, Style::default().fg(Colour::Gray)));
+                t_a.push(TuiText::styled(x, Style::default().fg(c!(Name))));
             }
             
             i = i + 1;

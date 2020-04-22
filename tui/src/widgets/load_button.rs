@@ -42,8 +42,8 @@ impl Attempt {
 
     fn message(&self) -> TuiText<'static> {
         match self {
-            Self::Failure(_) => TuiText::styled(s!(FailureMsg), Style::default().fg(Colour::Red)),
-            Self::Success(_) => TuiText::styled(s!(SuccessMsg), Style::default().fg(Colour::Green)),
+            Self::Failure(_) => TuiText::styled(s!(FailureMsg), Style::default().fg(c!(Error))),
+            Self::Success(_) => TuiText::styled(s!(SuccessMsg), Style::default().fg(c!(Success))),
         }
     }
 }
@@ -283,7 +283,7 @@ where
 
         match &data.program_path {
             None => {
-                let msg = TuiText::styled("No File Given!\n", Style::default().fg(Colour::Red));
+                let msg = TuiText::styled("No File Given!\n", Style::default().fg(c!(Error)));
 
                 Paragraph::new([msg].iter())
                     .style(Style::default().fg(Colour::White))
@@ -297,7 +297,7 @@ where
                     .and_then(|f| f.to_str())
                     .unwrap_or("<unprintable>");
 
-                let msg1 = TuiText::styled(format!("Load `{}`", file_name), Style::default().fg(Colour::Cyan));
+                let msg1 = TuiText::styled(format!("Load `{}`", file_name), Style::default().fg(c!(Load)));
 
                 Paragraph::new([msg1].iter())
                     .style(Style::default().fg(Colour::White))
@@ -349,11 +349,11 @@ where
                         match self.load(data.sim, terminal, p) {
                             Ok(msg) => {
                                 self.attempt = Attempt::succeeded();
-                                data.log(format!("[Load] {}\n", msg), Colour::Green)
+                                data.log(format!("[Load] {}\n", msg), c!(Success))
                             },
                             Err(msg) => {
                                 self.attempt = Attempt::failed();
-                                data.log(format!("[Load] {}\n", msg), Colour::Red)
+                                data.log(format!("[Load] {}\n", msg), c!(Error))
                             },
                         }
 

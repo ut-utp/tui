@@ -49,14 +49,14 @@ where
         let (Console, psr, pc) = Console_psr_pc;
 
         let peripheral_help = format!("Hello! To write to ADC or GPIO from the peripheral console,\nyou must write a line below separated by colons (:) then press ENTER to submit!\nex. gpio:1:1 will set GPIO pin 1 to True");
-        let text_help = [TuiText::styled(peripheral_help, Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+        let text_help = [TuiText::styled(peripheral_help, Style::default().fg(c!(ConsoleHelp)))];
 
         let mut para_help = Paragraph::new(text_help.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
-        let text = [TuiText::styled(">", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+        let text = [TuiText::styled(">", Style::default().fg(c!(Title)))];
 
         let mut para = Paragraph::new(text.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
@@ -70,7 +70,7 @@ where
             let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
             para.draw(area, buf);
 
-            let text = [TuiText::styled(self.input.clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+            let text = [TuiText::styled(self.input.clone(), Style::default().fg(c!(ConsoleIn)))];
             para = Paragraph::new(text.iter())
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
@@ -88,7 +88,7 @@ where
             let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
             para.draw(area, buf);
 
-            let text = [TuiText::styled(self.input.clone(), Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40)))];
+            let text = [TuiText::styled(self.input.clone(), Style::default().fg(c!(ConsoleIn)))];
             para = Paragraph::new(text.iter())
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)

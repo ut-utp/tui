@@ -44,7 +44,7 @@ where
 
 
         let text = [
-            TuiText::styled("PWM 0: \n", Style::default().fg(Colour::Gray)),
+            TuiText::styled("PWM 0: \n", Style::default().fg(c!(Name))),
         ];
 
         let mut para = Paragraph::new(text.iter())
@@ -71,7 +71,7 @@ where
         };
 
 
-        let text = [TuiText::styled(s0, Style::default().fg(Colour::LightGreen))];
+        let text = [TuiText::styled(s0, Style::default().fg(c!(Data)))];
         para = Paragraph::new(text.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
@@ -83,7 +83,7 @@ where
 
 
         let text = [
-            TuiText::styled("PWM 1: \n", Style::default().fg(Colour::Gray)),
+            TuiText::styled("PWM 1: \n", Style::default().fg(c!(Name))),
         ];
 
         let mut para = Paragraph::new(text.iter())
@@ -110,7 +110,7 @@ where
 
         };
 
-        let text = [TuiText::styled(s1, Style::default().fg(Colour::LightGreen))];
+        let text = [TuiText::styled(s1, Style::default().fg(c!(Data)))];
         para = Paragraph::new(text.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)

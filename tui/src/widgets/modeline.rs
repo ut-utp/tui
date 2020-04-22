@@ -73,7 +73,7 @@ where
     B: Backend,
 {
     pub fn new<W: Widget<'a, 'int, C, I, O, B> + 'a>(button: W) -> Self {
-        Self::new_with_colour(button, Colour::Blue)
+        Self::new_with_colour(button, c!(Modeline))
     }
 
     pub fn new_with_colour<W: Widget<'a, 'int, C, I, O, B> + 'a>(button: W, colour:Colour) -> Self {
@@ -129,7 +129,7 @@ where
     }
 
     fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
-        data.log("[modeline] Resetting Sim\n", Colour::Magenta);
+        data.log("[modeline] Resetting Sim\n", c!(Pause));
         data.sim.reset();
         data.input_string.replace(String::from(""));
         data.console_hist.borrow_mut().clear();
@@ -142,7 +142,7 @@ where
             block_on(e);
         }
 
-        data.log("[modeline] Reset Complete\n", Colour::Green);
+        data.log("[modeline] Reset Complete\n", c!(Success));
         drop(data.current_event.take())
     }
 }
@@ -180,15 +180,15 @@ where
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let mut box_colour = self.colour;
-        let mut execution_colour = Colour::Green;
-        let mut step_over_colour = Colour::Cyan;
-        let mut step_in_colour = Colour::Cyan;
-        let mut step_out_colour = Colour::Cyan;
-        let mut reset_colour = Colour::Yellow;
-        let mut load_colour = Colour::White;
+        let mut execution_colour = c!(Run);
+        let mut step_over_colour = c!(StepB);
+        let mut step_in_colour = c!(StepB);
+        let mut step_out_colour = c!(StepB);
+        let mut reset_colour = c!(Pause);
+        let mut load_colour = c!(LoadB);
 
         if self.focus != NoFocus {
-            box_colour = Colour::Red
+            box_colour = c!(Focus)
         }
 
         if self.focus != Reset {
@@ -196,17 +196,16 @@ where
         }
 
         if data.sim.get_state() == State::RunningUntilEvent {
-            execution_colour = Colour::Yellow;
+            execution_colour = c!(Pause);
         }
 
-        let focus_colour = Colour::Red;
         match self.focus {
-            ExecutionControl => execution_colour = focus_colour,
-            StepOver => step_over_colour = focus_colour,
-            StepIn => step_in_colour = focus_colour,
-            StepOut => step_out_colour = focus_colour,
-            Reset => reset_colour = focus_colour,
-            Load => load_colour = focus_colour,
+            ExecutionControl => execution_colour = c!(Focus),
+            StepOver => step_over_colour = c!(Focus),
+            StepIn => step_in_colour = c!(Focus),
+            StepOut => step_out_colour = c!(Focus),
+            Reset => reset_colour = c!(Focus),
+            Load => load_colour = c!(Focus),
             NoFocus => {},
         };
 
@@ -235,18 +234,17 @@ where
         self.reset_button = create_rect(8, 1, area);
         self.load_button = create_rect(9, 1, area);
 
-        let mut state_colour = Colour::White;
         let state = match data.sim.get_state() {
             State::Halted => "HALTED",
             State::Paused => "PAUSED",
             State::RunningUntilEvent => "RUNNING",
         };
-        let state_text = [TuiText::styled(state, Style::default().fg(state_colour))];
+        let state_text = [TuiText::styled(state, Style::default().fg(self.colour))];
         let mut para = Paragraph::new(state_text.iter())
             .style(Style::default())
             .block(Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(state_colour))
+                .border_style(Style::default().fg(self.colour))
                 .title("Current State"))
             .alignment(Alignment::Center)
             .wrap(true);
@@ -259,7 +257,7 @@ where
                     Event::MemoryWatch {addr, data} => format!("Watchpoint at {:#x} with data {:#x}!", addr, data),
                     Event::DepthBreakpoint => format!(""),      // TODO: Decide whether or not to show event on depth breakpoint
                     Event::Error {err} => {
-                        state_colour = Colour::LightRed;
+                        self.colour = c!(Error);
                         format!("Error: {}!", err)
                     },
                     Event::Interrupted => format!("Interrupted!"),
@@ -269,12 +267,12 @@ where
             },
             None => format!(""),
         };
-        let event_text = [TuiText::styled(event, Style::default().fg(state_colour))];
+        let event_text = [TuiText::styled(event, Style::default().fg(self.colour))];
         let mut para = Paragraph::new(event_text.iter())
             .style(Style::default())
             .block(Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(state_colour))
+                .border_style(Style::default().fg(self.colour))
                 .title("Current Event"))
             .alignment(Alignment::Left)
             .wrap(true);
@@ -315,9 +313,9 @@ where
 
         let mut vec = Vec::new();
         if data.sim.get_state() == State::RunningUntilEvent{
-            vec.push(TuiText::styled("Pause", Style::default().fg(Colour::Yellow)));
+            vec.push(TuiText::styled("Pause", Style::default().fg(c!(Pause))));
         } else {
-            vec.push(TuiText::styled("Run", Style::default().fg(Colour::Green)));
+            vec.push(TuiText::styled("Run", Style::default().fg(c!(Run))));
         }
         let mut para = Paragraph::new(vec.iter())
             .style(Style::default())
@@ -331,9 +329,9 @@ where
 
         let mut vec = Vec::new();
         if self.reset_flag {
-            vec.push(TuiText::styled(s!(ResetConfirmationMsg), Style::default().fg(Colour::Red)));
+            vec.push(TuiText::styled(s!(ResetConfirmationMsg), Style::default().fg(c!(Reset))));
         } else {
-            vec.push(TuiText::styled("Reset", Style::default().fg(Colour::Yellow)));
+            vec.push(TuiText::styled("Reset", Style::default().fg(c!(Pause))));
         }
         para = Paragraph::new(vec.iter())
             .style(Style::default())
@@ -359,8 +357,6 @@ where
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
-        // data.log(format!("Event in the modeline! {:?}", event), Colour::Red);
-
         // If we're currently running an event and the state changes, we've got
         // ourselves an event.
         if let Some(_) = self.event_fut {
@@ -369,12 +365,12 @@ where
                 
                 assert!(data.current_event.is_none()); // We're being defensive; I thini this holds.
                 let event_colour = match event {
-                    Event::Breakpoint {addr} => Colour::Red,
-                    Event::MemoryWatch {addr, data} => Colour::Rgb(0x30, 0x49, 0xDE),
-                    Event::Error {err} => Colour::LightRed,
-                    Event::Interrupted => Colour::Yellow,
-                    Event::Halted => Colour::Gray,
-                    _ => Colour::DarkGray,
+                    Event::Breakpoint {addr} => c!(Breakpoint),
+                    Event::MemoryWatch {addr, data} => c!(Watchpoint),
+                    Event::Error {err} => c!(Error),
+                    Event::Interrupted => c!(Pause),
+                    Event::Halted => c!(Halted),
+                    _ => c!(mDefault),
                 };
                 data.log(format!("[modeline] Got an event! {:?}\n", event), event_colour);
                 data.current_event = Some(event);

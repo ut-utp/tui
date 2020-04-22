@@ -135,33 +135,33 @@ where
             let cur_addr = pc.wrapping_sub(self.offset).wrapping_add(x).wrapping_sub(self.focus);
             if x == self.offset.wrapping_add(self.focus) {
                 let x = String::from("-->\n");
-                arrow_v.push(TuiText::styled(x,Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))));
+                arrow_v.push(TuiText::styled(x,Style::default().fg(c!(PC))));
             } else if x == self.offset {
                 let x = String::from("-->\n");
-                arrow_v.push(TuiText::styled(x,Style::default().fg(Colour::Cyan)));
+                arrow_v.push(TuiText::styled(x,Style::default().fg(c!(Highlight))));
             } else {
                 arrow_v.push(TuiText::raw("\n"));
             }
 
-            let mut bp_colour = Colour::Rgb(0xCC, 0x02, 0x02);
-            let mut wp_colour = Colour::Rgb(0x30, 0x49, 0xDE);
-            let mut addr_colour = Colour::Gray;
-            let mut data_colour = Colour::LightGreen;
-            let mut inst_colour = Colour::LightCyan;
+            let mut bp_colour = c!(Breakpoint);
+            let mut wp_colour = c!(Watchpoint);
+            let mut addr_colour = c!(Name);
+            let mut data_colour = c!(Data);
+            let mut inst_colour = c!(Inst);
 
             if x == self.offset {
                 if cur_addr == pc {
-                    bp_colour = Colour::Rgb(0xFF, 0x97, 0x40);
-                    wp_colour = Colour::Rgb(0xFF, 0x97, 0x40);
-                    addr_colour = Colour::Rgb(0xFF, 0x97, 0x40);
-                    data_colour = Colour::Rgb(0xFF, 0x97, 0x40);
-                    inst_colour = Colour::Rgb(0xFF, 0x97, 0x40);
+                    bp_colour = c!(PC);
+                    wp_colour = c!(PC);
+                    addr_colour = c!(PC);
+                    data_colour = c!(PC);
+                    inst_colour = c!(PC);
                 } else {
-                    bp_colour = Colour::Cyan;
-                    wp_colour = Colour::Cyan;
-                    addr_colour = Colour::Cyan;
-                    data_colour = Colour::Cyan;
-                    inst_colour = Colour::Cyan;
+                    bp_colour = c!(Highlight);
+                    wp_colour = c!(Highlight);
+                    addr_colour = c!(Highlight);
+                    data_colour = c!(Highlight);
+                    inst_colour = c!(Highlight);
                 }
             }
 
@@ -170,20 +170,20 @@ where
                     match event {
                         Event::Breakpoint {addr} => {
                             if cur_addr == pc {
-                                bp_colour = Colour::Red;
-                                wp_colour = Colour::Red;
-                                addr_colour = Colour::Red;
-                                data_colour = Colour::Red;
-                                inst_colour = Colour::Red;
+                                bp_colour = c!(Breakpoint);
+                                wp_colour = c!(Breakpoint);
+                                addr_colour = c!(Breakpoint);
+                                data_colour = c!(Breakpoint);
+                                inst_colour = c!(Breakpoint);
                             }
                         }
                         Event::MemoryWatch {addr, data} => {
                             if addr == cur_addr {
-                                bp_colour = Colour::Rgb(0x30, 0x49, 0xDE);
-                                wp_colour = Colour::Rgb(0x30, 0x49, 0xDE);
-                                addr_colour = Colour::Rgb(0x30, 0x49, 0xDE);
-                                data_colour = Colour::Rgb(0x30, 0x49, 0xDE);
-                                inst_colour = Colour::Rgb(0x30, 0x49, 0xDE);
+                                bp_colour = c!(Highlight);
+                                wp_colour = c!(Highlight);
+                                addr_colour = c!(Highlight);
+                                data_colour = c!(Highlight);
+                                inst_colour = c!(Highlight);
                             }
                         }
                         Event::DepthBreakpoint => {     // TODO: maybe pick some other color for this?
@@ -197,29 +197,29 @@ where
                         }
                         Event::Error {err} => {
                             if cur_addr == pc {
-                                bp_colour = Colour::LightRed;
-                                wp_colour = Colour::LightRed;
-                                addr_colour = Colour::LightRed;
-                                data_colour = Colour::LightRed;
-                                inst_colour = Colour::LightRed;
+                                bp_colour = c!(Error);
+                                wp_colour = c!(Error);
+                                addr_colour = c!(Error);
+                                data_colour = c!(Error);
+                                inst_colour = c!(Error);
                             }
                         },
                         Event::Interrupted => {
                             if cur_addr == pc {
-                                bp_colour = Colour::Yellow;
-                                wp_colour = Colour::Yellow;
-                                addr_colour = Colour::Yellow;
-                                data_colour = Colour::Yellow;
-                                inst_colour = Colour::Yellow;
+                                bp_colour = c!(Pause);
+                                wp_colour = c!(Pause);
+                                addr_colour = c!(Pause);
+                                data_colour = c!(Pause);
+                                inst_colour = c!(Pause);
                             }
                         }
                         Event::Halted => {
                             if cur_addr == pc {
-                                bp_colour = Colour::White;
-                                wp_colour = Colour::White;
-                                addr_colour = Colour::White;
-                                data_colour = Colour::White;
-                                inst_colour = Colour::White;
+                                bp_colour = c!(Halted);
+                                wp_colour = c!(Halted);
+                                addr_colour = c!(Halted);
+                                data_colour = c!(Halted);
+                                inst_colour = c!(Halted);
                             }
                         }
                         _ => {}
@@ -230,11 +230,11 @@ where
 
             if self.debug.0 && data.mem_reg_inter.0 == 1 {
                 if cur_addr == data.mem_reg_inter.1 {
-                    bp_colour = Colour::Gray;
-                    wp_colour = Colour::Gray;
-                    addr_colour = Colour::Gray;
-                    data_colour = Colour::Gray;
-                    inst_colour = Colour::Gray;
+                    bp_colour = c!(MemRegHighlight);
+                    wp_colour = c!(MemRegHighlight);
+                    addr_colour = c!(MemRegHighlight);
+                    data_colour = c!(MemRegHighlight);
+                    inst_colour = c!(MemRegHighlight);
                 }
             }
 

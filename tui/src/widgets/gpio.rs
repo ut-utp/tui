@@ -44,7 +44,7 @@ where
 
 
         let text = [
-            TuiText::styled("GPIO 0: \nGPIO 1: \nGPIO 2: \nGPIO 3: \n", Style::default().fg(Colour::Gray)),
+            TuiText::styled("GPIO 0: \nGPIO 1: \nGPIO 2: \nGPIO 3: \n", Style::default().fg(c!(Name))),
         ];
 
         let mut para = Paragraph::new(text.iter())
@@ -116,7 +116,7 @@ where
             }
         }
 
-        let text = [TuiText::styled(s1, Style::default().fg(Colour::LightGreen))];
+        let text = [TuiText::styled(s1, Style::default().fg(c!(Data)))];
         para = Paragraph::new(text.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
@@ -127,7 +127,7 @@ where
 
 
         let text = [
-            TuiText::styled("GPIO 4: \nGPIO 5: \nGPIO 6: \nGPIO 7: \n", Style::default().fg(Colour::Gray)),
+            TuiText::styled("GPIO 4: \nGPIO 5: \nGPIO 6: \nGPIO 7: \n", Style::default().fg(c!(Name))),
             ];
 
         let mut para = Paragraph::new(text.iter())
@@ -175,7 +175,7 @@ where
                 }
             }
 
-            let text = [TuiText::styled(s2, Style::default().fg(Colour::LightGreen))];
+            let text = [TuiText::styled(s2, Style::default().fg(c!(Data)))];
             para = Paragraph::new(text.iter())
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)

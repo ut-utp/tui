@@ -27,15 +27,15 @@ impl RegDiff {
     }
 
     fn diff(&self) -> ([Colour; Reg::NUM_REGS], Colour, Colour) {
-        let mut colours = ([Colour::LightGreen; Reg::NUM_REGS], Colour::LightGreen, Colour::LightGreen);
+        let mut colours = ([c!(Data); Reg::NUM_REGS], c!(Data), c!(Data));
         for i in 0..Reg::NUM_REGS {
             if self.old.0[i] != self.new.0[i] {
-                colours.0[i] = Colour::Magenta;
+                colours.0[i] = c!(RegHighlight);
             }
         }
 
         if self.old.1 != self.new.1 {
-            colours.1 = Colour::Magenta;
+            colours.1 = c!(RegHighlight);
         }
         colours
     }
@@ -93,17 +93,17 @@ where
         if self.debug && data.mem_reg_inter.0 == 2 {
             let reg = data.mem_reg_inter.1;
             if reg == 10 {
-                colours.2 = Colour::Gray;
+                colours.2 = c!(MemRegHighlight);
             } else {
-                colours.0[reg as usize] = Colour::Gray;
+                colours.0[reg as usize] = c!(MemRegHighlight);
             }
         }
 
         
 
         let text = [
-            TuiText::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(Colour::Gray)),
-            TuiText::styled("PSR:\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))),
+            TuiText::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(c!(Name))),
+            TuiText::styled("PSR:\n", Style::default().fg(c!(PC))),
         ];
 
         let mut para = Paragraph::new(text.iter())
@@ -133,8 +133,8 @@ where
         para.draw(area, buf);
 
         let text = [
-            TuiText::styled("R4:\nR5:\nR6:\nR7:\n", Style::default().fg(Colour::Gray)),
-            TuiText::styled("PC:\n", Style::default().fg(Colour::Rgb(0xFF, 0x97, 0x40))),
+            TuiText::styled("R4:\nR5:\nR6:\nR7:\n", Style::default().fg(c!(Name))),
+            TuiText::styled("PC:\n", Style::default().fg(c!(PC))),
         ];
 
         para = Paragraph::new(text.iter())
