@@ -428,23 +428,15 @@ where
                     self.step(data);
                     true
                 }
-                /*KeyEvent { code: KeyCode::Char('p'), modifiers: KeyModifiers::CONTROL } => {
+                KeyEvent { code: KeyCode::Char('p'), modifiers: KeyModifiers::CONTROL } => {
                     self.pause(data);
                     true
                 }
                 KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::CONTROL } => {
                     self.run(data);
                     true
-                }*/
-                KeyEvent { code: KeyCode::Enter, modifiers: KeyModifiers::CONTROL } => {
-                    if data.sim.get_state() == State::RunningUntilEvent{
-                        self.pause(data)
-                    } else {
-                        self.run(data);
-                    }
-                    true
                 }
-                KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::CONTROL } => {
+                KeyEvent { code: KeyCode::Char('t'), modifiers: KeyModifiers::CONTROL } => {
                     self.focus = Reset;
                     if self.reset_flag{
                         self.reset(data);
