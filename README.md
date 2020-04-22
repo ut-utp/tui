@@ -18,3 +18,5 @@ Currently, we have the following binary targets:
       + This supports all the functionality that the desktop application does, but supports different devices.
 
 (TODO: move each target to their own crate? i.e. utp-tui, utp-web?)
+
+![Root TUI Page](https://raw.githubusercontent.com/wiki/ut-utp/tui/root.png)
