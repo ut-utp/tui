@@ -145,6 +145,9 @@ where
             block_on(e);
         }
 
+        // TODO: find a better workaround than this:
+        data.sim.reset();
+
         data.log("[modeline] Reset Complete\n", c!(Success));
         drop(data.current_event.take())
     }
@@ -373,7 +376,7 @@ where
         if let Some(_) = self.event_fut {
             if !running {
                 let event = block_on(self.event_fut.take().unwrap());
-                
+
                 assert!(data.current_event.is_none()); // We're being defensive; I thini this holds.
                 let event_colour = match event {
                     Event::Breakpoint {addr} => c!(Breakpoint),
@@ -413,11 +416,11 @@ where
                 } else if !running && self.step_in_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepIn;
                     StepControl::step_in(data.sim);
-                    self.step(data);
+                    self.run(data);
                 } else if !running && self.step_out_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepOut;
                     StepControl::step_out(data.sim);
-                    self.run(data);
+                    self.run(data); 
                 } else if self.reset_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = Reset;
                     if self.reset_flag{
@@ -436,7 +439,8 @@ where
             Key(e) => match e {
                 KeyEvent { code: KeyCode::Char('s'), modifiers: KeyModifiers::CONTROL } => {
                     if !running {
-                        self.step(data);
+                        StepControl::step_in(data.sim);
+                        self.run(data);
                     }
                     true
                 }
@@ -480,8 +484,8 @@ where
                         StepIn => {
                             if !running {
                                 StepControl::step_in(data.sim);
+                                self.run(data);
                             }
-                            self.step(data);
                         }
                         StepOut => {
                             if !running {

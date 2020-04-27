@@ -7,7 +7,7 @@ extern crate flexi_logger;
 use lc3_tui::DynTui;
 use lc3_tui::layout;
 use lc3_application_support::init::{
-    BlackBox, BoardDevice, SimDevice, SimWithRpcDevice
+    BlackBox, BoardDevice, BoardConfig, SimDevice, SimWithRpcDevice
 };
 
 use structopt::StructOpt;
@@ -20,7 +20,8 @@ use std::fmt::{self, Display};
 
 #[derive(Debug)]
 enum DeviceType {
-    Board /*{ path: Path, baud_rate: u32 }*/, // TODO: options?
+    // Board { path: PathBuf, baud_rate: u32 }, // TODO: options?
+    Board(BoardConfig<PathBuf>), // TODO: options?
     Sim,
     SimWithRpc,
 }
@@ -32,10 +33,28 @@ impl FromStr for DeviceType {
         use DeviceType::*;
 
         match sim {
-            "board" => Ok(Board),
+            "board" => Ok(Board(Default::default())),
             "sim" => Ok(Sim),
             "sim-rpc" => Ok(SimWithRpc),
             "websocket" => unimplemented!(), // TODO!
+            s if s.starts_with("board=") =>{
+                let mut iter = s.split("=").skip(1);
+
+                let config = iter.next().expect(format!("Expected a board path, got nothing. ({})", s).as_str());
+                let mut iter = config.split(":");
+
+                let board = iter.next().expect(format!("Expected a board path, got nothing. ({})", s).as_str());
+                let baud_rate = if let Some(baud_rate) = iter.next() {
+                    baud_rate.parse().expect("A baud rate when `:` is after the board path.")
+                } else {
+                    1_500_000
+                };
+
+                let path = PathBuf::from(board);
+
+                Ok(Board(BoardConfig::new(path, baud_rate)))
+
+            },
             _ => Err("Could not parse device type!")
         }
     }
@@ -47,13 +66,15 @@ impl Display for DeviceType {
 
         let s = if fmt.alternate() {
             match self {
-                Board => "on a board",
+                Board(c) => {
+                    return write!(fmt, "on a board: {}", c.path.display());
+                },
                 Sim => "locally",
                 SimWithRpc => "locally via rpc",
             }
         } else {
             match self {
-                Board => "Board",
+                Board(_) => "Board",
                 Sim => "Simulator",
                 SimWithRpc => "Simulator With RPC",
             }
@@ -68,7 +89,7 @@ impl DeviceType {
         use DeviceType::*;
 
         match self {
-            Board => DynTui::new_boxed_from_init::<BoardDevice<'_, _, PathBuf>>(b), // TODO: config!
+            Board(config) => DynTui::new_boxed_from_init_with_config::<BoardDevice<'_, _, PathBuf>>(b, config.clone()), // TODO: config!
             DeviceType::Sim => DynTui::new_boxed_from_init::<SimDevice>(b),
             DeviceType::SimWithRpc => DynTui::<'b, 'static>::new_boxed_from_init::<SimWithRpcDevice>(b),
         }
