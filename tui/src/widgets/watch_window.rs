@@ -67,6 +67,10 @@ where
         let mut i = 0;
         let mut vec = Vec::new();
 
+        t_i.push(TuiText::styled("#\n",Style::default().fg(c!(NumT))));
+        t_a.push(TuiText::styled("Address\n",Style::default().fg(c!(AddrT))));
+        t_v.push(TuiText::styled("Data\n",Style::default().fg(c!(DataT))));
+
         for (wp_addr, _) in data.wp.iter() {
             vec.push(*wp_addr);
         }
@@ -108,9 +112,9 @@ where
                 self.highlight_addr = *wp_addr;
             } else {
                 let x = format!("{}\n", i);
-                t_i.push(TuiText::styled(x,Style::default().fg(c!(Title))));
+                t_i.push(TuiText::styled(x,Style::default().fg(c!(Num))));
                 let x = format!("{:#06x}\n",wp_addr);
-                t_a.push(TuiText::styled(x, Style::default().fg(c!(Name))));
+                t_a.push(TuiText::styled(x, Style::default().fg(c!(Addr))));
                 let x = format!("{:#018b} {:#06x} {:#05}\n",data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr));
                 t_v.push(TuiText::styled(x, Style::default().fg(c!(Data))));
             }
@@ -148,7 +152,7 @@ where
             Focus(FocusEvent::LostFocus) => true,
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, _, y, _)) => {
-                let y = y.wrapping_sub(self.position.y);
+                let y = y.wrapping_sub(self.position.y).wrapping_sub(1);
                 self.highlight = y;
                 true
             }

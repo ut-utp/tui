@@ -228,7 +228,7 @@ where
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, _, _, _)) => true,
 
-            Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
+            Key(KeyEvent { code: KeyCode::Char(c), modifiers: _ }) => {
                 let x = format!("{}", c);
                 if self.input.len() < MAX_INPUT_LEN as usize {
                     self.input.push_str(&x);

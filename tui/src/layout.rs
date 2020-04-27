@@ -139,8 +139,9 @@ where
 
     let mut debug = Widgets::new(horz.clone());
     let mut top_right = Widgets::new(horz.clone());
-    let _ = top_right.add_widget(Constraint::Percentage(30), BreakWindow::default(), Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Breakpoints")))
-        .add_widget(Constraint::Percentage(70), WatchWindow::default(), Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Watchpoints").title_style(Style::default().fg(c!(Title)))));
+    let _ = top_right.add_widget(Constraint::Percentage(15), BreakWindow::default(), Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Breakpoints")))
+        .add_widget(Constraint::Percentage(45), WatchWindow::default(), Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Watchpoints").title_style(Style::default().fg(c!(Title)))))
+        .add_widget(Constraint::Percentage(40), StackWindow::default(), Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Stack Frame").title_style(Style::default().fg(c!(Title)))));
 
     let mem = Mem::new_with_debug(true);
     let regs = Regs::new_with_debug(true);

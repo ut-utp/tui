@@ -126,7 +126,7 @@ where
                     }
 
 
-                    Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
+                    Key(KeyEvent { code: KeyCode::Char(c), modifiers: _ }) => {
 
                         let mut x = format!("{}", c);
                         self.input.push_str(&x);

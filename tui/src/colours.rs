@@ -43,7 +43,13 @@ palette! {
     Data = TuiColour::LightGreen,
     Inst = TuiColour::LightCyan,
     Name = TuiColour::Gray,
+    Addr = TuiColour::Gray,
     PC = TuiColour::Rgb(0xFF, 0x97, 0x40),
+    Num = TuiColour::Rgb(0xFF, 0x97, 0x40),
+
+    DataT = TuiColour::Green,
+    AddrT = TuiColour::DarkGray,
+    NumT = TuiColour::Rgb(0xFF, 0xC7, 0x70),
 
     Breakpoint = TuiColour::Rgb(0xCC, 0x02, 0x02),
     Watchpoint = TuiColour::Rgb(0x30, 0x49, 0xDE),
@@ -76,6 +82,7 @@ palette! {
 
     Modeline = TuiColour::White,
     StepB = TuiColour::Cyan,
+    StepBLight = TuiColour::Rgb(0xA7,0xE2,0xE2),
     LoadB = TuiColour::White,
     mDefault = TuiColour::DarkGray,
 

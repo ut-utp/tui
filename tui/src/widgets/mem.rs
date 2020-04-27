@@ -145,7 +145,7 @@ where
 
             let mut bp_colour = c!(Breakpoint);
             let mut wp_colour = c!(Watchpoint);
-            let mut addr_colour = c!(Name);
+            let mut addr_colour = c!(Addr);
             let mut data_colour = c!(Data);
             let mut inst_colour = c!(Inst);
 

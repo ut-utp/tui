@@ -102,8 +102,7 @@ where
 
     fn load(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
         self.load_b[0].update(event, data, terminal);
-        data.reset_flag = data.reset_flag.wrapping_add(1);
-        drop(data.current_event.take())
+        self.reset(data)
     }
     // TODO: should also call `drop(data.current_event.take())`
 
@@ -123,6 +122,10 @@ where
 
             // eprintln!("Already running!");
             assert!(self.event_fut.is_some());
+        }
+
+        if self.focus == StepOver || self.focus == StepIn || self.focus == StepOut {
+            self.focus = ExecutionControl;
         }
 
         drop(data.current_event.take())
@@ -188,15 +191,20 @@ where
         let mut load_colour = c!(LoadB);
 
         if self.focus != NoFocus {
-            box_colour = c!(Focus)
+            box_colour = c!(Focus);
         }
 
         if self.focus != Reset {
             self.reset_flag = false;
         }
 
-        if data.sim.get_state() == State::RunningUntilEvent {
+        let running = data.sim.get_state() == State::RunningUntilEvent;
+
+        if running {
             execution_colour = c!(Pause);
+            step_over_colour = c!(StepBLight);
+            step_in_colour = c!(StepBLight);
+            step_out_colour = c!(StepBLight);
         }
 
         match self.focus {
@@ -234,7 +242,7 @@ where
         self.reset_button = create_rect(8, 1, area);
         self.load_button = create_rect(9, 1, area);
 
-        let state = match data.sim.get_state() {
+        let state = match State::RunningUntilEvent {
             State::Halted => "HALTED",
             State::Paused => "PAUSED",
             State::RunningUntilEvent => "RUNNING",
@@ -313,7 +321,7 @@ where
         para.draw(self.step_out_button,buf);
 
         let mut vec = Vec::new();
-        if data.sim.get_state() == State::RunningUntilEvent{
+        if running {
             vec.push(TuiText::styled("Pause", Style::default().fg(c!(Pause))));
         } else {
             vec.push(TuiText::styled("Run", Style::default().fg(c!(Run))));
@@ -360,8 +368,10 @@ where
 
         // If we're currently running an event and the state changes, we've got
         // ourselves an event.
+        let running = data.sim.get_state() == State::RunningUntilEvent;
+
         if let Some(_) = self.event_fut {
-            if State::RunningUntilEvent != data.sim.get_state() {
+            if !running {
                 let event = block_on(self.event_fut.take().unwrap());
                 
                 assert!(data.current_event.is_none()); // We're being defensive; I thini this holds.
@@ -391,20 +401,20 @@ where
             Mouse(MouseEvent::Down(_, x, y, _)) => {
                 if self.execution_control_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = ExecutionControl;
-                    if data.sim.get_state() == State::RunningUntilEvent{
+                    if running {
                         self.pause(data)
                     } else {
                         self.run(data);
                     }
-                } else if self.step_over_button.intersects(Rect::new(x,y,1,1)) {
+                } else if !running && self.step_over_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepOver;
                     StepControl::step_over(data.sim);
                     self.run(data);
-                } else if self.step_in_button.intersects(Rect::new(x,y,1,1)) {
+                } else if !running && self.step_in_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepIn;
                     StepControl::step_in(data.sim);
                     self.step(data);
-                } else if self.step_out_button.intersects(Rect::new(x,y,1,1)) {
+                } else if !running && self.step_out_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepOut;
                     StepControl::step_out(data.sim);
                     self.run(data);
@@ -425,7 +435,9 @@ where
 
             Key(e) => match e {
                 KeyEvent { code: KeyCode::Char('s'), modifiers: KeyModifiers::CONTROL } => {
-                    self.step(data);
+                    if !running {
+                        self.step(data);
+                    }
                     true
                 }
                 KeyEvent { code: KeyCode::Char('p'), modifiers: KeyModifiers::CONTROL } => {
@@ -453,22 +465,28 @@ where
                 KeyEvent { code: KeyCode::Enter, modifiers: EMPTY } => {
                     match self.focus {
                         ExecutionControl => {
-                            if data.sim.get_state() == State::RunningUntilEvent{
+                            if running {
                                 self.pause(data)
                             } else {
                                 self.run(data);
                             }
                         },
                         StepOver => {
-                            StepControl::step_over(data.sim);
+                            if !running {
+                                StepControl::step_over(data.sim);
+                            }
                             self.run(data);
                         },
                         StepIn => {
-                            StepControl::step_in(data.sim);
+                            if !running {
+                                StepControl::step_in(data.sim);
+                            }
                             self.step(data);
                         }
                         StepOut => {
-                            StepControl::step_out(data.sim);
+                            if !running {
+                                StepControl::step_out(data.sim);
+                            }
                             self.run(data);
                         },
                         Reset => {
@@ -506,6 +524,9 @@ where
                         Load => Reset,
                         NoFocus => NoFocus,
                     };
+                    if running && self.focus == StepOut {
+                        self.focus = ExecutionControl;
+                    }
                     true
                 }
                 _ => false,

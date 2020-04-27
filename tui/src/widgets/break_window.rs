@@ -66,6 +66,9 @@ where
         let mut t_i = Vec::new();
         let mut t_a = Vec::new();
 
+        t_i.push(TuiText::styled("#\n",Style::default().fg(c!(NumT))));
+        t_a.push(TuiText::styled("Address\n",Style::default().fg(c!(AddrT))));
+
         let mut event_highlight = 200;
         let mut i = 0;
 
@@ -106,9 +109,9 @@ where
                 self.highlight_addr = *bp_addr;
             } else {
                 let x = format!("{}\n", i);
-                t_i.push(TuiText::styled(x,Style::default().fg(c!(Title))));
+                t_i.push(TuiText::styled(x,Style::default().fg(c!(Num))));
                 let x = format!("{:#06x}\n",bp_addr);
-                t_a.push(TuiText::styled(x, Style::default().fg(c!(Name))));
+                t_a.push(TuiText::styled(x, Style::default().fg(c!(Addr))));
             }
             
             i = i + 1;
@@ -137,7 +140,7 @@ where
             Focus(FocusEvent::LostFocus) => true,
             Mouse(MouseEvent::Up(_, _, _, _)) => true,
             Mouse(MouseEvent::Down(_, _, y, _)) => {
-                let y = y.wrapping_sub(self.position.y);
+                let y = y.wrapping_sub(self.position.y).wrapping_sub(1);
                 self.highlight = y;
                 true
             }
