@@ -4,6 +4,8 @@ use super::widget_impl_support::*;
 
 use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
 
+use std::sync::RwLock;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Gpio {
     pub focusable: bool,
@@ -68,8 +70,16 @@ where
                     disabled_string, ));
                 }
                 GpioState::Output => {
-                    let output_string = "Output";
-                    s1.push_str(&format!("{}\n", 
+                    let mut output_string = String::from("Output");
+
+                    if let Some(shims) = &data.shims {
+                        match RwLock::read(&shims.gpio).unwrap().get_pin(gpio_pins_1[i]).unwrap() {
+                            true => output_string.push_str(": 1"),
+                            false => output_string.push_str(": 0"),
+                        }
+                    }
+
+                    s1.push_str(&format!("{}\n",
                     output_string, ));
                 },
 
@@ -149,8 +159,16 @@ where
                         disabled_string, ));
                     },
                     GpioState::Output => {
-                        let output_string = "Output";
-                        s2.push_str(&format!("{}\n", 
+                        let mut output_string = String::from("Output");
+
+                        if let Some(shims) = &data.shims {
+                            match RwLock::read(&shims.gpio).unwrap().get_pin(gpio_pins_2[i]).unwrap() {
+                                true => output_string.push_str(": 1"),
+                                false => output_string.push_str(": 0"),
+                            }
+                        }
+
+                        s2.push_str(&format!("{}\n",
                         output_string, ));
                     },
                     _ => {
