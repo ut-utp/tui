@@ -406,7 +406,7 @@ where
                 } else if self.step_in_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepIn;
                     StepControl::step_in(data.sim);
-                    self.step(data);
+                    self.run(data);
                 } else if self.step_out_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepOut;
                     StepControl::step_out(data.sim);
@@ -468,7 +468,7 @@ where
                         },
                         StepIn => {
                             StepControl::step_in(data.sim);
-                            self.step(data);
+                            self.run(data);
                         }
                         StepOut => {
                             StepControl::step_out(data.sim);
