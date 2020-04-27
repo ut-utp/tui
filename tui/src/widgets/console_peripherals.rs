@@ -119,7 +119,7 @@ where
                         if self.input.len() > 0 {
                             self.input.remove(self.input.len()-1);
                         }
-                        
+
 
                         true
 
