@@ -332,7 +332,7 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         // Report Device Code
                                         'c' if s.pop() == Some('0') && s.len() >= 2 => {
 
-                                            if let Ok(dev_code) = s.parse::<u16>() {
+                                            if let Ok(_dev_code) = s.parse::<u16>() {
                                                 /* Unsupported */
                                                 break;
                                             } else {

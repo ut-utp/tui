@@ -487,7 +487,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lc3-application-support"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#23b45a92a42dfbc597ec9c43331e5915d94ebe04"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
 dependencies = [
  "lazy_static",
  "lc3-baseline-sim",
@@ -514,7 +514,7 @@ dependencies = [
 [[package]]
 name = "lc3-baseline-sim"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#23b45a92a42dfbc597ec9c43331e5915d94ebe04"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
 dependencies = [
  "lc3-isa",
  "lc3-macros",
@@ -525,7 +525,7 @@ dependencies = [
 [[package]]
 name = "lc3-device-support"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#23b45a92a42dfbc597ec9c43331e5915d94ebe04"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
 dependencies = [
  "embedded-hal",
  "lc3-isa",
@@ -540,7 +540,7 @@ dependencies = [
 [[package]]
 name = "lc3-isa"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#23b45a92a42dfbc597ec9c43331e5915d94ebe04"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
 dependencies = [
  "lc3-macros",
  "serde",
@@ -550,7 +550,7 @@ dependencies = [
 [[package]]
 name = "lc3-macros"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#23b45a92a42dfbc597ec9c43331e5915d94ebe04"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -560,7 +560,7 @@ dependencies = [
 [[package]]
 name = "lc3-os"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#23b45a92a42dfbc597ec9c43331e5915d94ebe04"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
 dependencies = [
  "lazy_static",
  "lc3-baseline-sim",
@@ -574,7 +574,7 @@ dependencies = [
 [[package]]
 name = "lc3-shims"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#23b45a92a42dfbc597ec9c43331e5915d94ebe04"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
 dependencies = [
  "byteorder",
  "chrono",
@@ -589,7 +589,7 @@ dependencies = [
 [[package]]
 name = "lc3-traits"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#23b45a92a42dfbc597ec9c43331e5915d94ebe04"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
 dependencies = [
  "lc3-isa",
  "lc3-macros",
