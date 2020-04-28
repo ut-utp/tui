@@ -83,7 +83,9 @@ palette! {
 
     Focus = TuiColour::Red,
     Reset = TuiColour::Red,
-    Load = TuiColour::Cyan,
+    LoadText = TuiColour::Cyan,
+    LoadNoChanges = TuiColour::Reset,
+    LoadPendingChanges = TuiColour::Red,
 
     Title = TuiColour::Rgb(0xFF, 0x97, 0x40),
     Border = TuiColour::Blue,
@@ -99,10 +101,6 @@ palette! {
 
     InProgress = TuiColour::Magenta,
     Disabled = TuiColour::DarkGray,
-
-    LoadText = TuiColour::White,
-    LoadPendingChanges = TuiColour::Cyan,
-    LoadNoChanges = TuiColour::Gray,
 }
 
 declare_palette! { DefaultPalette = { }}
