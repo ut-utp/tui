@@ -48,12 +48,14 @@ where
         self.position = area;
         let mut flag = false;
         let mut event_flag = false;
-        if self.bp_len != data.bp.len().try_into().unwrap() {
+
+        let num_bps: u16 = data.bp.len().try_into().unwrap();
+        if self.bp_len != num_bps {
             if self.highlight != 200 {
                 flag = true;
                 self.highlight = 200;
             }
-            self.bp_len = data.bp.len().try_into().unwrap();
+            self.bp_len = num_bps;
         }
 
         let mut event_addr: Addr = 0;
@@ -62,7 +64,7 @@ where
             event_addr = addr;
         }
 
-        
+
         let mut t_i = Vec::new();
         let mut t_a = Vec::new();
 
@@ -101,7 +103,7 @@ where
                 t_i.push(TuiText::styled(x,Style::default().fg(c!(Breakpoint))));
                 let x = format!("{:#06x}\n",bp_addr);
                 t_a.push(TuiText::styled(x, Style::default().fg(c!(Breakpoint))));
-            } else if i == self.highlight { 
+            } else if i == self.highlight {
                 let x = format!("{}\n", i);
                 t_i.push(TuiText::styled(x,Style::default().fg(c!(Highlight))));
                 let x = format!("{:#06x}\n",bp_addr);
@@ -113,7 +115,7 @@ where
                 let x = format!("{:#06x}\n",bp_addr);
                 t_a.push(TuiText::styled(x, Style::default().fg(c!(Addr))));
             }
-            
+
             i = i + 1;
         }
 

@@ -45,12 +45,14 @@ where
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         self.position = area;
         let mut flag = false;
-        if self.wp_len != data.wp.len().try_into().unwrap() {
+
+        let num_wps: u16 = data.wp.len().try_into().unwrap();
+        if self.wp_len != num_wps {
             if self.highlight != 200 {
                 flag = true;
                 self.highlight = 200;
             }
-            self.wp_len = data.wp.len().try_into().unwrap();
+            self.wp_len = num_wps;
         }
 
         let mut event_flag = false;
@@ -59,7 +61,7 @@ where
             event_flag = true;
             event_addr = addr;
         }
-    
+
         let mut t_i = Vec::new();
         let mut t_a = Vec::new();
         let mut t_v = Vec::new();
@@ -102,7 +104,7 @@ where
                 t_a.push(TuiText::styled(x, Style::default().fg(c!(Watchpoint))));
                 let x = format!("{:#018b} {:#06x} {:#05}\n",data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr), data.sim.read_word(*wp_addr));
                 t_v.push(TuiText::styled(x, Style::default().fg(c!(Watchpoint))));
-            } else if i == self.highlight { 
+            } else if i == self.highlight {
                 let x = format!("{}\n", i);
                 t_i.push(TuiText::styled(x,Style::default().fg(c!(Highlight))));
                 let x = format!("{:#06x}\n",wp_addr);
