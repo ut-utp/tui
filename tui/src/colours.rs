@@ -99,6 +99,10 @@ palette! {
 
     InProgress = TuiColour::Magenta,
     Disabled = TuiColour::DarkGray,
+
+    LoadText = TuiColour::White,
+    LoadPendingChanges = TuiColour::Cyan,
+    LoadNoChanges = TuiColour::Gray,
 }
 
 declare_palette! { DefaultPalette = { }}
