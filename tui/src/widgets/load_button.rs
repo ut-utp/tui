@@ -2,11 +2,14 @@
 
 use super::widget_impl_support::*;
 
+use lc3_isa::util::MemoryDump;
 use lc3_traits::control::load::{load_whole_memory_dump, Progress, LoadMemoryProgress};
+use lc3_traits::control::metadata::{LongIdentifier, ProgramMetadata, ProgramId};
 
 use std::path::PathBuf;
-use std::time::{Duration, Instant};
-use std::sync::mpsc;
+use std::time::{Duration, Instant, SystemTime};
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread::Builder as ThreadBuilder;
 
 use crossbeam::thread::scope;
 use std::fs;
@@ -49,10 +52,13 @@ impl Attempt {
 }
 
 // No block!
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug)]
 pub struct LoadButton {
     area: Option<Rect>,
     attempt: Option<Attempt>,
+    last_file_check_time: Mutex<Option<SystemTime>>, // We don't actually need this field to be Sync but we need the struct to be Sync which is why we're using a Mutex instead of just a Cell.
+    program_is_out_of_date: Arc<Mutex<bool>>,
+    assembler_background_thread_running: Arc<Mutex<bool>>,
     fullscreen_load: bool,
 }
 
@@ -62,6 +68,10 @@ impl LoadButton {
             area: None,
             attempt: None,
             fullscreen_load: true,
+
+            last_file_check_time: Mutex::new(None),
+            program_is_out_of_date: Arc::new(Mutex::new(false)),
+            assembler_background_thread_running: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -133,37 +143,32 @@ impl LoadButton {
                     .render(&mut f, info);
             });
 
-            let path_str = path.clone().into_os_string().into_string().unwrap();
-            let string = fs::read_to_string(path).unwrap();
-            let src = string.as_str();
-            let lexer = Lexer::new(src);
-            let cst = parse(lexer, LeniencyLevel::Lenient);
-
-            let errors = extract_file_errors(cst.clone());
-            if errors.len() > 0 {
-                let mut error_string = String::new();
-                for error in errors {
-                    let label_string = error.message();
-                    let label = label_string.as_str();
-                    let annotations = error.annotations();
-                    let slices = slices(annotations, src, Some(path_str.as_str()));
-                    let snippet = create_snippet(label, slices);
-                    let dl = DisplayList::from(snippet);
-                    error_string = format!("{}\n{}", error_string, dl);
-                }
-                let error_string = error_string.replace("\n", "\n|");
-                return Err(error_string);
-            }
-            let background = Some(lc3_os::OS_IMAGE.clone());
-
-            assemble(cst.objects, background)  // TODO: can still fail. fix in assembler.
+            assemble_mem_dump(path)?
         } else {
-            lc3_shims::memory::FileBackedMemoryShim::from_existing_file(path)
+            FileBackedMemoryShim::from_existing_file(path)
                 .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", p, e))?
                 .into()
         };
 
-        // let shim = lc3_shims::memory::FileBackedMemoryShim::from_existing_file(&assembled_file_path)
+        const DEFAULT_IDENT: LongIdentifier = LongIdentifier::new_from_str_that_crashes_on_invalid_inputs("<<file>>");
+
+        let ident = if let Some(fname) = path.file_name().and_then(|f| f.to_str()) {
+            let ident: String = fname.chars()
+                .chain(core::iter::repeat(' '))
+                .take(LongIdentifier::MAX_LEN)
+                .collect();
+
+            LongIdentifier::new_from_str(ident.as_str())
+                .unwrap_or(DEFAULT_IDENT)
+        } else {
+            DEFAULT_IDENT
+        };
+
+        let mut metadata = ProgramMetadata::new_modified_now(ident, &memory_dump);
+
+        if let Ok(t) = path.metadata().and_then(|m| m.modified()) {
+            metadata.modified_on(t);
+        }
 
         let progress = Progress::new_with_time().unwrap();
 
