@@ -11,12 +11,11 @@ use lc3_application_support::event_loop::Backoff;
 use lc3_application_support::io_peripherals::{InputSink, OutputSource};
 
 use chrono::{DateTime, offset::Local};
-use crossterm::{ExecutableCommand, execute};
-use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::ExecutableCommand;
 use crossterm::event::{KeyEvent, KeyCode, KeyModifiers, DisableMouseCapture};
 use failure::err_msg;
 use tui::terminal::Terminal;
-use tui::backend::{Backend, CrosstermBackend};
+use tui::backend::Backend;
 use tui::widgets::Text as TuiText;
 use tui::layout::Rect;
 use tui::style::{Color, Style};
@@ -164,12 +163,16 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
     }
 
     // Run with crossterm; with or without your own special layout.
-    pub fn run_with_crossterm(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, CrosstermBackend<Stdout>>>) -> Result<()> {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn run_with_crossterm(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<Stdout>>>) -> Result<()> {
+        use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
+        use crossterm::execute;
+
         let mut stdout = std::io::stdout();
         execute!(stdout, EnterAlternateScreen)?;
         crossterm::terminal::enable_raw_mode()?;
 
-        let backend = CrosstermBackend::new(stdout);
+        let backend = tui::backend::CrosstermBackend::new(stdout);
         let mut terminal = Terminal::new(backend)?;
 
         terminal.hide_cursor()?;

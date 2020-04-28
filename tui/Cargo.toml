@@ -45,7 +45,12 @@ log = "0.4.8"
 pin-utils = "0.1.0-alpha.4"
 lazy_static = "1.4.0"
 
-crossterm = "0.17.1"
+# TODO: switch to not using this fork, eventually.
+crossterm = { git = "https://github.com/ut-utp/crossterm", version = "0.17.3"}
+
+# # No crossterm dep on wasm.
+# [target.'cfg(not(target_arch = "wasm32"))'.dependencies.cros !!sterm]
+# version = "0.17.1"
 
 # Version hack:
 # No crossterm feature in the tui on wasm:
