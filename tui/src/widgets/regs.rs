@@ -180,7 +180,7 @@ where
 
         let text = [
             TuiText::styled("R4:\nR5:\nR6:\nR7:\n", Style::default().fg(c!(Name))),
-            TuiText::styled("PC:\nn:\nz:\np:\n", Style::default().fg(c!(PC))),
+            TuiText::styled("PC:\nnzp: ", Style::default().fg(c!(PC))),
         ];
 
         para = Paragraph::new(text.iter())
@@ -201,11 +201,14 @@ where
         }
         let s = format!("{:#018b} {:#06x} {:#05}\n", pc, pc, pc);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.2)));
-        let s = format!("{}\n", n);
+        reg_v.push(TuiText::styled(format!("n: "), Style::default().fg(c!(PC))));
+        let s = format!("{}  ", n);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[2])));
-        let s = format!("{}\n", z);
+        reg_v.push(TuiText::styled(format!("z: "), Style::default().fg(c!(PC))));
+        let s = format!("{}  ", z);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[3])));
-        let s = format!("{}\n", p);
+        reg_v.push(TuiText::styled(format!("p: "), Style::default().fg(c!(PC))));
+        let s = format!("{}  ", p);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[4])));
 
         para = Paragraph::new(reg_v.iter())
