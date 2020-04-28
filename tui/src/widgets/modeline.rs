@@ -6,9 +6,9 @@ use ModelineFocus::*;
 use core::future::Future;
 use core::task::{Context, Waker, Poll};
 
-use lc3_os::USER_PROG_START_ADDR;
-
 use lc3_traits::control::{Event, State, StepControl};
+use lc3_os::USER_PROG_START_ADDR;
+use lc3_isa::{Addr, OS_START_ADDR};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ModelineFocus {
@@ -137,6 +137,47 @@ where
         drop(data.current_event.take())
     }
 
+    fn go_to_os(&self, data: &mut TuiData<'a, 'int, C, I, O>) {
+        // Only do this if we're using the OS.
+        if !data.use_os {
+            return;
+        }
+
+        let start_addr: Addr = data.sim.read_word(USER_PROG_START_ADDR);
+
+        // If the start addr is 0 somehow, assume that we're not actually using
+        // the OS / that something went wrong.
+        //
+        // Also don't do this if we're not at the OS start location.
+
+        if start_addr == 0 {
+            log::warn!("No user prog start address specified at {:#4X}.",
+                USER_PROG_START_ADDR);
+
+            return;
+        }
+
+        if data.sim.get_pc() != OS_START_ADDR {
+            log::warn!("Tried to skip the OS startup when not at the \
+                OS Start location! Expected to be at {:#4X}; was actually at \
+                {:#4X}.", data.sim.get_pc(), OS_START_ADDR);
+
+            return;
+        }
+
+        while data.sim.get_pc() != start_addr {
+            self.step(data);
+
+            // If we get an event while running the OS startup, bail.
+            //
+            // This allows users to set breakpoints in the OS if they so choose.
+            if let Some(event) = data.current_event {
+                log::warn!("Got an event while trying to skip past the OS! \
+                    At PC = {:#4X}, event: `{:?}`.", data.sim.get_pc(), event);
+            }
+        }
+    }
+
     fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
         data.log("[modeline] Resetting Sim\n", c!(Pause));
         data.sim.reset();
@@ -153,6 +194,8 @@ where
 
         // TODO: find a better workaround than this:
         data.sim.reset();
+
+        self.go_to_os(data);
 
         data.log("[modeline] Reset Complete\n", c!(Success));
         drop(data.current_event.take())
@@ -406,9 +449,7 @@ where
         }
 
         if self.load_flag != data.load_flag {
-            while data.sim.get_pc() != data.sim.read_word(USER_PROG_START_ADDR) {
-                self.step(data);
-            }
+            self.go_to_os(data);
             self.load_flag = data.load_flag;
         }
 
