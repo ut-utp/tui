@@ -83,8 +83,8 @@ palette! {
     Help = TuiColour::Green,
 
     Modeline = TuiColour::White,
-    StepB = TuiColour::Cyan,
-    StepBLight = TuiColour::Rgb(0xA7, 0xE2, 0xE2),
+    StepButtons = TuiColour::Cyan,
+    // StepBLight = TuiColour::Rgb(0xA7, 0xE2, 0xE2),
     LoadB = TuiColour::White,
     mDefault = TuiColour::DarkGray,
 
@@ -92,6 +92,7 @@ palette! {
     CallStackUserMode = TuiColour::Green,
 
     InProgress = TuiColour::Magenta,
+    Disabled = TuiColour::DarkGray,
 }
 
 declare_palette! { DefaultPalette = { }}
