@@ -253,7 +253,84 @@ impl LoadButton {
             res
         }).unwrap()
         .map_err(|e| format!("Error during load: {:?}", e))
-        .map(|_| format!("Successful Load (`{}`)! Finished in {}.", p, chrono::Duration::from_std(progress.time_elapsed().unwrap()).unwrap()))
+        .map(|_| {
+            *self.program_is_out_of_date.lock().unwrap() = false;
+            *self.last_file_check_time.lock().unwrap() = Some(SystemTime::now());
+
+            // Update the metadata:
+            sim.set_program_metadata(metadata);
+
+            format!("Successful Load (`{}`)! Finished in {}.", p, chrono::Duration::from_std(progress.time_elapsed().unwrap()).unwrap())
+        })
+    }
+
+    fn check_for_program_changes<C: Control + ?Sized>(&self, p: &PathBuf, sim: &C) {
+        // An optimization would be to check if we're already out of date (and
+        // then to just not do any additional checks if so). Unfortunately if
+        // the file gets modified and then changed back we want to correctly say
+        // that a reload isn't needed so we can't do this.
+
+        // Check if we're already up to date:
+        // (if the last check time is more recent than the file modification time)
+        let last_file_check_time = self.last_file_check_time.lock().unwrap().unwrap_or(SystemTime::UNIX_EPOCH);
+        let file_modified_at = p.metadata().and_then(|m| m.modified()).unwrap_or(SystemTime::UNIX_EPOCH);
+
+        if file_modified_at <= last_file_check_time { return; }
+
+        *self.last_file_check_time.lock().unwrap() = Some(SystemTime::now());
+
+        let current_hash = sim.get_program_metadata().id;
+
+        if file_requires_assembly(p) {
+            let running = self.assembler_background_thread_running.lock().unwrap();
+
+            // If we're already running an assembler thread, bail.
+            if *running { return }
+            drop(running);
+
+            // Otherwise, re-assemble and check if the actual memory dump is any
+            // different.
+            let out_of_date = self.program_is_out_of_date.clone();
+            let running = self.assembler_background_thread_running.clone();
+            let path = p.clone();
+
+            ThreadBuilder::new()
+                .name("TUI: Assembler Background Thread".to_string())
+                .stack_size(32 * 1024 * 1024)
+                .spawn(move || {
+                    if let Ok(mem) = assemble_mem_dump(&path)  {
+                        if ProgramId::new(&mem) != current_hash {
+                            *out_of_date.lock().unwrap() = true;
+                        } else {
+                            // This covers the case where the file switched _back_.
+                            *out_of_date.lock().unwrap() = false;
+                        }
+                    } else {
+                        // Since the program no longer assembles things are
+                        // indeed out of date.
+                        *out_of_date.lock().unwrap() = true;
+
+                        // Don't report errors here; they'll know when they try
+                        // to load the program.
+                    }
+
+                    *running.lock().unwrap() = false;
+                })
+                .unwrap();
+
+        } else {
+            if let Ok(f) = FileBackedMemoryShim::from_existing_file(p) {
+                if f.metadata.id != current_hash {
+                    *self.program_is_out_of_date.lock().unwrap() = true;
+                } else {
+                    // This covers the case where the file switched _back_.
+                    *self.program_is_out_of_date.lock().unwrap() = false;
+                }
+            } else {
+                // If it failed to load, let's call it out of date.
+                *self.program_is_out_of_date.lock().unwrap() = true;
+            }
+        }
     }
 }
 
@@ -293,6 +370,33 @@ fn slices<'input>(annotations: Vec<SourceAnnotation<'input>>, source: &'input st
     slices
 }
 
+fn assemble_mem_dump(path: &PathBuf) -> Result<MemoryDump, String> {
+    let path_str = path.clone().into_os_string().into_string().unwrap();
+    let string = fs::read_to_string(path).unwrap();
+    let src = string.as_str();
+    let lexer = Lexer::new(src);
+    let cst = parse(lexer, LeniencyLevel::Lenient);
+
+    let errors = extract_file_errors(cst.clone());
+    if errors.len() > 0 {
+        let mut error_string = String::new();
+        for error in errors {
+            let label_string = error.message();
+            let label = label_string.as_str();
+            let annotations = error.annotations();
+            let slices = slices(annotations, src, Some(path_str.as_str()));
+            let snippet = create_snippet(label, slices);
+            let dl = DisplayList::from(snippet);
+            error_string = format!("{}\n{}", error_string, dl);
+        }
+        let error_string = error_string.replace("\n", "\n|");
+        return Err(error_string);
+    }
+    let background = Some(lc3_os::OS_IMAGE.clone());
+
+    Ok(assemble(cst.objects, background))  // TODO: can still fail. fix in assembler.
+}
+
 impl TuiWidget for LoadButton {
     fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
         unimplemented!("Don't call this! We need TuiData to draw!")
@@ -330,6 +434,8 @@ where
             Some(p) => {
                 let (text, gauge) = Self::split_for_text_and_gauge(area);
 
+                self.check_for_program_changes(p, data.sim);
+
                 // Paragraph::new([msg1].iter())
                 //     .style(Style::default().fg(Colour::White))
                 //     .alignment(Alignment::Center)
@@ -350,7 +456,9 @@ where
 
                         let file_name = trim_to_width(file_name, area.width - 2);
 
-                        let msg1 = TuiText::styled(format!("`{}`", file_name), Style::default().fg(c!(Load)));
+                        let msg1 = TuiText::styled(format!("`{}`", file_name), Style::default().fg(c!(LoadText)).bg(
+                            if *self.program_is_out_of_date.lock().unwrap() { c!(LoadPendingChanges) } else { c!(LoadNoChanges) }
+                        ));
 
                         Paragraph::new([msg1].iter())
                             .style(Style::default().fg(Colour::White))
