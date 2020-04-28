@@ -137,7 +137,7 @@ where
         drop(data.current_event.take())
     }
 
-    fn go_to_os(&self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn go_to_os(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
         // Only do this if we're using the OS.
         if !data.use_os {
             return;

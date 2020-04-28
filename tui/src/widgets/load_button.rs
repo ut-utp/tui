@@ -264,7 +264,7 @@ impl LoadButton {
         })
     }
 
-    fn check_for_program_changes<C: Control + ?Sized>(&self, p: &PathBuf, with_os: bool, sim: &C) {
+    fn check_for_program_changes<C: Control + ?Sized>(&self, sim: &C, p: &PathBuf, with_os: bool) {
         // An optimization would be to check if we're already out of date (and
         // then to just not do any additional checks if so). Unfortunately if
         // the file gets modified and then changed back we want to correctly say
@@ -434,7 +434,7 @@ where
             Some(p) => {
                 let (text, gauge) = Self::split_for_text_and_gauge(area);
 
-                self.check_for_program_changes(p, data.sim, data.with_os);
+                self.check_for_program_changes(data.sim, p, data.use_os);
 
                 // Paragraph::new([msg1].iter())
                 //     .style(Style::default().fg(Colour::White))

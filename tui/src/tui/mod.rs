@@ -255,7 +255,7 @@ where
     }
 
     pub fn set_use_os(&mut self, use_os: bool) -> &mut Self {
-        self.use_os = use_os;
+        self.data.use_os = use_os;
         self
     }
 
