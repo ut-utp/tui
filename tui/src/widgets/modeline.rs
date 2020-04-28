@@ -137,7 +137,7 @@ where
         drop(data.current_event.take())
     }
 
-    fn go_to_os(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn skip_os(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
         // Only do this if we're using the OS.
         if !data.use_os {
             return;
@@ -165,16 +165,29 @@ where
             return;
         }
 
-        while data.sim.get_pc() != start_addr {
-            self.step(data);
+        // kludge to support breakpoints at _exactly_ 0x200:
+        if data.sim.get_breakpoints()
+            .iter()
+            .filter_map(|a| *a)
+            .any(|addr| addr == OS_START_ADDR)
+        {
+            log::trace!("BP on OS Start Address ({:#4X})!", OS_START_ADDR);
 
+            return;
+        }
+
+        while data.sim.get_pc() != start_addr {
             // If we get an event while running the OS startup, bail.
             //
             // This allows users to set breakpoints in the OS if they so choose.
             if let Some(event) = data.current_event {
-                log::warn!("Got an event while trying to skip past the OS! \
+                log::trace!("Got an event while trying to skip past the OS! \
                     At PC = {:#4X}, event: `{:?}`.", data.sim.get_pc(), event);
+
+                return;
             }
+
+            self.step(data);
         }
     }
 
@@ -195,7 +208,7 @@ where
         // TODO: find a better workaround than this:
         data.sim.reset();
 
-        self.go_to_os(data);
+        self.skip_os(data);
 
         data.log("[modeline] Reset Complete\n", c!(Success));
         drop(data.current_event.take())
@@ -449,7 +462,7 @@ where
         }
 
         if self.load_flag != data.load_flag {
-            self.go_to_os(data);
+            self.skip_os(data);
             self.load_flag = data.load_flag;
         }
 

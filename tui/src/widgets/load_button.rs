@@ -392,7 +392,12 @@ fn assemble_mem_dump(path: &PathBuf, with_os: bool) -> Result<MemoryDump, String
         let error_string = error_string.replace("\n", "\n|");
         return Err(error_string);
     }
-    let background = Some(lc3_os::OS_IMAGE.clone());
+
+    let background = if with_os {
+        Some(lc3_os::OS_IMAGE.clone())
+    } else {
+        None
+    };
 
     Ok(assemble(cst.objects, background))  // TODO: can still fail. fix in assembler.
 }
