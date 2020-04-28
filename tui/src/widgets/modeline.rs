@@ -253,7 +253,7 @@ where
         self.reset_button = create_rect(8, 1, area);
         self.load_button = create_rect(9, 1, area);
 
-        let state = match State::RunningUntilEvent {
+        let state = match data.sim.get_state() {
             State::Halted => "HALTED",
             State::Paused => "PAUSED",
             State::RunningUntilEvent => "RUNNING",
