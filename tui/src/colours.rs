@@ -90,6 +90,8 @@ palette! {
 
     CallStackSupervisorMode = TuiColour::Red,
     CallStackUserMode = TuiColour::Green,
+
+    InProgress = TuiColour::Magenta,
 }
 
 declare_palette! { DefaultPalette = { }}

@@ -98,7 +98,41 @@ impl LoadButton {
         // over the program source (i.e. can come from files, URLs, etc; should
         // work on wasm too).
 
-        let assembled_file_path = if file_requires_assembly(path) {
+        let memory_dump = if file_requires_assembly(path) {
+            terminal.draw(|mut f| {
+                // TODO: spin this boilerplate into a function.
+                let area = if self.fullscreen_load {
+                    f.size()
+                } else if let Some(area) = self.area {
+                    area
+                } else {
+                    return; // don't draw if we don't have a rect
+                };
+
+                let (_, area) = Self::split_for_text_and_gauge(area);
+
+                let chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                    .split(area);
+
+                let (_, info) = (chunks[0], chunks[1]);
+
+                // If the screen changed and we're not displayed
+                // anymore, skip the redraw (so we don't crash).
+                if f.size().intersection(area) != area {
+                    return;
+                }
+
+                Paragraph::new([
+                        TuiText::styled(format!("Assembling..\n"), Style::default().fg(c!(InProgress))),
+                    ].iter())
+                    .style(Style::default().fg(Colour::White))
+                    .alignment(Alignment::Center)
+                    .wrap(true)
+                    .render(&mut f, info);
+            });
+
             let path_str = path.clone().into_os_string().into_string().unwrap();
             let string = fs::read_to_string(path).unwrap();
             let src = string.as_str();
