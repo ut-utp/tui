@@ -151,12 +151,14 @@ where
                     self.propagate_to_main(event, data, terminal)
                 }
 
-                KeyEvent { code: KeyCode::Char('s'), modifiers: KeyModifiers::CONTROL } => {
-                    self.propagate_to_footer(event, data, terminal)
-                }
-                KeyEvent { code: KeyCode::Char('p'), modifiers: KeyModifiers::CONTROL } => {
-                    self.propagate_to_footer(event, data, terminal)
-                }
+                KeyEvent { code: KeyCode::Char('i'), modifiers: KeyModifiers::ALT } |
+                KeyEvent { code: KeyCode::Char('i'), modifiers: KeyModifiers::CONTROL } |
+                KeyEvent { code: KeyCode::Char('o'), modifiers: KeyModifiers::ALT } |
+                KeyEvent { code: KeyCode::Char('o'), modifiers: KeyModifiers::CONTROL } |
+                KeyEvent { code: KeyCode::Char('u'), modifiers: KeyModifiers::ALT } |
+                KeyEvent { code: KeyCode::Char('u'), modifiers: KeyModifiers::CONTROL } |
+                KeyEvent { code: KeyCode::Char('s'), modifiers: KeyModifiers::CONTROL } |
+                KeyEvent { code: KeyCode::Char('p'), modifiers: KeyModifiers::CONTROL } |
                 KeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::CONTROL } => {
                     self.propagate_to_footer(event, data, terminal)
                 }

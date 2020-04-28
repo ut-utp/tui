@@ -113,7 +113,7 @@ where
         }
 
         self.state.push(regs_psr_pc);
-        
+
         let mut colours = self.state.diff();
 
         if self.debug && data.mem_reg_inter.0 == 2 {
@@ -124,8 +124,6 @@ where
                 colours.0[reg as usize] = c!(MemRegHighlight);
             }
         }
-
-        
 
         let text = [
             TuiText::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(c!(Name))),
@@ -165,7 +163,7 @@ where
         let s = match privilege {
             0 => "Supervisor\n",
             1 => "User\n",
-            _ => "Error\n",
+            _ => unreachable!(),
         };
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[0])));
 

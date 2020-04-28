@@ -43,8 +43,9 @@ where
                 Ctrl + a diretional arrow also moves between widgets.\n
                 A lot of widgets have their own keybinds. See the full documentation for assistance.\n
                 Finally, there are universal keybinds:\n
-                Ctrl: + l to load, + r to run, + p to pause, + s to step\n 
-                Ctrl: + t twice to reset.\n", Style::default().fg(c!(Help))),
+                Ctrl: + l to load, + r to run, + p to pause, + s to step\n
+                Ctrl: + t twice to reset.\n
+                Ctrl + u for Step Over, Ctrl + i for Step In (== Step), Ctrl + o for Step Out (these binds also work with Alt — i.e. Alt + u — for machines with issues with Ctrl)", Style::default().fg(c!(Help))),
         ];
 
         // TODO: allow parameterization of this in the usual way.

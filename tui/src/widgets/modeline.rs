@@ -100,6 +100,21 @@ where
         data.current_event = data.sim.step();
     }
 
+    fn step_in(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+        StepControl::step_in(data.sim);
+        self.run(data);
+    }
+
+    fn step_out(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+        StepControl::step_out(data.sim);
+        self.run(data);
+    }
+
+    fn step_over(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+        StepControl::step_over(data.sim);
+        self.run(data);
+    }
+
     fn pause(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
         data.sim.pause();
     }
@@ -480,15 +495,14 @@ where
                     }
                 } else if !running && self.step_over_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepOver;
-                    StepControl::step_over(data.sim);
-                    self.run(data);
+                    self.step_over(data);
                 } else if !running && self.step_in_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepIn;
-                    self.step(data);
+                    // This is eq. to step, but we'll do this for consistency.
+                    self.step_in(data);
                 } else if !running && self.step_out_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepOut;
-                    StepControl::step_out(data.sim);
-                    self.run(data);
+                    self.step_out(data);
                 } else if self.reset_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = Reset;
                     if self.reset_flag{
@@ -505,6 +519,24 @@ where
             }
 
             Key(e) => match e {
+                KeyEvent { code: KeyCode::Char('u'), modifiers: KeyModifiers::ALT } |
+                KeyEvent { code: KeyCode::Char('u'), modifiers: KeyModifiers::CONTROL } => {
+                    if !running { self.step_over(data); }
+                    true
+                }
+
+                KeyEvent { code: KeyCode::Char('i'), modifiers: KeyModifiers::ALT } |
+                KeyEvent { code: KeyCode::Char('i'), modifiers: KeyModifiers::CONTROL } => {
+                    if !running { self.step_in(data); }
+                    true
+                }
+
+                KeyEvent { code: KeyCode::Char('o'), modifiers: KeyModifiers::ALT } |
+                KeyEvent { code: KeyCode::Char('o'), modifiers: KeyModifiers::CONTROL } => {
+                    if !running { self.step_out(data); }
+                    true
+                }
+
                 KeyEvent { code: KeyCode::Char('s'), modifiers: KeyModifiers::CONTROL } => {
                     if !running {
                         self.step(data);
@@ -543,21 +575,13 @@ where
                             }
                         },
                         StepOver => {
-                            if !running {
-                                StepControl::step_over(data.sim);
-                            }
-                            self.run(data);
+                            if !running { self.step_over(data) }
                         },
                         StepIn => {
-                            if !running {
-                                self.step(data);
-                            }
+                            if !running { self.step_in(data); }
                         }
                         StepOut => {
-                            if !running {
-                                StepControl::step_out(data.sim);
-                            }
-                            self.run(data);
+                            if !running { self.step_out(data) }
                         },
                         Reset => {
                              if self.reset_flag{
