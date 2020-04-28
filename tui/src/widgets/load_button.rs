@@ -87,7 +87,7 @@ impl LoadButton {
         }
     }
 
-    fn load<'a, C, B>(&self, sim: &mut C, terminal: &mut Terminal<B>, path: &PathBuf) -> Result<String, String>
+    fn load<'a, C, B>(&self, sim: &mut C, terminal: &mut Terminal<B>, path: &PathBuf, with_os: bool) -> Result<String, String>
     where
         C: Control + ?Sized + 'a,
         B: Backend,
@@ -100,9 +100,9 @@ impl LoadButton {
         }
 
         // TODO: don't bother writing out the assembled program to a file; just
-        // use the already in-memory MemoryDump.
+        // use the already in-memory MemoryDump. (update: this is done)
         //
-        // Better yet use the loadable iterator thing.
+        // Better yet use the loadable iterator thing. (this is not done)
 
         // TODO: spin this off into its own module and introduce an abstraction
         // over the program source (i.e. can come from files, URLs, etc; should
@@ -143,7 +143,7 @@ impl LoadButton {
                     .render(&mut f, info);
             });
 
-            assemble_mem_dump(path)?
+            assemble_mem_dump(path, with_os)?
         } else {
             FileBackedMemoryShim::from_existing_file(path)
                 .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", p, e))?
@@ -264,7 +264,7 @@ impl LoadButton {
         })
     }
 
-    fn check_for_program_changes<C: Control + ?Sized>(&self, p: &PathBuf, sim: &C) {
+    fn check_for_program_changes<C: Control + ?Sized>(&self, p: &PathBuf, with_os: bool, sim: &C) {
         // An optimization would be to check if we're already out of date (and
         // then to just not do any additional checks if so). Unfortunately if
         // the file gets modified and then changed back we want to correctly say
@@ -298,7 +298,7 @@ impl LoadButton {
                 .name("TUI: Assembler Background Thread".to_string())
                 .stack_size(32 * 1024 * 1024)
                 .spawn(move || {
-                    if let Ok(mem) = assemble_mem_dump(&path)  {
+                    if let Ok(mem) = assemble_mem_dump(&path, with_os)  {
                         if ProgramId::new(&mem) != current_hash {
                             *out_of_date.lock().unwrap() = true;
                         } else {
@@ -370,7 +370,7 @@ fn slices<'input>(annotations: Vec<SourceAnnotation<'input>>, source: &'input st
     slices
 }
 
-fn assemble_mem_dump(path: &PathBuf) -> Result<MemoryDump, String> {
+fn assemble_mem_dump(path: &PathBuf, with_os: bool) -> Result<MemoryDump, String> {
     let path_str = path.clone().into_os_string().into_string().unwrap();
     let string = fs::read_to_string(path).unwrap();
     let src = string.as_str();
@@ -434,7 +434,7 @@ where
             Some(p) => {
                 let (text, gauge) = Self::split_for_text_and_gauge(area);
 
-                self.check_for_program_changes(p, data.sim);
+                self.check_for_program_changes(p, data.sim, data.with_os);
 
                 // Paragraph::new([msg1].iter())
                 //     .style(Style::default().fg(Colour::White))
@@ -488,7 +488,7 @@ where
 
                 match data.program_path {
                     Some(ref p) => {
-                        match self.load(data.sim, terminal, p) {
+                        match self.load(data.sim, terminal, p, data.use_os) {
                             Ok(msg) => {
                                 self.attempt = Attempt::succeeded();
                                 data.log(format!("[Load] {}\n", msg), c!(Success))

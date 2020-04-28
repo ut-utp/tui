@@ -43,6 +43,9 @@ where
     pub shims: Option<Shims<'int>>,
 
     pub(in crate) program_path: Option<PathBuf>,
+    /// Determines whether we will tell the assembler to build using the OS
+    /// *and* whether we skip past the OS on loads and resets.
+    pub(in crate) use_os: bool,
 
     pub(in crate) reset_flag: u8,
     pub(in crate) load_flag: u8,
@@ -120,6 +123,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 shims: None,
 
                 program_path: None,
+                use_os: true,
 
                 reset_flag: 0,
                 load_flag: 0,
@@ -247,6 +251,11 @@ where
 {
     pub fn set_program_path(&mut self, path: PathBuf) -> &mut Self {
         self.data.program_path = Some(path);
+        self
+    }
+
+    pub fn set_use_os(&mut self, use_os: bool) -> &mut Self {
+        self.use_os = use_os;
         self
     }
 

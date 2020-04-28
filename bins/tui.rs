@@ -132,6 +132,10 @@ struct Args {
     /// Update period
     #[structopt(short, long, default_value = "50", help = "Update period in milliseconds")]
     update_period: TimeInMs,
+
+    /// Build/run with OS
+    #[structopt(long, default_value = "true", help = "Builds .asm files with the UTP LC-3 OS and skips past the OS on loads and resets when this is enabled")]
+    use_os: bool,
 }
 
 pub fn with_stack_size<R: Send + 'static, F: FnOnce() -> R + Send + 'static>(ss: usize, f: F) -> R {
@@ -164,6 +168,8 @@ fn main() -> Result<(), failure::Error> {
         if let Some(p) = options.program_file {
             tui.set_program_path(p);
         }
+
+        tui.set_use_os(options.use_os);
 
         let name = format!("UTP LC-3 Simulator (running {:#})", options.device);
 
