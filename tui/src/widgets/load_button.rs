@@ -343,7 +343,9 @@ where
                             .and_then(|f| f.to_str())
                             .unwrap_or("<unprintable>");
 
-                        let msg1 = TuiText::styled(format!("Load `{}`", file_name), Style::default().fg(c!(Load)));
+                        let file_name = trim_to_width(file_name, area.width - 2);
+
+                        let msg1 = TuiText::styled(format!("`{}`", file_name), Style::default().fg(c!(Load)));
 
                         Paragraph::new([msg1].iter())
                             .style(Style::default().fg(Colour::White))
