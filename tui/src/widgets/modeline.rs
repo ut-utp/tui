@@ -193,9 +193,9 @@ where
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let mut box_colour = self.colour;
         let mut execution_colour = c!(Run);
-        let mut step_over_colour = c!(StepB);
-        let mut step_in_colour = c!(StepB);
-        let mut step_out_colour = c!(StepB);
+        let mut step_over_colour = c!(StepButtons);
+        let mut step_in_colour = c!(StepButtons);
+        let mut step_out_colour = c!(StepButtons);
         let mut reset_colour = c!(Pause);
         let mut load_colour = c!(LoadB);
 
@@ -203,6 +203,8 @@ where
             box_colour = c!(Focus);
         }
 
+        // TODO: use a time based thing to unset the reset_flag instead of stealing
+        // focus and unsetting it when losing focus..
         if self.focus != Reset {
             self.reset_flag = false;
         }
@@ -211,9 +213,9 @@ where
 
         if running {
             execution_colour = c!(Pause);
-            step_over_colour = c!(StepBLight);
-            step_in_colour = c!(StepBLight);
-            step_out_colour = c!(StepBLight);
+            step_over_colour = c!(Disabled);
+            step_in_colour = c!(Disabled);
+            step_out_colour = c!(Disabled);
         }
 
         match self.focus {
@@ -432,7 +434,7 @@ where
                 } else if !running && self.step_out_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepOut;
                     StepControl::step_out(data.sim);
-                    self.run(data); 
+                    self.run(data);
                 } else if self.reset_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = Reset;
                     if self.reset_flag{

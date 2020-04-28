@@ -268,8 +268,7 @@ dependencies = [
 [[package]]
 name = "crossterm"
 version = "0.17.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccdd8ef63a44e821956c6a276eca0faaa889d6a067dfcdbd5bfe85dce3a1d250"
+source = "git+https://github.com/ut-utp/crossterm#fcf2842e699c9b0e26c6351127621dc4f90c3f90"
 dependencies = [
  "bitflags",
  "crossterm_winapi 0.6.1",
@@ -464,6 +463,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "itoa"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8b7a7c0c47db5545ed3fef7468ee7bb5b74691498139e4b3f6a20685dc6dd8e"
+
+[[package]]
 name = "kernel32-sys"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -482,7 +487,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lc3-application-support"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#846bf9e8b058aca3b83b5f2aee3d367a325b1fbb"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#66ee33755b1268acc3697d7131c8d7729bf02839"
 dependencies = [
  "lazy_static",
  "lc3-baseline-sim",
@@ -494,7 +499,7 @@ dependencies = [
 [[package]]
 name = "lc3-assembler"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/assembler#51e8243fe6cfeb779afbe471e48855465e9ae3b3"
+source = "git+https://github.com/ut-utp/assembler#d974ad1ec657cd953d77b7cbba30e760c90ba6bb"
 dependencies = [
  "annotate-snippets",
  "clap",
@@ -509,7 +514,7 @@ dependencies = [
 [[package]]
 name = "lc3-baseline-sim"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#846bf9e8b058aca3b83b5f2aee3d367a325b1fbb"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#66ee33755b1268acc3697d7131c8d7729bf02839"
 dependencies = [
  "lc3-isa",
  "lc3-macros",
@@ -520,7 +525,7 @@ dependencies = [
 [[package]]
 name = "lc3-device-support"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#846bf9e8b058aca3b83b5f2aee3d367a325b1fbb"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#66ee33755b1268acc3697d7131c8d7729bf02839"
 dependencies = [
  "embedded-hal",
  "lc3-isa",
@@ -535,7 +540,7 @@ dependencies = [
 [[package]]
 name = "lc3-isa"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#846bf9e8b058aca3b83b5f2aee3d367a325b1fbb"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#66ee33755b1268acc3697d7131c8d7729bf02839"
 dependencies = [
  "lc3-macros",
  "serde",
@@ -545,7 +550,7 @@ dependencies = [
 [[package]]
 name = "lc3-macros"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#846bf9e8b058aca3b83b5f2aee3d367a325b1fbb"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#66ee33755b1268acc3697d7131c8d7729bf02839"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -555,7 +560,7 @@ dependencies = [
 [[package]]
 name = "lc3-os"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#846bf9e8b058aca3b83b5f2aee3d367a325b1fbb"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#66ee33755b1268acc3697d7131c8d7729bf02839"
 dependencies = [
  "lazy_static",
  "lc3-baseline-sim",
@@ -569,7 +574,7 @@ dependencies = [
 [[package]]
 name = "lc3-shims"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#846bf9e8b058aca3b83b5f2aee3d367a325b1fbb"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#66ee33755b1268acc3697d7131c8d7729bf02839"
 dependencies = [
  "byteorder",
  "chrono",
@@ -584,12 +589,13 @@ dependencies = [
 [[package]]
 name = "lc3-traits"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#846bf9e8b058aca3b83b5f2aee3d367a325b1fbb"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#66ee33755b1268acc3697d7131c8d7729bf02839"
 dependencies = [
  "lc3-isa",
  "lc3-macros",
  "log",
  "serde",
+ "serde_json",
  "static_assertions",
 ]
 
@@ -999,6 +1005,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c691c0e608126e00913e33f0ccf3727d5fc84573623b8d65b2df340b5201783"
 
 [[package]]
+name = "ryu"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed3d612bc64430efeb3f7ee6ef26d590dce0c43249217bddc62112540c7941e1"
+
+[[package]]
 name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1022,6 +1034,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "serde_json"
+version = "1.0.51"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da07b57ee2623368351e9a0488bb0b261322a15a6e0ae53e243cbdc0f4208da9"
+dependencies = [
+ "itoa",
+ "ryu",
+ "serde",
 ]
 
 [[package]]

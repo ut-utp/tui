@@ -80,6 +80,8 @@ register_strings! { STR_TABLE <- {
     // Log messages:
     HelloMsg => ("Hello\n", "Hello! 👋\n"),
     StartupMsg => ("We're up!\n", "We're up! 🚀\n"),
+
+    DotDotDot => ("..", "……"),
 }}
 
 #[inline]

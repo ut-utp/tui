@@ -1,5 +1,7 @@
 //! Colours used in the tui.
 
+use crate::env::COLOUR_PALETTE_ENV_VAR;
+
 use tui::style::Color as TuiColour;
 
 macro_rules! palette {
@@ -88,11 +90,15 @@ palette! {
     Help = TuiColour::Green,
 
     Modeline = TuiColour::White,
-    StepB = TuiColour::Cyan,
-    StepBLight = TuiColour::Rgb(0xA7,0xE2,0xE2),
+    StepButtons = TuiColour::Cyan,
     LoadB = TuiColour::White,
     mDefault = TuiColour::DarkGray,
 
+    CallStackSupervisorMode = TuiColour::Red,
+    CallStackUserMode = TuiColour::Green,
+
+    InProgress = TuiColour::Magenta,
+    Disabled = TuiColour::DarkGray,
 }
 
 declare_palette! { DefaultPalette = { }}
@@ -105,8 +111,14 @@ declare_palette! { DefaultPalette = { }}
 
 lazy_static::lazy_static! {
     pub static ref PALETTE: CurrentPalette = {
-        // TODO: select based on env vars!
-        DefaultPalette.into()
+        if let Some(palette) = std::env::var_os(COLOUR_PALETTE_ENV_VAR) {
+            match palette.to_str().unwrap() {
+                "nord" => todo!(),
+                _ => DefaultPalette.into(),
+            }
+        } else {
+            DefaultPalette.into()
+        }
     };
 }
 
