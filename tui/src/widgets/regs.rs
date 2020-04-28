@@ -2,7 +2,7 @@
 
 use super::widget_impl_support::*;
 
-use lc3_isa::{Addr, Instruction, Reg, Word};
+use lc3_isa::{Addr, Instruction, Reg, Word, Bits};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct RegDiff {
@@ -26,17 +26,34 @@ impl RegDiff {
         }
     }
 
-    fn diff(&self) -> ([Colour; Reg::NUM_REGS], Colour, Colour) {
-        let mut colours = ([c!(Data); Reg::NUM_REGS], c!(Data), c!(Data));
+    fn diff(&self) -> ([Colour; Reg::NUM_REGS], [Colour; 5], Colour) {
+        let mut colours = ([c!(Data); Reg::NUM_REGS], [c!(Privilege), c!(Priority), c!(n_bit), c!(z_bit), c!(p_bit)], c!(Data));
         for i in 0..Reg::NUM_REGS {
             if self.old.0[i] != self.new.0[i] {
                 colours.0[i] = c!(RegHighlight);
             }
         }
 
-        if self.old.1 != self.new.1 {
-            colours.1 = c!(RegHighlight);
+        if self.old.1.bit(15) != self.new.1.bit(15){
+            colours.1[0] = c!(RegHighlight);
         }
+
+        if self.old.1.bits(8..10) != self.new.1.bits(8..10){
+            colours.1[1] = c!(RegHighlight);
+        }
+
+        if self.old.1.bit(2) != self.new.1.bit(2){
+            colours.1[2] = c!(RegHighlight);
+        }
+
+        if self.old.1.bit(1) != self.new.1.bit(1){
+            colours.1[3] = c!(RegHighlight);
+        }
+
+        if self.old.1.bit(0) != self.new.1.bit(0){
+            colours.1[4] = c!(RegHighlight);
+        }
+
         colours
     }
 }
@@ -81,6 +98,15 @@ where
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let regs_psr_pc = data.sim.get_registers_psr_and_pc();
         let (regs, psr, pc) = regs_psr_pc;
+        let privilege = psr.bit(15) as u8;
+        let priority = psr.bits(8..10);
+        let pri1 = psr.bit(8) as u8;
+        let pri2 = psr.bit(9) as u8;
+        let pri3 = psr.bit(10) as u8;
+        let n = psr.bit(2) as u8;
+        let z = psr.bit(1) as u8;
+        let p = psr.bit(0) as u8;
+
         if self.reset_flag != data.reset_flag{
             self.state.push((regs, psr, pc-1));
             self.reset_flag = data.reset_flag;
@@ -103,7 +129,7 @@ where
 
         let text = [
             TuiText::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(c!(Name))),
-            TuiText::styled("PSR:\n", Style::default().fg(c!(PC))),
+            TuiText::styled("PSR:\nMode:\nPri:\n", Style::default().fg(c!(PC))),
         ];
 
         let mut para = Paragraph::new(text.iter())
@@ -121,20 +147,42 @@ where
             );
             reg_v.push(TuiText::styled(s, Style::default().fg(colours.0[i])));
         }
-        let s = format!("{:#018b} {:#06x} {:#05}\n", psr, psr, psr);
-        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1)));
+
+        reg_v.push(TuiText::styled("0b", Style::default().fg(c!(Data))));
+        let s = format!("{}", privilege);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[0])));
+        reg_v.push(TuiText::styled("0000", Style::default().fg(c!(Data))));
+        let s = format!("{}{}{}", pri3, pri2, pri1);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[1])));
+        reg_v.push(TuiText::styled("00000", Style::default().fg(c!(Data))));
+        let s = format!("{}", n);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[2])));
+        let s = format!("{}", z);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[3])));
+        let s = format!("{}\n", p);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[4])));
+
+        let s = match privilege {
+            0 => "Supervisor\n",
+            1 => "User\n",
+            _ => "Error\n",
+        };
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[0])));
+
+        let s = format!("{}\n", priority);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[1])));
 
         para = Paragraph::new(reg_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
-        let area = increment(5, Axis::X, area);
+        let area = increment(6, Axis::X, area);
         para.draw(area, buf);
 
         let text = [
             TuiText::styled("R4:\nR5:\nR6:\nR7:\n", Style::default().fg(c!(Name))),
-            TuiText::styled("PC:\n", Style::default().fg(c!(PC))),
+            TuiText::styled("PC:\nn:\nz:\np:\n", Style::default().fg(c!(PC))),
         ];
 
         para = Paragraph::new(text.iter())
@@ -155,13 +203,19 @@ where
         }
         let s = format!("{:#018b} {:#06x} {:#05}\n", pc, pc, pc);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.2)));
+        let s = format!("{}\n", n);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[2])));
+        let s = format!("{}\n", z);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[3])));
+        let s = format!("{}\n", p);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[4])));
 
         para = Paragraph::new(reg_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
-        let area = increment(5, Axis::X, area);
+        let area = increment(6, Axis::X, area);
         para.draw(area, buf);
 
     }

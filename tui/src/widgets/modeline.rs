@@ -6,6 +6,8 @@ use ModelineFocus::*;
 use core::future::Future;
 use core::task::{Context, Waker, Poll};
 
+use lc3_os::USER_PROG_START_ADDR;
+
 use lc3_traits::control::{Event, State, StepControl};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -61,6 +63,7 @@ where
     reset_button: Rect,
     load_button: Rect,
     reset_flag: bool,
+    load_flag: u8,
     load_b: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
     focus: ModelineFocus,
 }
@@ -87,6 +90,7 @@ where
             reset_button: Rect::default(),
             load_button: Rect::default(),
             reset_flag: false,
+            load_flag: 0,
             load_b: vec![Box::new(button)],
             focus: NoFocus,
         }
@@ -101,8 +105,10 @@ where
     }
 
     fn load(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
-        self.load_b[0].update(event, data, terminal);
-        self.reset(data)
+        if self.load_b[0].update(event, data, terminal) {
+            data.load_flag = data.load_flag.wrapping_add(1);
+            self.reset(data)
+        }
     }
     // TODO: should also call `drop(data.current_event.take())`
 
@@ -397,6 +403,13 @@ where
             }
         }
 
+        if self.load_flag != data.load_flag {
+            while data.sim.get_pc() != data.sim.read_word(USER_PROG_START_ADDR) {
+                self.step(data);
+            }
+            self.load_flag = data.load_flag;
+        }
+
         match event {
             Focus(FocusEvent::GotFocus) => {true},
             Focus(FocusEvent::LostFocus) => {self.focus = NoFocus; false},
@@ -415,8 +428,7 @@ where
                     self.run(data);
                 } else if !running && self.step_in_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepIn;
-                    StepControl::step_in(data.sim);
-                    self.run(data);
+                    self.step(data);
                 } else if !running && self.step_out_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = StepOut;
                     StepControl::step_out(data.sim);
@@ -439,8 +451,7 @@ where
             Key(e) => match e {
                 KeyEvent { code: KeyCode::Char('s'), modifiers: KeyModifiers::CONTROL } => {
                     if !running {
-                        StepControl::step_in(data.sim);
-                        self.run(data);
+                        self.step(data);
                     }
                     true
                 }
@@ -483,8 +494,7 @@ where
                         },
                         StepIn => {
                             if !running {
-                                StepControl::step_in(data.sim);
-                                self.run(data);
+                                self.step(data);
                             }
                         }
                         StepOut => {

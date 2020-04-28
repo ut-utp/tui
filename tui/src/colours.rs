@@ -55,6 +55,12 @@ palette! {
     Watchpoint = TuiColour::Rgb(0x30, 0x49, 0xDE),
     BWHighlight = TuiColour::Magenta,
 
+    Privilege = TuiColour::Cyan,
+    Priority = TuiColour::Red,
+    n_bit = TuiColour::Rgb(0xE9, 0xA3, 0xC9),
+    z_bit = TuiColour::White,
+    p_bit = TuiColour::Rgb(0xA1, 0xD7, 0x6A),
+
     MemRegHighlight = TuiColour::Gray,
     RegHighlight = TuiColour::Magenta,
 
@@ -69,6 +75,7 @@ palette! {
     Error = TuiColour::LightRed,
     Success = TuiColour::Green,
     Halted = TuiColour::White,
+    Depth = TuiColour::LightYellow,
 
     Highlight = TuiColour::Cyan,
 

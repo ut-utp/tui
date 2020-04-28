@@ -42,6 +42,20 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         self.data.log(s!(HelloMsg), Color::Cyan);
         self.data.log(s!(StartupMsg), Color::Magenta);
 
+        let wps = self.data.sim.get_memory_watchpoints();
+        let mut i = 0;
+        while let Some(wp) = wps[i] {
+            self.data.wp.insert(wp.0, i);
+            i = i + 1;
+        }
+
+        let bps = self.data.sim.get_breakpoints();
+        i = 0;
+        while let Some(bp) = bps[i] {
+            self.data.bp.insert(bp, i);
+            i = i + 1;
+        }
+
         let mut last_window_size = None;
 
         backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {

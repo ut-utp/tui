@@ -188,11 +188,11 @@ where
                         }
                         Event::DepthReached {current_depth } => {     // TODO: maybe pick some other color for this?
                             if cur_addr == pc {
-                                bp_colour = Colour::Red;
-                                wp_colour = Colour::Red;
-                                addr_colour = Colour::Red;
-                                data_colour = Colour::Red;
-                                inst_colour = Colour::Red;
+                                bp_colour = c!(Depth);
+                                wp_colour = c!(Depth);
+                                addr_colour = c!(Depth);
+                                data_colour = c!(Depth);
+                                inst_colour = c!(Depth);
                             }
                         }
                         Event::Error {err} => {

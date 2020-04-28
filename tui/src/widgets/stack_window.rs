@@ -55,7 +55,7 @@ where
                 ProcessorMode::Supervisor => "S\n",
                 ProcessorMode::User => "U\n",
             };
-            mode_v.push(TuiText::styled(x,Style::default().fg(c!(Data))));
+            mode_v.push(TuiText::styled(x,Style::default().fg(c!(Privilege))));
             i = i + 1;
         }
 
