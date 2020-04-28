@@ -155,19 +155,15 @@ impl LoadButton {
                 return Err(error_string);
             }
             let background = Some(lc3_os::OS_IMAGE.clone());
-            let mem = assemble(cst.objects, background);  // TODO: can still fail. fix in assembler.
 
-            let mut output_path = PathBuf::from(path_str);
-            output_path.set_extension("mem");
-            let mut file_backed_mem = FileBackedMemoryShim::with_initialized_memory(output_path.clone(), mem);
-            file_backed_mem.flush_all_changes().unwrap();
-            output_path.clone()
+            assemble(cst.objects, background)  // TODO: can still fail. fix in assembler.
         } else {
-            path.clone()
+            lc3_shims::memory::FileBackedMemoryShim::from_existing_file(path)
+                .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", p, e))?
+                .into()
         };
 
-        let shim = lc3_shims::memory::FileBackedMemoryShim::from_existing_file(&assembled_file_path)
-            .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", p, e))?;
+        // let shim = lc3_shims::memory::FileBackedMemoryShim::from_existing_file(&assembled_file_path)
 
         let progress = Progress::new_with_time().unwrap();
 
@@ -245,7 +241,7 @@ impl LoadButton {
                 }
             });
 
-            let res = load_whole_memory_dump(sim, &shim.into(), Some(&progress));
+            let res = load_whole_memory_dump(sim, &memory_dump, Some(&progress));
 
             send.send(()).unwrap();
             handle.join().unwrap();
