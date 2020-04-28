@@ -2,22 +2,12 @@
 
 use super::widget_impl_support::*;
 
-use lc3_isa::{Addr, Instruction, Reg, Word};
-use std::convert::TryInto;
+use lc3_isa::{Addr, Word};
+use lc3_traits::control::control::ProcessorMode;
 
-use lc3_traits::control::control::{Event,ProcessorMode};
+#[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]
+pub struct StackWindow;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct StackWindow
-{
-}
-
-impl Default for StackWindow {
-    fn default() -> Self {
-        Self {
-        }
-    }
-}
 
 impl TuiWidget for StackWindow
 {
@@ -51,11 +41,11 @@ where
             frame_v.push(TuiText::styled(x,Style::default().fg(c!(Num))));
             let x = format!("{:#06x}\n", frame.0);
             addr_v.push(TuiText::styled(x,Style::default().fg(c!(Addr))));
-            let x = match frame.1 {
-                ProcessorMode::Supervisor => "S\n",
-                ProcessorMode::User => "U\n",
+            let (x, style) = match frame.1 {
+                ProcessorMode::Supervisor => ("S\n", c!(CallStackSupervisorMode)),
+                ProcessorMode::User => ("U\n", c!(CallStackUserMode)),
             };
-            mode_v.push(TuiText::styled(x,Style::default().fg(c!(Data))));
+            mode_v.push(TuiText::styled(x,Style::default().fg(style)));
             i = i + 1;
         }
 

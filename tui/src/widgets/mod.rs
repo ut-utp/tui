@@ -79,8 +79,8 @@ pub use watch_window::*;
 mod break_window;
 pub use break_window::*;
 
-mod stack_window;
-pub use stack_window::*;
+mod call_stack;
+pub use call_stack::*;
 
 mod modeline;
 pub use modeline::*;

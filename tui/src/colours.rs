@@ -84,10 +84,12 @@ palette! {
 
     Modeline = TuiColour::White,
     StepB = TuiColour::Cyan,
-    StepBLight = TuiColour::Rgb(0xA7,0xE2,0xE2),
+    StepBLight = TuiColour::Rgb(0xA7, 0xE2, 0xE2),
     LoadB = TuiColour::White,
     mDefault = TuiColour::DarkGray,
 
+    CallStackSupervisorMode = TuiColour::Red,
+    CallStackUserMode = TuiColour::Green,
 }
 
 declare_palette! { DefaultPalette = { }}
