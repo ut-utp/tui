@@ -487,7 +487,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lc3-application-support"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#2bf05ae7d548ef503c1773f493cee5525db6e2e6"
 dependencies = [
  "lazy_static",
  "lc3-baseline-sim",
@@ -514,7 +514,7 @@ dependencies = [
 [[package]]
 name = "lc3-baseline-sim"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#2bf05ae7d548ef503c1773f493cee5525db6e2e6"
 dependencies = [
  "lc3-isa",
  "lc3-macros",
@@ -525,22 +525,22 @@ dependencies = [
 [[package]]
 name = "lc3-device-support"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#2bf05ae7d548ef503c1773f493cee5525db6e2e6"
 dependencies = [
  "embedded-hal",
  "lc3-isa",
  "lc3-traits",
- "mio-serial",
  "nb",
  "postcard",
  "serde",
+ "serialport",
  "static_assertions",
 ]
 
 [[package]]
 name = "lc3-isa"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#2bf05ae7d548ef503c1773f493cee5525db6e2e6"
 dependencies = [
  "lc3-macros",
  "serde",
@@ -550,7 +550,7 @@ dependencies = [
 [[package]]
 name = "lc3-macros"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#2bf05ae7d548ef503c1773f493cee5525db6e2e6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -560,7 +560,7 @@ dependencies = [
 [[package]]
 name = "lc3-os"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#2bf05ae7d548ef503c1773f493cee5525db6e2e6"
 dependencies = [
  "lazy_static",
  "lc3-baseline-sim",
@@ -574,7 +574,7 @@ dependencies = [
 [[package]]
 name = "lc3-shims"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#2bf05ae7d548ef503c1773f493cee5525db6e2e6"
 dependencies = [
  "byteorder",
  "chrono",
@@ -589,7 +589,7 @@ dependencies = [
 [[package]]
 name = "lc3-traits"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/prototype?branch=staging#5b3d86c0a7745864b010dd0eb49f35569f30edad"
+source = "git+https://github.com/ut-utp/prototype?branch=staging#2bf05ae7d548ef503c1773f493cee5525db6e2e6"
 dependencies = [
  "lc3-isa",
  "lc3-macros",
@@ -719,35 +719,10 @@ dependencies = [
  "kernel32-sys",
  "libc",
  "log",
- "miow 0.2.1",
+ "miow",
  "net2",
  "slab",
  "winapi 0.2.8",
-]
-
-[[package]]
-name = "mio-named-pipes"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5e374eff525ce1c5b7687c4cef63943e7686524a387933ad27ca7ec43779cb3"
-dependencies = [
- "log",
- "mio",
- "miow 0.3.3",
- "winapi 0.3.8",
-]
-
-[[package]]
-name = "mio-serial"
-version = "3.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0f0c240805cd4c65aa97da44ad99df8bad922cb999d0e451b51fdec13a661fd"
-dependencies = [
- "mio",
- "mio-named-pipes",
- "nix 0.17.0",
- "serialport",
- "winapi 0.3.8",
 ]
 
 [[package]]
@@ -760,16 +735,6 @@ dependencies = [
  "net2",
  "winapi 0.2.8",
  "ws2_32-sys",
-]
-
-[[package]]
-name = "miow"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "396aa0f2003d7df8395cb93e09871561ccc3e785f0acb369170e8cc74ddf9226"
-dependencies = [
- "socket2",
- "winapi 0.3.8",
 ]
 
 [[package]]
@@ -794,19 +759,6 @@ name = "nix"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c722bee1037d430d0f8e687bbdbf222f27cc6e4e68d5caf630857bb2b6dbdce"
-dependencies = [
- "bitflags",
- "cc",
- "cfg-if",
- "libc",
- "void",
-]
-
-[[package]]
-name = "nix"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50e4785f2c3b7589a0d0c1dd60285e1188adac4006e8abd6dd578e1567027363"
 dependencies = [
  "bitflags",
  "cc",
@@ -1059,7 +1011,7 @@ dependencies = [
  "cfg-if",
  "libudev",
  "mach 0.2.3",
- "nix 0.14.1",
+ "nix",
  "regex 1.3.7",
  "winapi 0.3.8",
 ]
@@ -1096,18 +1048,6 @@ name = "smallvec"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7cb5678e1615754284ec264d9bb5b4c27d2018577fd90ac0ceb578591ed5ee4"
-
-[[package]]
-name = "socket2"
-version = "0.3.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03088793f677dce356f3ccc2edb1b314ad191ab702a5de3faf49304f7e104918"
-dependencies = [
- "cfg-if",
- "libc",
- "redox_syscall",
- "winapi 0.3.8",
-]
 
 [[package]]
 name = "stable_deref_trait"
