@@ -150,19 +150,19 @@ where
             let mut inst_colour = c!(Inst);
 
             if x == self.offset {
-                if cur_addr == pc {
-                    bp_colour = c!(PC);
-                    wp_colour = c!(PC);
-                    addr_colour = c!(PC);
-                    data_colour = c!(PC);
-                    inst_colour = c!(PC);
-                } else {
-                    bp_colour = c!(Highlight);
-                    wp_colour = c!(Highlight);
-                    addr_colour = c!(Highlight);
-                    data_colour = c!(Highlight);
-                    inst_colour = c!(Highlight);
-                }
+                bp_colour = c!(Highlight);
+                wp_colour = c!(Highlight);
+                addr_colour = c!(Highlight);
+                data_colour = c!(Highlight);
+                inst_colour = c!(Highlight);
+            }
+
+            if cur_addr == pc {
+                bp_colour = c!(PC);
+                wp_colour = c!(PC);
+                addr_colour = c!(PC);
+                data_colour = c!(PC);
+                inst_colour = c!(PC);
             }
 
             match data.get_current_event() {

@@ -527,7 +527,7 @@ where
 
                 KeyEvent { code: KeyCode::Char('i'), modifiers: KeyModifiers::ALT } |
                 KeyEvent { code: KeyCode::Char('i'), modifiers: KeyModifiers::CONTROL } => {
-                    if !running { self.step_in(data); }
+                    if !running { self.step(data); }
                     true
                 }
 
@@ -578,7 +578,7 @@ where
                             if !running { self.step_over(data) }
                         },
                         StepIn => {
-                            if !running { self.step_in(data); }
+                            if !running { self.step(data); }
                         }
                         StepOut => {
                             if !running { self.step_out(data) }
