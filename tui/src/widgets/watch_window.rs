@@ -2,10 +2,10 @@
 
 use super::widget_impl_support::*;
 
-use lc3_isa::{Addr, Instruction, Reg, Word};
+use lc3_isa::Addr;
 use std::convert::TryInto;
 
-use lc3_traits::control::control::{Event};
+use lc3_traits::control::control::Event;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WatchWindow
@@ -26,14 +26,6 @@ impl Default for WatchWindow {
         }
     }
 }
-
-impl TuiWidget for WatchWindow
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for WatchWindow
 where
@@ -128,21 +120,21 @@ where
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let area = increment(5, Axis::X, area);
         para = Paragraph::new(t_a.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let area = increment(10, Axis::X, area);
         para = Paragraph::new(t_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
-        para.draw(area, buf);
+        para.render(area, buf);
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
@@ -160,7 +152,7 @@ where
             }
 
             Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
-                if(c.is_digit(10)){
+                if c.is_digit(10) {
                     self.highlight = c.to_digit(10).unwrap().try_into().unwrap();
                 }
                 true

@@ -2,16 +2,13 @@
 
 use super::widget_impl_support::*;
 
-use lc3_isa::{Addr, Instruction, Reg, Word};
+use lc3_isa::Addr;
+use lc3_traits::control::control::Event;
+
 use std::convert::TryInto;
 
-use lc3_traits::control::control::{Event};
-
-use std::slice;
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct BreakWindow
-{
+pub struct BreakWindow {
     highlight: u16,
     highlight_addr: Addr,
     bp_len: u16,
@@ -28,14 +25,6 @@ impl Default for BreakWindow {
         }
     }
 }
-
-impl TuiWidget for BreakWindow
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for BreakWindow
 where
@@ -81,7 +70,7 @@ where
         vec.sort();
 
 
-        for (bp_addr) in vec.iter() {
+        for bp_addr in vec.iter() {
             if flag && *bp_addr == self.highlight_addr {
                 self.highlight = i;
                 flag = false;
@@ -123,14 +112,14 @@ where
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let area = increment(5, Axis::X, area);
         para = Paragraph::new(t_a.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
-        para.draw(area, buf);
+        para.render(area, buf);
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
@@ -148,7 +137,7 @@ where
             }
 
             Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
-                if(c.is_digit(10)){
+                if c.is_digit(10) {
                     self.highlight = c.to_digit(10).unwrap().try_into().unwrap();
                 }
                 true

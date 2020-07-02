@@ -2,28 +2,8 @@
 
 use super::widget_impl_support::*;
 
-use std::convert::TryInto;
-use std::cell::RefCell;
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Console
-{
-}
-
-impl Default for Console {
-    fn default() -> Self {
-        Self {
-        }
-    }
-}
-
-impl TuiWidget for Console
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub struct Console;
 
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Console
 where
@@ -36,7 +16,7 @@ where
         if matches!((data.output, data.input), (None, None)) {
             return Block::default()
                 .style(Style::default().bg(Colour::Gray).fg(Colour::Gray))
-                .draw(area, buf);
+                .render(area, buf);
         }
 
         // TODO(rrbutani): redo this to use the text container.
@@ -113,7 +93,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        para.draw(area, buf); // the idea of this is to write the output before the ">", but I'm not sure this accomplishes that...
+        para.render(area, buf); // the idea of this is to write the output before the ">", but I'm not sure this accomplishes that...
 
         let text = [TuiText::styled(">", Style::default().fg(c!(Title)))];
 
@@ -123,13 +103,13 @@ where
             .wrap(true);
 
         if area.height <= 1 {
-            para.draw(area, buf);
+            para.render(area, buf);
         } else if area.height <= 4 {
             let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
-            para.draw(area, buf);
+            para.render(area, buf);
         } else {
             let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
-            para.draw(area, buf);
+            para.render(area, buf);
         }
 
         if bottom_area.height >= 2 {
@@ -138,7 +118,7 @@ where
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
                 .wrap(true);
-            para.draw(bottom_area,buf);
+            para.render(bottom_area,buf);
         }
 
     }

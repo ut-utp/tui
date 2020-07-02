@@ -80,13 +80,6 @@ impl Regs {
     }
 }
 
-impl TuiWidget for Regs
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Regs
 where
@@ -135,7 +128,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let mut reg_v = Vec::new();
         for i in 0..4 {
@@ -176,7 +169,7 @@ where
             .wrap(true);
 
         let area = increment(6, Axis::X, area);
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let text = [
             TuiText::styled("R4:\nR5:\nR6:\nR7:\n", Style::default().fg(c!(Name))),
@@ -189,7 +182,7 @@ where
             .wrap(true);
 
         let area = increment(40, Axis::X, area);
-        para.draw(area, buf);
+        para.render(area, buf);
 
         reg_v.clear();
         for i in 4..8 {
@@ -217,7 +210,7 @@ where
             .wrap(true);
 
         let area = increment(6, Axis::X, area);
-        para.draw(area, buf);
+        para.render(area, buf);
 
     }
 

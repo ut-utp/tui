@@ -2,25 +2,22 @@
 
 use super::widget_impl_support::*;
 
-use core::num::NonZeroU8;
-
 use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
 use lc3_traits::peripherals::adc::{AdcPin, AdcState};
 use lc3_traits::peripherals::pwm::{PwmPin, PwmState};
 use lc3_traits::peripherals::timers::{TimerId, TimerState};
-use std::sync::{mpsc, Arc, Mutex, RwLock};
 
-use lc3_isa::{Addr, Instruction, Reg, Word};
+use std::sync::RwLock;
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Console_peripherals
+pub struct ConsolePeripherals
 {
     history: String,
     input: String,
 }
 
-impl Default for Console_peripherals {
+impl Default for ConsolePeripherals {
     fn default() -> Self {
         Self {
             history: String::from(""),
@@ -29,15 +26,7 @@ impl Default for Console_peripherals {
     }
 }
 
-impl TuiWidget for Console_peripherals
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
-
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Console_peripherals
+impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for ConsolePeripherals
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -45,13 +34,10 @@ where
     B: Backend,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-        let Console_psr_pc = data.sim.get_registers_psr_and_pc();
-        let (Console, psr, pc) = Console_psr_pc;
-
         let peripheral_help = format!("Hello! To write to ADC or GPIO from the peripheral console,\nyou must write a line below separated by colons (:) then press ENTER to submit!\nex. gpio:1:1 will set GPIO pin 1 to True");
         let text_help = [TuiText::styled(peripheral_help, Style::default().fg(c!(ConsoleHelp)))];
 
-        let mut para_help = Paragraph::new(text_help.iter())
+        let para_help = Paragraph::new(text_help.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
@@ -65,10 +51,10 @@ where
 
 
         if area.height <= 1 {
-            para.draw(area, buf);
+            para.render(area, buf);
         } else if area.height <= 4 {
             let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
-            para.draw(area, buf);
+            para.render(area, buf);
 
             let text = [TuiText::styled(self.input.clone(), Style::default().fg(c!(ConsoleIn)))];
             para = Paragraph::new(text.iter())
@@ -80,13 +66,13 @@ where
             if area.height < 2 {
                 return;
             }
-            para.draw(area,buf);
+            para.render(area,buf);
         } else {
 
-            para_help.draw(area, buf);
+            para_help.render(area, buf);
 
             let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
-            para.draw(area, buf);
+            para.render(area, buf);
 
             let text = [TuiText::styled(self.input.clone(), Style::default().fg(c!(ConsoleIn)))];
             para = Paragraph::new(text.iter())
@@ -98,7 +84,7 @@ where
             if area.height < 2 {
                 return;
             }
-            para.draw(area,buf);
+            para.render(area,buf);
         }
 
     }
@@ -120,18 +106,14 @@ where
                             self.input.remove(self.input.len()-1);
                         }
 
-
                         true
-
                     }
 
 
                     Key(KeyEvent { code: KeyCode::Char(c), modifiers: _ }) => {
-
-                        let mut x = format!("{}", c);
+                        let x = format!("{}", c);
                         self.input.push_str(&x);
                         true
-
                     }
 
                     Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {

@@ -117,24 +117,6 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, B, F> TuiWidget for Tabs<'a, 'int, C, I, O, B, F>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-    F: Fn() -> TabsBar<'a, String>,
-{
-    fn draw(&mut self, area: Rect, buf: &mut Buffer) {
-        // Shouldn't actually be called, but just in case:
-        // (note: if there are Widgets within our tabs this will be A Problem)
-        let (bar, rest) = self.area_split(area);
-
-        self.tabs_bar().draw(bar, buf);
-        TuiWidget::draw(&mut *self.tabs[self.current_tab], rest, buf);
-    }
-}
-
 impl<'a, 'int, C, I, O, B, F> Widget<'a, 'int, C, I, O, B> for Tabs<'a, 'int, C, I, O, B, F>
 where
     C: Control + ?Sized + 'a,
@@ -146,7 +128,7 @@ where
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         let (bar, rest) = self.area_split(area);
 
-        self.tabs_bar().draw(bar, buf);
+        self.tabs_bar().render(bar, buf);
         Widget::draw(&mut *self.tabs[self.current_tab], data, rest, buf)
     }
 

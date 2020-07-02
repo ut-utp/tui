@@ -22,12 +22,6 @@ impl Clock {
     }
 }
 
-impl TuiWidget for Clock {
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        // Do nothing!
-    }
-}
-
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Clock
 where
     C: Control + ?Sized + 'a,
@@ -47,7 +41,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        para.draw(area, buf);
+        para.render(area, buf);
 
 
         let clock_val = data.sim.get_clock();
@@ -61,7 +55,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
         let area = increment(10, Axis::X, area);
-        para.draw(area, buf);
+        para.render(area, buf);
     }
 
 

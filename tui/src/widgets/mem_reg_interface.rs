@@ -2,7 +2,7 @@
 
 use super::widget_impl_support::*;
 
-use lc3_isa::{Addr, Instruction, Reg, Word};
+use lc3_isa::{Addr, Reg, Word};
 use MemRegMode::*;
 use std::convert::TryFrom;
 
@@ -11,10 +11,10 @@ const MAX_INPUT_LEN: u16 = 24;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum MemRegMode {
-    INPUT_SOURCE,
-    MEMORY_MOD,
-    REGISTER_MOD,
-    PC_MOD,
+    InputSource,
+    MemoryMod,
+    RegisterMod,
+    PcMod,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -32,20 +32,12 @@ impl Default for MemRegInterface {
         Self {
             mem_addr: 0,
             reg_num: Reg::R0,
-            mode: INPUT_SOURCE,
+            mode: InputSource,
             input: String::from(""),
             reset_flag: 0,
         }
     }
 }
-
-impl TuiWidget for MemRegInterface
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for MemRegInterface
 where
@@ -56,30 +48,30 @@ where
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         if self.reset_flag != data.reset_flag {
-            self.mode = INPUT_SOURCE;
+            self.mode = InputSource;
             self.reset_flag = data.reset_flag;
         }
 
         let prompt = match self.mode {
-            INPUT_SOURCE => {
+            InputSource => {
                 TuiText::styled(
                     "INPUT ADDRESS\n",
                     Style::default().fg(c!(ConsoleRequest)).modifier(Modifier::BOLD),
                 )
             },
-            MEMORY_MOD => {
+            MemoryMod => {
                 TuiText::styled(
                     format!("Current Address: {:#06x}\n", self.mem_addr),
                     Style::default().fg(c!(Name)),
                 )
             },
-            REGISTER_MOD => {
+            RegisterMod => {
                 TuiText::styled(
                     format!("Current Register: {}\n", self.reg_num),
                     Style::default().fg(c!(Name)),
                 )
             },
-            PC_MOD => {
+            PcMod => {
                 TuiText::styled(
                     format!("Current Register: PC\n"),
                     Style::default().fg(c!(PC)),
@@ -97,18 +89,18 @@ where
                 .alignment(Alignment::Left)
                 .wrap(true);
 
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let area = increment(MAX_INPUT_LEN+1, Axis::X, area);
 
         let instructions = match self.mode {
-            INPUT_SOURCE => {
+            InputSource => {
                 [TuiText::styled("Enter an address or register to get started.\n You can use default decimal format,\n or add 0x for hexadecimal, and 0b for binary.\n e.g. 16 = 0x10 = 0b10000\n For registers, enter R0 to R7 or PC", Style::default().fg(c!(ConsoleHelp))), ]
             },
-            MEMORY_MOD => {
+            MemoryMod => {
                 [TuiText::styled("Memory Manipulation Help\nb to toggle breakpoint\nw to toggle watchpoint\nj to jump to address\ne to enter a new address\nType a value to change data at the address\n", Style::default().fg(c!(Title))), ]
             },
-            REGISTER_MOD | PC_MOD => {
+            RegisterMod | PcMod => {
                 [TuiText::styled("Register Manipulation Help\nb to toggle breakpoint at reg address\nw to toggle watchpoint\nj to jump to reg address\ne to enter a new address\nType a value to change data in the register\n", Style::default().fg(c!(Title))), ]
             },
         };
@@ -118,7 +110,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        para.draw(area, buf);
+        para.render(area, buf);
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
@@ -203,15 +195,15 @@ where
             ($addr:ident, $word:ident, $on_write:block) => {
                 if self.input == String::from("b") {
                     set_bp($addr, data);
-                    self.mode = INPUT_SOURCE;
+                    self.mode = InputSource;
                 } else if self.input == String::from("w") {
                     set_wp($addr, data);
-                    self.mode = INPUT_SOURCE;
+                    self.mode = InputSource;
                 } else if self.input == String::from("j") {
                     data.jump = (data.jump.0+1,$addr);
-                    self.mode = INPUT_SOURCE;
+                    self.mode = InputSource;
                 } else if self.input == String::from("e") {
-                    self.mode = INPUT_SOURCE;
+                    self.mode = InputSource;
                     data.mem_reg_inter = (0,0);
                 } else {
                     parse_addr!(
@@ -247,8 +239,8 @@ where
                 if self.input.len() > 0 {
                     self.input = String::from("");
                 } else {
-                    // Else, change to INPUT_SOURCE mode
-                    self.mode = INPUT_SOURCE;
+                    // Else, change to InputSource mode
+                    self.mode = InputSource;
                 }
                 true
             }
@@ -256,13 +248,13 @@ where
             Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
                 self.input = self.input.trim().to_lowercase();
                 match self.mode {
-                    INPUT_SOURCE => {
+                    InputSource => {
                         if self.input.starts_with("r") {
                             match self.input[1..].parse::<u8>() {
                                 Ok(value) => {
                                     match Reg::try_from(value) {
                                         Ok(reg) => {
-                                            self.mode = REGISTER_MOD;
+                                            self.mode = RegisterMod;
                                             self.reg_num = reg;
                                             data.mem_reg_inter = (2, value.into());
                                         },
@@ -276,13 +268,13 @@ where
                                 }
                             }
                         } else if self.input == String::from("pc") {
-                            self.mode = PC_MOD;
+                            self.mode = PcMod;
                             data.mem_reg_inter = (2, 10);
                         } else {
                             let mut addr: Word;
                             parse_addr!(
                                 {
-                                    self.mode = MEMORY_MOD;
+                                    self.mode = MemoryMod;
                                     self.mem_addr = addr;
                                     data.mem_reg_inter = (1, addr);
                                 },
@@ -290,7 +282,7 @@ where
                             )
                         }
                     },
-                    MEMORY_MOD => {
+                    MemoryMod => {
                         let addr = self.mem_addr;
                         let mut word: Word;
                         modify_addr!(
@@ -299,7 +291,7 @@ where
                             {data.sim.write_word(addr, word);}
                         );
                     },
-                    REGISTER_MOD => {
+                    RegisterMod => {
                         let addr_from_reg = data.sim.get_register(self.reg_num);
                         let mut word: Word;
                         modify_addr!(
@@ -308,7 +300,7 @@ where
                             {data.sim.set_register(self.reg_num, word);}
                         );
                     },
-                    PC_MOD => {
+                    PcMod => {
                         let addr_from_pc = data.sim.get_pc();
                         let mut word: Word;
                         modify_addr!(

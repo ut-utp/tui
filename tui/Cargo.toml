@@ -43,8 +43,12 @@ log = "0.4.8"
 pin-utils = "0.1.0-alpha.4"
 lazy_static = "1.4.0"
 
+# crossterm = { git = "https://github.com/ut-utp/crossterm", version = "0.17.3"}
 # TODO: switch to not using this fork, eventually.
-crossterm = { git = "https://github.com/ut-utp/crossterm", version = "0.17.3"}
+
+crossterm = { git = "https://github.com/rrbutani/crossterm", version = "0.17.5" }
+tui = { git = "https://github.com/rrbutani/tui-rs", version = "0.9.5", default-features = false, features = ["crossterm"] }
+# Once PRs are submitted/merged, stop using these forks (TODO).
 
 # # No crossterm dep on wasm.
 # [target.'cfg(not(target_arch = "wasm32"))'.dependencies.cros !!sterm]
@@ -52,11 +56,11 @@ crossterm = { git = "https://github.com/ut-utp/crossterm", version = "0.17.3"}
 
 # Version hack:
 # No crossterm feature in the tui on wasm:
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tui = { version = "0.8.0", default-features = false, features = ["crossterm"] }
+# [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# tui = { version = "0.8.0", default-features = false, features = ["crossterm"] }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-tui = { version = "0.7.0", default-features = false}
+# [target.'cfg(target_arch = "wasm32")'.dependencies]
+# tui = { version = "0.7.0", default-features = false}
 #                  ^^^^^ awful hack! This tricks cargo into thinking this and
 #                        the above are separate crates (which lets them have
 #                        different features).

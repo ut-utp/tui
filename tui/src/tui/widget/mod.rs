@@ -12,6 +12,7 @@ use tui::buffer::Buffer;
 use tui::Frame;
 use tui::layout::Rect;
 use tui::terminal::Terminal;
+use tui::widgets::StatefulWidget;
 
 use std::marker::PhantomData;
 
@@ -27,7 +28,7 @@ pub use grouped::Widgets;
 
 pub mod util;
 
-pub trait Widget<'a, 'int, C, I, O, B>: TuiWidget
+pub trait Widget<'a, 'int, C, I, O, B>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -43,9 +44,7 @@ where
     /// need a [`Control`] instance need not override the default impl.
     ///
     /// [`Control`]: `lc3_traits::control::Control`
-    fn draw(&mut self, _data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-        TuiWidget::draw(self, area, buf)
-    }
+    fn draw(&mut self, _data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer);
 
     fn render<'s>(&'s mut self, data: &'s TuiData<'a, 'int, C, I, O>, f: &mut Frame<'_, B>, area: Rect) {
         // This is tricky.
@@ -59,9 +58,12 @@ where
         // `TuiWidget::draw(self, ...)` the buffer; our impl of `TuiWidget` on
         // `FakeWidget` goes and passes this buffer to the wrapped widget's
         // `TuiWidget::draw` function.
+        //
+        // Note: the above used to be true, but now we just do the below so that
+        // we can draw this widget instance without it being _consumed_.
 
         let mut fw = FakeWidget::<'s, 'a, 'int, _, _, _, _, _>(data, self, PhantomData);
-        <FakeWidget<'s, 'a, 'int, _, _, _, _, _> as TuiWidget>::render::<B>(&mut fw, f, area);
+        f.render_widget(fw, area);
     }
 
     // Return true or false indicating whether you (a widget) or your children
@@ -71,3 +73,21 @@ where
     // which widget is currently focused).
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool;
 }
+
+// impl<'a, 'int, C, I, O, B, W> Widget<'a, 'int, C, I, O, B, W> for W
+// where
+//     C: Control + ?Sized + 'a,
+//     I: InputSink + ?Sized + 'a,
+//     O: OutputSource + ?Sized + 'a,
+//     B: Backend,
+//     W: TuiWidget,
+// {
+
+// }
+
+// #[derive(Debug)]
+// pub struct Adapter<'a, W: Widget>(&'a mut W);
+
+// impl<'a, 'int, W: Widget> StatefulWidget for Adapter<'a, W> {
+//     type State = TuiData<'a, 'int,
+// }

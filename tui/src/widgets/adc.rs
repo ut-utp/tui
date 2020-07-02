@@ -24,12 +24,6 @@ impl Adc {
     }
 }
 
-impl TuiWidget for Adc {
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Adc
 where
     C: Control + ?Sized + 'a,
@@ -52,7 +46,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        para.draw(area, buf);
+        para.render(area, buf);
 
 
         let mut s1 = String::from("");
@@ -94,7 +88,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
         let area = increment(10, Axis::X, area);
-        para.draw(area, buf);
+        para.render(area, buf);
 
 
 
@@ -107,7 +101,7 @@ where
         .alignment(Alignment::Left)
         .wrap(true);
         let area = increment(40, Axis::X, area);
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let mut s2 = String::from("");
 
@@ -149,7 +143,7 @@ where
                 .wrap(true);
 
             let area = increment(10, Axis::X, area);
-            para.draw(area, buf);
+            para.render(area, buf);
 
 
     }

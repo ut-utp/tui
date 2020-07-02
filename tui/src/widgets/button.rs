@@ -8,7 +8,7 @@ use lc3_isa::{Addr, Instruction, Reg, Word};
 
 #[allow(explicit_outlives_requirements)]
 #[derive(Debug, Clone, PartialEq)]
-pub struct Sim_Button<'a, 'int, C, I, O, F>
+pub struct SimButton<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -21,7 +21,7 @@ where
     _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
 }
 
-impl<'a, 'int, C, I, O, F> Sim_Button<'a, 'int, C, I, O, F>
+impl<'a, 'int, C, I, O, F> SimButton<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -65,20 +65,7 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, F> TuiWidget for Sim_Button<'a, 'int, C, I, O, F>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r mut C),
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
-
-impl<'a, 'int, C, I, O, B, F> Widget<'a, 'int, C, I, O, B> for Sim_Button<'a, 'int, C, I, O, F>
+impl<'a, 'int, C, I, O, B, F> Widget<'a, 'int, C, I, O, B> for SimButton<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -96,7 +83,7 @@ where
             .alignment(Alignment::Center)
             .wrap(true);
 
-        para.draw(area, buf);
+        para.render(area, buf);
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {

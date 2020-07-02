@@ -24,12 +24,6 @@ impl Empty {
     }
 }
 
-impl TuiWidget for Empty {
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        // Do nothing!
-    }
-}
-
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Empty
 where
     C: Control + ?Sized + 'a,
@@ -37,6 +31,10 @@ where
     O: OutputSource + ?Sized + 'a,
     B: Backend,
 {
+    fn draw(&mut self, _data: &TuiData<'a, 'int, C, I, O>, _area: Rect, _buf: &mut Buffer) {
+        // Do nothing!
+    }
+
     fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
         match event {
             WidgetEvent::Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,

@@ -230,18 +230,6 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, B> TuiWidget for Modeline<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 // Divides rect into NUM_SEGMENTS equal segments
 // Creates a rect based on index and size (# of segments)
 fn create_rect(index: u16, size: u16, area:Rect) -> Rect {
@@ -304,7 +292,7 @@ where
             .border_style(Style::default().fg(box_colour))
             .title("");
 
-        bg_block.draw(area, buf);
+        bg_block.render(area, buf);
 
         let area = bg_block.inner(area);
         let area = Rect::new(area.x, area.y, area.width, area.height);
@@ -338,7 +326,7 @@ where
                 .title("Current State"))
             .alignment(Alignment::Center)
             .wrap(true);
-        para.draw(state_block, buf);
+        para.render(state_block, buf);
 
         let mut box_colour   = self.colour;
         let event = match data.get_current_event() {
@@ -367,7 +355,7 @@ where
                 .title("Current Event"))
             .alignment(Alignment::Left)
             .wrap(true);
-        para.draw(cur_event_block, buf);
+        para.render(cur_event_block, buf);
 
         let text = [TuiText::styled("Step Over", Style::default().fg(step_over_colour))];
         para = Paragraph::new(text.iter())
@@ -378,7 +366,7 @@ where
                 .title(""))
             .alignment(Alignment::Center)
             .wrap(true);
-        para.draw(self.step_over_button,buf);
+        para.render(self.step_over_button,buf);
 
         let text = [TuiText::styled("Step In", Style::default().fg(step_in_colour))];
         para = Paragraph::new(text.iter())
@@ -389,7 +377,7 @@ where
                 .title(""))
             .alignment(Alignment::Center)
             .wrap(true);
-        para.draw(self.step_in_button,buf);
+        para.render(self.step_in_button,buf);
 
         let text = [TuiText::styled("Step Out", Style::default().fg(step_out_colour))];
         para = Paragraph::new(text.iter())
@@ -400,7 +388,7 @@ where
                 .title(""))
             .alignment(Alignment::Center)
             .wrap(true);
-        para.draw(self.step_out_button,buf);
+        para.render(self.step_out_button,buf);
 
         let mut vec = Vec::new();
         if running {
@@ -416,7 +404,7 @@ where
                 .title(""))
             .alignment(Alignment::Center)
             .wrap(true);
-        para.draw(self.execution_control_button,buf);
+        para.render(self.execution_control_button,buf);
 
         let mut vec = Vec::new();
         if self.reset_flag {
@@ -432,13 +420,13 @@ where
                 .title(""))
             .alignment(Alignment::Center)
             .wrap(true);
-        para.draw(self.reset_button,buf);
+        para.render(self.reset_button,buf);
 
         bg_block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(load_colour))
             .title("");
-        bg_block.draw(self.load_button, buf);
+        bg_block.render(self.load_button, buf);
 
         Widget::draw(&mut *self.load_b[0], data, bg_block.inner(self.load_button), buf);
 

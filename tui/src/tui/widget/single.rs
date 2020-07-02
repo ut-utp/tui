@@ -53,9 +53,9 @@ where
                     .clone()
                     .border_style(Style::default().fg(Color::Red));
 
-                block.draw(self.area, buf);
+                block.render(self.area, buf);
             } else {
-                block.draw(self.area, buf);
+                block.clone().render(self.area, buf);
             }
 
             block.inner(self.area)

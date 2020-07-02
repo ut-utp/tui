@@ -164,7 +164,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
 
     // Run with crossterm; with or without your own special layout.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn run_with_crossterm(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<Stdout>>>) -> Result<()> {
+    pub fn run_with_crossterm<'c>(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<'c, Stdout>>>) -> Result<()> {
         use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
         use crossterm::execute;
 

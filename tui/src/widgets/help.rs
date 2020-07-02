@@ -2,8 +2,6 @@
 
 use super::widget_impl_support::*;
 
-use super::super::Tui;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Help
 {
@@ -15,13 +13,6 @@ impl Default for Help {
         Self {
             focusable: true,
         }
-    }
-}
-
-impl TuiWidget for Help
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Do not call this!");
     }
 }
 
@@ -54,7 +45,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        para.draw(area, buf)
+        para.render(area, buf)
     }
 
     fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {

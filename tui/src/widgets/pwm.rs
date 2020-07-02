@@ -24,12 +24,6 @@ impl Pwm {
     }
 }
 
-impl TuiWidget for Pwm {
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Pwm
 where
     C: Control + ?Sized + 'a,
@@ -52,7 +46,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let mut s0 = String::from("");
 
@@ -77,7 +71,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
         let area = increment(10, Axis::X, area);
-        para.draw(area, buf);
+        para.render(area, buf);
 
 
 
@@ -91,7 +85,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
         let area1 = increment(40, Axis::X, area);
-        para.draw(area1, buf);
+        para.render(area1, buf);
 
 
 
@@ -116,7 +110,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
         let area2 = increment(10, Axis::X, area1);
-        para.draw(area2, buf);
+        para.render(area2, buf);
 
 
 

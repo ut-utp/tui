@@ -40,18 +40,6 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, F> TuiWidget for Text<'a, 'int, C, I, O, F>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r [TuiText<'r>],
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 impl<'a, 'int, C, I, O, F, B> Widget<'a, 'int, C, I, O, B> for Text<'a, 'int, C, I, O, F>
 where
     C: Control + ?Sized + 'a,
@@ -76,7 +64,7 @@ where
             .scroll(self.offset)
             .wrap(true);
 
-        para.draw(area, buf)
+        para.render(area, buf)
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {

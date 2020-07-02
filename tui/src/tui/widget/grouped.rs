@@ -3,7 +3,7 @@
 use crate::tui::TuiData;
 use crate::tui::events::{WidgetEvent, FocusEvent};
 use super::single::SingleWidget;
-use super::{TuiWidget, Widget};
+use super::Widget;
 
 use lc3_application_support::io_peripherals::{InputSink, OutputSource};
 use lc3_traits::control::Control;
@@ -222,18 +222,6 @@ where
             }
             _ => unreachable!(), // Unnamed union types.. we long for ye
         }
-    }
-}
-
-impl<'a, 'int, C, I, O, B> TuiWidget for Widgets<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, _rect: Rect, _buffer: &mut Buffer) {
-        unreachable!("This should never be called. Call `lc3_tui::Widget::draw` instead.")
     }
 }
 

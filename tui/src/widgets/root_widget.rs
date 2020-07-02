@@ -99,18 +99,6 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, B> TuiWidget for RootWidget<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, area: Rect, buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for RootWidget<'a, 'int, C, I, O, B>
 where
     C: Control + ?Sized + 'a,

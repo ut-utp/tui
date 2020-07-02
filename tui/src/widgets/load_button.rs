@@ -134,13 +134,15 @@ impl LoadButton {
                     return;
                 }
 
-                Paragraph::new([
-                        TuiText::styled(format!("Assembling..\n"), Style::default().fg(c!(InProgress))),
-                    ].iter())
+                let text = [
+                    TuiText::styled(format!("Assembling..\n"), Style::default().fg(c!(InProgress))),
+                ];
+                let para = Paragraph::new(text.iter())
                     .style(Style::default().fg(Colour::White))
                     .alignment(Alignment::Center)
-                    .wrap(true)
-                    .render(&mut f, info);
+                    .wrap(true);
+
+                f.render_widget(para, info);
             });
 
             assemble_mem_dump(path, with_os)?
@@ -208,11 +210,13 @@ impl LoadButton {
                                     return;
                                 }
 
-                                Gauge::default()
-                                    // .block(Block::default().borders(Borders::ALL).title("Progress"))
-                                    .style(Style::default().fg(Colour::Green).bg(Colour::Black).modifier(Modifier::ITALIC | Modifier::BOLD))
-                                    .ratio(progress.progress().min(1.0f32).max(0.0f32).into())
-                                    .render(&mut f, gauge);
+                                f.render_widget(
+                                    Gauge::default()
+                                        // .block(Block::default().borders(Borders::ALL).title("Progress"))
+                                        .style(Style::default().fg(Colour::Green).bg(Colour::Black).modifier(Modifier::ITALIC | Modifier::BOLD))
+                                        .ratio(progress.progress().min(1.0f32).max(0.0f32).into()),
+                                    gauge,
+                                );
 
                                 let success_rate = format!("{:.2}%", progress.success_rate() * 100.0);
 
@@ -228,15 +232,17 @@ impl LoadButton {
                                     })
                                     .unwrap_or("Unknown".to_string());
 
-                                Paragraph::new([
-                                        TuiText::styled(format!("~{}", time_remaining), Style::default().fg(Colour::Green)),
-                                        TuiText::styled(format!(" // "), Style::default().fg(Colour::Gray)),
-                                        TuiText::styled(format!("{} success", success_rate), Style::default().fg(Colour::Magenta)),
-                                    ].iter())
+                                let text = [
+                                    TuiText::styled(format!("~{}", time_remaining), Style::default().fg(Colour::Green)),
+                                    TuiText::styled(format!(" // "), Style::default().fg(Colour::Gray)),
+                                    TuiText::styled(format!("{} success", success_rate), Style::default().fg(Colour::Magenta)),
+                                ];
+                                let para = Paragraph::new(text.iter())
                                     .style(Style::default().fg(Colour::White))
                                     .alignment(Alignment::Center)
-                                    .wrap(true)
-                                    .render(&mut f, info);
+                                    .wrap(true);
+
+                                f.render_widget(para, info);
                             }).unwrap();
 
                             std::thread::sleep(Duration::from_millis(30))
@@ -402,12 +408,6 @@ fn assemble_mem_dump(path: &PathBuf, with_os: bool) -> Result<MemoryDump, String
     Ok(assemble(cst.objects, background))  // TODO: can still fail. fix in assembler.
 }
 
-impl TuiWidget for LoadButton {
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for LoadButton
 where
     C: Control + ?Sized + 'a,
@@ -433,7 +433,7 @@ where
                     .style(Style::default().fg(Colour::White))
                     .alignment(Alignment::Center)
                     .wrap(true)
-                    .draw(area, buf)
+                    .render(area, buf)
             },
 
             Some(p) => {
@@ -452,7 +452,7 @@ where
                         .style(Style::default())
                         .alignment(Alignment::Center)
                         .wrap(true)
-                        .draw(gauge, buf),
+                        .render(gauge, buf),
 
                     None => {
                         let file_name = p.file_name()
@@ -469,7 +469,7 @@ where
                             .style(Style::default().fg(Colour::White))
                             .alignment(Alignment::Center)
                             .wrap(true)
-                            .draw(area, buf);
+                            .render(area, buf);
                     }
                 }
             }

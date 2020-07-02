@@ -67,11 +67,7 @@ where
     let timers = Timers::default();
     let clock = Clock::default();
     let adc = Adc::default();
-    let console_peripherals = Console_peripherals::default();
-
-
-
-
+    let console_peripherals = ConsolePeripherals::default();
 
     let gpio2 = Gpio::default();
     let pwm2 =  Pwm::default();

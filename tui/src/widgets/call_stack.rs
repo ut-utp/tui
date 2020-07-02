@@ -2,20 +2,10 @@
 
 use super::widget_impl_support::*;
 
-use lc3_isa::{Addr, Word};
 use lc3_traits::control::control::ProcessorMode;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]
 pub struct StackWindow;
-
-
-impl TuiWidget for StackWindow
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for StackWindow
 where
@@ -53,21 +43,21 @@ where
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let area = increment(5, Axis::X, area);
         para = Paragraph::new(addr_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let area = increment(10, Axis::X, area);
         para = Paragraph::new(mode_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
-        para.draw(area, buf);
+        para.render(area, buf);
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {

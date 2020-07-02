@@ -24,12 +24,6 @@ impl Timers {
     }
 }
 
-impl TuiWidget for Timers {
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Timers
 where
     C: Control + ?Sized + 'a,
@@ -52,7 +46,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        para.draw(area, buf);
+        para.render(area, buf);
 
 
         let mut s0 = String::from("");
@@ -82,10 +76,10 @@ where
                         }
 
                 };
-            
-            
+
+
             },
-            
+
         };
 
         let text = [TuiText::styled(s0, Style::default().fg(c!(Data)))];
@@ -94,7 +88,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
         let area = increment(10, Axis::X, area);
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let text = [
             TuiText::styled("Timer 1: \n", Style::default().fg(c!(Name))),
@@ -105,7 +99,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
         let area = increment(40, Axis::X, area);
-        para.draw(area, buf);
+        para.render(area, buf);
 
         let mut s1 = String::from("");
 
@@ -134,9 +128,9 @@ where
                         }
 
                 };
-            
+
             },
-            
+
         };
 
 
@@ -147,7 +141,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
         let area = increment(10, Axis::X, area);
-        para.draw(area, buf);
+        para.render(area, buf);
 
 
 

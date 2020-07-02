@@ -5,7 +5,7 @@ use super::widget_impl_support::*;
 use std::convert::TryInto;
 
 use lc3_isa::{Addr, Instruction, Reg, Word};
-use lc3_traits::control::control::{Event};
+use lc3_traits::control::control::Event;
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -57,14 +57,6 @@ impl Mem {
         self.follow = true;
     }
 }
-
-impl TuiWidget for Mem
-{
-    fn draw(&mut self, _area: Rect, _buf: &mut Buffer) {
-        unimplemented!("Don't call this! We need TuiData to draw!")
-    }
-}
-
 
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Mem
 where
@@ -276,7 +268,7 @@ where
                 .alignment(Alignment::Left)
                 .wrap(true);
 
-        para.draw(area, buf);
+        para.render(area, buf);
 
         para = Paragraph::new(bp_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
@@ -287,7 +279,7 @@ where
         if area.width < 4 {
             return
         }
-        para.draw(area, buf);
+        para.render(area, buf);
 
         para = Paragraph::new(wp_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
@@ -298,7 +290,7 @@ where
         if area.width < 4 {
             return
         }
-        para.draw(area, buf);
+        para.render(area, buf);
 
         para = Paragraph::new(addresses_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
@@ -309,7 +301,7 @@ where
         if area.width < 8 {
             return
         }
-        para.draw(area, buf);
+        para.render(area, buf);
 
         para = Paragraph::new(bin_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
@@ -320,7 +312,7 @@ where
         if area.width < 19 {
             return
         }
-        para.draw(area, buf);
+        para.render(area, buf);
 
         para = Paragraph::new(hex_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
@@ -331,7 +323,7 @@ where
         if area.width < 7 {
             return
         }
-        para.draw(area, buf);
+        para.render(area, buf);
 
         para = Paragraph::new(dec_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
@@ -342,7 +334,7 @@ where
         if area.width < 5 {
             return
         }
-        para.draw(area, buf);
+        para.render(area, buf);
 
         para = Paragraph::new(insts_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
@@ -353,7 +345,7 @@ where
         if area.width < 20 {
             return
         }
-        para.draw(area, buf)
+        para.render(area, buf)
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
