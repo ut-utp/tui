@@ -8,7 +8,7 @@ workspace = "../.."
 
 description = "An LC-3 simulator and debugger with a terminal user interface — for the web."
 homepage = "https://utp.tools"
-repository = "http://github.com/ut-utp/tui/tree/master/bins/web"
+repository = "http://github.com/ut-utp/tui/tree/main/bins/web"
 
 readme = "README.md"
 

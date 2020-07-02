@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fut-utp%2Ftui%2Fbadge&style=for-the-badge)](https://github.com/ut-utp/tui/actions) [![License: MPL-2.0](https://img.shields.io/github/license/ut-utp/tui?color=orange&style=for-the-badge)](https://opensource.org/licenses/MPL-2.0)
 --
-[![](https://tokei.rs/b1/github/ut-utp/tui)](https://github.com/ut-utp/tui) [![codecov](https://codecov.io/gh/ut-utp/tui/branch/master/graph/badge.svg)](https://codecov.io/gh/ut-utp/tui)
+[![](https://tokei.rs/b1/github/ut-utp/tui)](https://github.com/ut-utp/tui) [![codecov](https://codecov.io/gh/ut-utp/tui/branch/main/graph/badge.svg)](https://codecov.io/gh/ut-utp/tui)
 
 This repo is home to the [UTP `lc3-tui` crate](tui) as well as the binary targets that use the [`lc3-tui`](tui) crate.
 

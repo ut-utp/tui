@@ -19,7 +19,7 @@ license = "MPL-2.0"
 
 [badges]
 github-actions = { repository = "ut-utp/tui", workflow = "tui" }
-codecov = { repository = "ut-utp/tui", branch = "master", service = "github" }
+codecov = { repository = "ut-utp/tui", branch = "main", service = "github" }
 
 is-it-maintained-issue-resolution = { repository = "ut-utp/tui" }
 is-it-maintained-open-issues = { repository = "ut-utp/tui" }
