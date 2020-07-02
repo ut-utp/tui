@@ -62,7 +62,7 @@ where
         // Note: the above used to be true, but now we just do the below so that
         // we can draw this widget instance without it being _consumed_.
 
-        let mut fw = FakeWidget::<'s, 'a, 'int, _, _, _, _, _>(data, self, PhantomData);
+        let fw = FakeWidget::<'s, 'a, 'int, _, _, _, _, _>(data, self, PhantomData);
         f.render_widget(fw, area);
     }
 
@@ -73,21 +73,3 @@ where
     // which widget is currently focused).
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool;
 }
-
-// impl<'a, 'int, C, I, O, B, W> Widget<'a, 'int, C, I, O, B, W> for W
-// where
-//     C: Control + ?Sized + 'a,
-//     I: InputSink + ?Sized + 'a,
-//     O: OutputSource + ?Sized + 'a,
-//     B: Backend,
-//     W: TuiWidget,
-// {
-
-// }
-
-// #[derive(Debug)]
-// pub struct Adapter<'a, W: Widget>(&'a mut W);
-
-// impl<'a, 'int, W: Widget> StatefulWidget for Adapter<'a, W> {
-//     type State = TuiData<'a, 'int,
-// }
