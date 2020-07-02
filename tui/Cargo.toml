@@ -27,15 +27,13 @@ maintenance = { status = "actively-developed" }
 
 
 [dependencies]
-lc3-application-support = { git = "https://github.com/ut-utp/prototype", branch = "staging", version = "0.1.0" }
-lc3-isa = { git = "https://github.com/ut-utp/prototype", branch = "staging", version = "0.1.0", default-features = false }
-lc3-macros = { git = "https://github.com/ut-utp/prototype", branch = "staging", version = "0.1.0" }
-lc3-shims = { git = "https://github.com/ut-utp/prototype", branch = "staging", version = "0.1.0" }
-lc3-traits = { git = "https://github.com/ut-utp/prototype", branch = "staging", version = "0.1.0", default-features = false, features = [] } # Enable std features
-lc3-os = { git = "https://github.com/ut-utp/prototype", branch = "staging", version = "0.1.0" }
-lc3-assembler = { git = "https://github.com/ut-utp/assembler", branch = "master", version = "0.1.0" }
-# TODO: change all of the above to grab the crates from crates.io instead of git
-# TODO: get rid of the staging branch thing
+lc3-application-support = "0.1.0"
+lc3-isa = { version = "0.1.0", default-features = false }
+lc3-macros = "0.1.0"
+lc3-shims = "0.1.0"
+lc3-traits = { version = "0.1.0", default-features = false, features = [] } # Enable std features
+lc3-os = "0.1.0"
+lc3-assembler = "0.1.0"
 
 annotate-snippets = "0.8.0"
 chrono = "0.4"

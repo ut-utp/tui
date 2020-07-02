@@ -1,0 +1,42 @@
+[package]
+name = "utp-tui"
+version = "0.1.0"
+authors = ["UT UTP <ut.utp.group@gmail.com>"]
+edition = "2018"
+
+workspace = "../.."
+
+description = "An LC-3 simulator and debugger with a terminal user interface — for desktops."
+homepage = "https://utp.tools"
+repository = "http://github.com/ut-utp/tui/tree/master/bins/desktop"
+
+readme = "README.md"
+
+# TODO!
+# keywords = ["lc-3", "shims", "utp", "tui"]
+# categories =
+
+license = "MPL-2.0"
+
+default-run = "utp-tui"
+
+
+[badges]
+# TODO!
+# github-actions = { repository = "ut-utp/tui", workflow = "tui-desktop" }
+# codecov = { repository = "ut-utp/tui", branch = "main", service = "github" }
+
+is-it-maintained-issue-resolution = { repository = "ut-utp/tui" }
+is-it-maintained-open-issues = { repository = "ut-utp/tui" }
+maintenance = { status = "actively-developed" }
+
+
+[dependencies]
+flexi_logger = { version = "0.14", default_features = false }
+structopt = { version = "0.3", default-features = false }
+failure = "0.1.6"
+
+lc3-application-support = "0.1.0"
+# TODO: grab the above from crates.io instead of git
+# TODO: get rid of the staging thing
+lc3-tui = { path = "../../tui", version = "0.1.0" }

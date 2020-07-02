@@ -1,31 +1,9 @@
 [workspace]
 members = [
     "tui",
+    "bins/desktop",
+    "bins/web",
 ]
-
-
-[package] # TODO: split into another crate once web becomes a thing
-name = "utp-tui"
-version = "0.1.0"
-
-default-run = "tui"
-
-# TODO: CI for this binary
-[[bin]]
-name = "tui"
-path = "bins/tui.rs"
-
-
-[dependencies]
-flexi_logger = { version = "0.14", default_features = false }
-structopt = { version = "0.3", default-features = false }
-failure = "0.1.6"
-
-lc3-application-support = { git = "https://github.com/ut-utp/prototype", branch = "staging", version = "0.1.0" }
-# TODO: grab the above from crates.io instead of git
-# TODO: get rid of the staging thing
-lc3-tui = { path = "tui", version = "0.1.0" }
-# TODO: grab the above from crates.io instead of by path
 
 
 [profile.release]
@@ -40,6 +18,12 @@ codegen-units = 1
 incremental = false
 overflow-checks = false
 
-# TODO: remove this
-# [patch."https://github.com/ut-utp/prototype"]
-# lc3-application-support = { git = "https://github.com/ut-utp/prototype", branch = "feat-trap-tests" }
+
+[patch.crates-io]
+lc3-application-support = { git = "https://github.com/ut-utp/core", branch = "master" }
+lc3-isa = { git = "https://github.com/ut-utp/core", branch = "master" }
+lc3-macros = { git = "https://github.com/ut-utp/core", branch = "master" }
+lc3-shims = { git = "https://github.com/ut-utp/core", branch = "master" }
+lc3-traits = { git = "https://github.com/ut-utp/core", branch = "master" }
+lc3-os = { git = "https://github.com/ut-utp/core", branch = "master" }
+lc3-assembler = { git = "https://github.com/ut-utp/assembler", branch = "master" }
