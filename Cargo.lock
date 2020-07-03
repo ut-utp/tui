@@ -266,32 +266,19 @@ dependencies = [
 [[package]]
 name = "crossterm"
 version = "0.17.5"
-source = "git+https://github.com/rrbutani/crossterm#ba82f5444ace560940ef3b45934408f710c1d628"
+source = "git+https://github.com/rrbutani/crossterm?branch=xtermjs#66c3120a7004ca78f060f03f04c08120a2844369"
 dependencies = [
  "bitflags",
  "crossterm_winapi",
+ "futures-core",
  "lazy_static",
  "libc",
  "mio",
  "parking_lot",
  "signal-hook",
+ "wasm-bindgen",
  "winapi 0.3.9",
-]
-
-[[package]]
-name = "crossterm"
-version = "0.17.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9851d20b9809e561297ec3ca85d7cba3a57507fe8d01d07ba7b52469e1c89a11"
-dependencies = [
- "bitflags",
- "crossterm_winapi",
- "lazy_static",
- "libc",
- "mio",
- "parking_lot",
- "signal-hook",
- "winapi 0.3.9",
+ "xterm-js-sys",
 ]
 
 [[package]]
@@ -384,6 +371,12 @@ name = "fuchsia-zircon-sys"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7"
+
+[[package]]
+name = "futures-core"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59f5fff90fd5d971f936ad674802482ba441b6f09ba5e15fd8b39145582ca399"
 
 [[package]]
 name = "generic-array"
@@ -635,7 +628,7 @@ dependencies = [
  "annotate-snippets",
  "chrono",
  "crossbeam",
- "crossterm 0.17.5 (git+https://github.com/rrbutani/crossterm)",
+ "crossterm",
  "failure",
  "lazy_static",
  "lc3-application-support",
@@ -1221,7 +1214,7 @@ source = "git+https://github.com/rrbutani/tui-rs#1999eb9f2384ff5e760c2a0343302dd
 dependencies = [
  "bitflags",
  "cassowary",
- "crossterm 0.17.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "crossterm",
  "either",
  "itertools 0.9.0",
  "unicode-segmentation",
@@ -1308,8 +1301,7 @@ checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 [[package]]
 name = "wasm-bindgen"
 version = "0.2.64"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a634620115e4a229108b71bde263bb4220c483b3f07f5ba514ee8d15064c4c2"
+source = "git+https://github.com/rrbutani/wasm-bindgen.git?branch=patches#0360e9df1b3bb935499bd9141c67ca864b859c45"
 dependencies = [
  "cfg-if",
  "wasm-bindgen-macro",
@@ -1318,8 +1310,7 @@ dependencies = [
 [[package]]
 name = "wasm-bindgen-backend"
 version = "0.2.64"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e53963b583d18a5aa3aaae4b4c1cb535218246131ba22a71f05b518098571df"
+source = "git+https://github.com/rrbutani/wasm-bindgen.git?branch=patches#0360e9df1b3bb935499bd9141c67ca864b859c45"
 dependencies = [
  "bumpalo",
  "lazy_static",
@@ -1333,8 +1324,7 @@ dependencies = [
 [[package]]
 name = "wasm-bindgen-macro"
 version = "0.2.64"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fcfd5ef6eec85623b4c6e844293d4516470d8f19cd72d0d12246017eb9060b8"
+source = "git+https://github.com/rrbutani/wasm-bindgen.git?branch=patches#0360e9df1b3bb935499bd9141c67ca864b859c45"
 dependencies = [
  "quote",
  "wasm-bindgen-macro-support",
@@ -1343,8 +1333,7 @@ dependencies = [
 [[package]]
 name = "wasm-bindgen-macro-support"
 version = "0.2.64"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9adff9ee0e94b926ca81b57f57f86d5545cdcb1d259e21ec9bdd95b901754c75"
+source = "git+https://github.com/rrbutani/wasm-bindgen.git?branch=patches#0360e9df1b3bb935499bd9141c67ca864b859c45"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1356,8 +1345,7 @@ dependencies = [
 [[package]]
 name = "wasm-bindgen-shared"
 version = "0.2.64"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f7b90ea6c632dd06fd765d44542e234d5e63d9bb917ecd64d79778a13bd79ae"
+source = "git+https://github.com/rrbutani/wasm-bindgen.git?branch=patches#0360e9df1b3bb935499bd9141c67ca864b859c45"
 
 [[package]]
 name = "web-sys"
@@ -1416,8 +1404,7 @@ dependencies = [
 [[package]]
 name = "xterm-js-sys"
 version = "4.6.0-alpha1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbdd39a705df4ab4ed7316b76aa48df97974716b36f79ea94346dadcb2988d72"
+source = "git+https://github.com/rrbutani/xterm-js-sys?branch=main#b31eb3383d299a69caf681e1bda142795fd6d8e2"
 dependencies = [
  "js-sys",
  "wasm-bindgen",

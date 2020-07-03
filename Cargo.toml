@@ -27,3 +27,8 @@ lc3-shims = { git = "https://github.com/ut-utp/core", branch = "master" }
 lc3-traits = { git = "https://github.com/ut-utp/core", branch = "master" }
 lc3-os = { git = "https://github.com/ut-utp/core", branch = "master" }
 lc3-assembler = { git = "https://github.com/ut-utp/assembler", branch = "master" }
+
+wasm-bindgen = { git = "https://github.com/rrbutani/wasm-bindgen.git", branch = "patches" }
+crossterm = { git = "https://github.com/rrbutani/crossterm", branch = "xtermjs", version = "0.17.5" }
+tui = { git = "https://github.com/rrbutani/tui-rs", version = "0.9.5" }
+xterm-js-sys = { git = "https://github.com/rrbutani/xterm-js-sys", branch = "main" }

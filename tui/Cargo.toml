@@ -46,8 +46,10 @@ lazy_static = "1.4.0"
 # crossterm = { git = "https://github.com/ut-utp/crossterm", version = "0.17.3"}
 # TODO: switch to not using this fork, eventually.
 
-crossterm = { git = "https://github.com/rrbutani/crossterm", version = "0.17.5" }
-tui = { git = "https://github.com/rrbutani/tui-rs", version = "0.9.5", default-features = false, features = ["crossterm"] }
+# crossterm = { git = "https://github.com/rrbutani/crossterm", version = "0.17.5" }
+crossterm = { version = "0.17.5", features = ["event-stream"] } # technically we only need/use the event-stream feature on wasm but afaik there isn't yet a way to selectively enable features depending on the target.. (TODO: make this a feature that wasm targets have to enable and go and find the relevant cargo issue and link to it)
+# tui = { git = "https://github.com/rrbutani/tui-rs", version = "0.9.5", default-features = false, features = ["crossterm"] }
+tui = { version = "0.9.5", default-features = false, features = ["crossterm"] }
 # Once PRs are submitted/merged, stop using these forks (TODO).
 
 # # No crossterm dep on wasm.
