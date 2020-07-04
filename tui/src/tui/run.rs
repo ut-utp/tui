@@ -23,7 +23,29 @@ use tui::style::{Color, Style};
 use std::io::{Stdout, Write};
 
 impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSource + ?Sized + 'a> Tui<'a, 'int, C, I, O> {
-    pub fn run_with_custom_layout<B: Backend>(mut self, term: &mut Terminal<B>, mut root: impl Widget<'a, 'int, C, I, O, B>) -> Result<()>
+    // some one time initialization stuff
+    fn init(&mut self) {
+        // Say hello:
+        self.data.log(s!(HelloMsg), Color::Cyan);
+        self.data.log(s!(StartupMsg), Color::Magenta);
+
+        // Copy over any existing breakpoints/watchpoints:
+        self.data.sim.get_memory_watchpoints()
+            .iter().copied()
+            .filter_map(std::convert::identity)
+            .enumerate()
+            .for_each(|(idx, (addr, _))| self.data.wp.insert(addr, idx));
+
+        self.data.sim.get_breakpoints()
+            .iter().copied()
+            .filter_map(std::convert::identity)
+            .enumerate()
+            .for_each(|(idx, addr)| self.data.bp.insert(addr, idx));
+    }
+
+    // Matches the interface `Backoff` has for the function it takes; return value
+    // indicates whether to continue.
+    fn handle_event<B>(&mut self, event: Event, term: &mut Terminal<B>) -> bool
     where
         B: ExecutableCommand<&'static str>,
         Terminal<B>: Send,
