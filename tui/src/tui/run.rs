@@ -50,7 +50,42 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
         B: ExecutableCommand<&'static str>,
         Terminal<B>: Send,
     {
-        let (event_recv, tx) = events::start_event_threads(term.backend_mut(), self.update_period)?;
+        use Event::*;
+        use CrosstermEvent::*;
+
+        // Empty the queue if we're told to. This should handle nested requests
+        // (i.e. if we're told to empty the queue while we're already doing so).
+        if let Some(f) = tui.data.flush_all_events {
+            use super::Flush::*;
+
+            match f {
+                Requested(i) => {
+                    tx.send(FlushEventsBarrier(i)).unwrap();
+                    self.data.flush_all_events = Some(Acknowledged(i));
+                }
+                Acknowledged(c) => {
+                    match event {
+                        FlushEventsBarrier(i) => {
+                            // If its count matches us, we're done clearing.
+                            if c == i {
+                                drop(self.data.flush_all_events.take());
+                                let Rect { width, height, .. } = term.size().unwrap();
+                                tx.send(ActualEvent(Resize(width, height))).unwrap();
+                            }
+                        }
+                        _ => {
+                            /* Otherwise, continue discarding events. */
+                            if let Some(ref mut v) = self.data.debug_log {
+                                let time = std::time::SystemTime::now();
+                                let time: DateTime<Local> = time.into();
+                                let line = format!("[EVENT] @ {}, discarded: {:?}\n", time.format("%d/%m/%Y %T%.6f"), event);
+
+                                v.push(TuiText::styled(line, Style::default().fg(Color::Yellow)));
+                            }
+                        }
+                    }
+                }
+            }
 
         // TODO: potentially construct this from user configurable options!
         let backoff = Backoff::default();
