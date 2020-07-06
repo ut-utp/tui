@@ -87,6 +87,16 @@ impl LoadButton {
         }
     }
 
+    #[cfg(target_arch = "wasm32")]
+    fn load<'a, C, B>(&self, sim: &mut C, terminal: &mut Terminal<B>, path: &PathBuf, with_os: bool) -> Result<String, String>
+    where
+        C: Control + ?Sized + 'a,
+        B: Backend,
+    {
+        todo!()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
     fn load<'a, C, B>(&self, sim: &mut C, terminal: &mut Terminal<B>, path: &PathBuf, with_os: bool) -> Result<String, String>
     where
         C: Control + ?Sized + 'a,
@@ -414,7 +424,7 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     B: Backend,
-    Terminal<B>: Send,
+    Terminal<B>: ConditionalSendBound,
 {
     fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
         self.area = Some(area);
