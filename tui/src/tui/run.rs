@@ -237,40 +237,76 @@ where
         self.run_with_custom_layout(term, crate::layout::layout(None, vec![]))
     }
 
-    // Run with crossterm; with or without your own special layout.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn run_with_crossterm<'c>(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<'c, Stdout>>>) -> Result<()> {
-        use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
-        use crossterm::execute;
+    web => {
+        // Note: this is almost exactly a copy of the `desktop` counterpart.
+        pub async fn run_with_custom_layout<B: Backend>(
+            mut self,
+            term: &mut Terminal<B>,
+            mut root: impl Widget<'a, 'int, C, I, O, B>,
+        ) -> Result<()>
+        where
+            B: ExecutableCommand<&'static str>,
+            Terminal<B>: Send,
+        {
+            // init!
+            self.init();
 
-        let mut stdout = std::io::stdout();
-        execute!(stdout, EnterAlternateScreen)?;
-        crossterm::terminal::enable_raw_mode()?;
+            // TODO: potentially construct this from user configurable options!
+            let backoff = Backoff::default();
 
-        let backend = tui::backend::CrosstermBackend::new(stdout);
-        let mut terminal = Terminal::new(backend)?;
+            // Event things:
+            let (event_recv, tx) = events::start_event_stream(term.backend_mut(), self.update_period)?;
 
-        terminal.hide_cursor()?;
+            let mut last_window_size = None;
 
-        let res = if let Some(w) = root_widget {
-            self.run_with_custom_layout(&mut terminal, w)
-        } else {
-            self.run(&mut terminal)
-        };
+            backoff.run_tick_with_event_with_project(
+                &mut self,
+                |t| t.data.sim,
+                event_recv,
+                |tui, event| tui.handle_event(event, term, &tx, &mut root, &mut last_window_size),
+            )
+            .await
+            .map_err(|_| err_msg("Channel disconnected; maybe something crashed?"))
+        }
 
-        // TODO: v should maybe happen when the Crossterm Event Thread exits, but this
-        // is okay for now.
-        //
-        // Right now we duplicate this logic in the crossterm event thread's exit since
-        // it can also trigger a quit and when we quit from here, there's no guarantee
-        // that the crossterm event thread doesn't die before it gets to reset the
-        // screen.
-        execute!(std::io::stdout(), DisableMouseCapture)?;
+        // Run with default layout and a backend of your choosing.
+        pub async fn run<B: Backend>(self, term: &mut Terminal<B>) -> Result<()>
+        where
+            B: ExecutableCommand<&'static str>,
+            Terminal<B>: Send,
+        {
+            self.run_with_custom_layout(term, crate::layout::layout(None, vec![])).await
+        }
 
-        terminal.show_cursor()?;
-        crossterm::terminal::disable_raw_mode()?;
-        execute!(std::io::stdout(), LeaveAlternateScreen)?;
+        // Run with crossterm; with or without your own special layout.
+        pub async fn run_with_xtermjs<'c>(
+            self,
+            root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<'c, Vec<u8>>>>,
+            terminal: &'c xterm_js_sys::Terminal,
+        ) -> Result<()> {
+            use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
+            use crossterm::execute;
+            use tui::backend::CrosstermBackend;
 
-        res
+            term.focus();
+
+            let backend = CrosstermBackend::new(term);
+            let mut terminal = Terminal::new(backend)?;
+
+            execute!(terminal, EnterAlternateScreen)?;
+            terminal.hide_cursor()?;
+
+            let res = if let Some(w) = root_widget {
+                self.run_with_custom_layout(&mut terminal, w).await
+            } else {
+                self.run(&mut terminal).await
+            };
+
+            execute!(terminal, DisableMouseCapture)?;
+            terminal.show_cursor()?;
+            execute!(terminal, LeaveAlternateScreen)?;
+
+            res
+        }
     }
-}
+}}

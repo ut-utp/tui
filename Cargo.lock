@@ -146,9 +146,9 @@ checksum = "df8670b8c7b9dae1793364eafadf7239c40d669904660c5960d74cfd80b46a53"
 
 [[package]]
 name = "cc"
-version = "1.0.56"
+version = "1.0.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77c1f1d60091c1b73e2b1f4560ab419204b178e625fa945ded7b660becd2bd46"
+checksum = "0fde55d2a2bfaa4c9668bbc63f531fbdeee3ffe188f4662511ce2c22b3eedebe"
 
 [[package]]
 name = "cfg-if"
@@ -158,9 +158,9 @@ checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
 name = "chrono"
-version = "0.4.12"
+version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0fee792e164f78f5fe0c296cc2eb3688a2ca2b70cdff33040922d298203f0c4"
+checksum = "c74d84029116787153e02106bf53e66828452a4b325cc8652b788b5967c0a0b6"
 dependencies = [
  "num-integer",
  "num-traits",
@@ -373,10 +373,56 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7"
 
 [[package]]
+name = "futures-channel"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f366ad74c28cca6ba456d95e6422883cfb4b252a83bed929c83abfdbbf2967d5"
+dependencies = [
+ "futures-core",
+]
+
+[[package]]
 name = "futures-core"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59f5fff90fd5d971f936ad674802482ba441b6f09ba5e15fd8b39145582ca399"
+
+[[package]]
+name = "futures-macro"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0b5a30a4328ab5473878237c447333c093297bded83a4983d10f4deea240d39"
+dependencies = [
+ "proc-macro-hack",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "futures-task"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bdb66b5f09e22019b1ab0830f7785bcea8e7a42148683f99214f73f8ec21a626"
+dependencies = [
+ "once_cell",
+]
+
+[[package]]
+name = "futures-util"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8764574ff08b701a084482c3c7031349104b07ac897393010494beaa18ce32c6"
+dependencies = [
+ "futures-core",
+ "futures-macro",
+ "futures-task",
+ "pin-project",
+ "pin-utils",
+ "proc-macro-hack",
+ "proc-macro-nested",
+ "slab",
+]
 
 [[package]]
 name = "generic-array"
@@ -441,9 +487,9 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.14"
+version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9586eedd4ce6b3c498bc3b4dd92fc9f11166aa908a914071953768066c67909"
+checksum = "3deed196b6e7f9e44a2ae8d94225d80302d81208b1bb673fd21fe634645c85a9"
 dependencies = [
  "libc",
 ]
@@ -509,13 +555,31 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lc3-application-support"
 version = "0.1.0"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+dependencies = [
+ "futures-core",
+ "futures-util",
+ "js-sys",
+ "lazy_static",
+ "lc3-baseline-sim 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-device-support 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-shims 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "lc3-application-support"
+version = "0.1.0"
 source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
 dependencies = [
  "lazy_static",
- "lc3-baseline-sim",
- "lc3-device-support",
- "lc3-shims",
- "lc3-traits",
+ "lc3-baseline-sim 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-device-support 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-shims 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core)",
 ]
 
 [[package]]
@@ -526,9 +590,9 @@ dependencies = [
  "annotate-snippets",
  "clap",
  "itertools 0.8.2",
- "lc3-isa",
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
  "lc3-os",
- "lc3-shims",
+ "lc3-shims 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
  "num-traits",
  "regex 0.2.11",
 ]
@@ -536,11 +600,37 @@ dependencies = [
 [[package]]
 name = "lc3-baseline-sim"
 version = "0.1.0"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+dependencies = [
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "static_assertions",
+]
+
+[[package]]
+name = "lc3-baseline-sim"
+version = "0.1.0"
 source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
 dependencies = [
- "lc3-isa",
- "lc3-macros",
- "lc3-traits",
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core)",
+ "static_assertions",
+]
+
+[[package]]
+name = "lc3-device-support"
+version = "0.1.0"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+dependencies = [
+ "embedded-hal",
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "nb",
+ "postcard",
+ "serde",
+ "serialport",
  "static_assertions",
 ]
 
@@ -550,8 +640,8 @@ version = "0.1.0"
 source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
 dependencies = [
  "embedded-hal",
- "lc3-isa",
- "lc3-traits",
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core)",
  "nb",
  "postcard",
  "serde",
@@ -562,11 +652,31 @@ dependencies = [
 [[package]]
 name = "lc3-isa"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
 dependencies = [
- "lc3-macros",
+ "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
  "serde",
  "static_assertions",
+]
+
+[[package]]
+name = "lc3-isa"
+version = "0.1.0"
+source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
+dependencies = [
+ "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core)",
+ "serde",
+ "static_assertions",
+]
+
+[[package]]
+name = "lc3-macros"
+version = "0.1.0"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -582,15 +692,30 @@ dependencies = [
 [[package]]
 name = "lc3-os"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
 dependencies = [
  "lazy_static",
- "lc3-baseline-sim",
- "lc3-isa",
- "lc3-macros",
- "lc3-shims",
- "lc3-traits",
+ "lc3-baseline-sim 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-shims 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
  "static_assertions",
+]
+
+[[package]]
+name = "lc3-shims"
+version = "0.1.0"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+dependencies = [
+ "byteorder",
+ "chrono",
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "static_assertions",
+ "time",
+ "timer",
 ]
 
 [[package]]
@@ -600,9 +725,9 @@ source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f54
 dependencies = [
  "byteorder",
  "chrono",
- "lc3-isa",
- "lc3-macros",
- "lc3-traits",
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core)",
  "static_assertions",
  "time",
  "timer",
@@ -611,10 +736,23 @@ dependencies = [
 [[package]]
 name = "lc3-traits"
 version = "0.1.0"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+dependencies = [
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "log",
+ "serde",
+ "serde_json",
+ "static_assertions",
+]
+
+[[package]]
+name = "lc3-traits"
+version = "0.1.0"
 source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
 dependencies = [
- "lc3-isa",
- "lc3-macros",
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core)",
  "log",
  "serde",
  "serde_json",
@@ -630,18 +768,25 @@ dependencies = [
  "crossbeam",
  "crossterm",
  "failure",
+ "futures-channel",
+ "futures-core",
+ "futures-util",
+ "js-sys",
  "lazy_static",
- "lc3-application-support",
+ "lc3-application-support 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
  "lc3-assembler",
- "lc3-isa",
- "lc3-macros",
+ "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
  "lc3-os",
- "lc3-shims",
- "lc3-traits",
+ "lc3-shims 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
  "log",
  "pin-utils",
  "pretty_assertions",
  "tui",
+ "wasm-bindgen",
+ "web-sys",
+ "xterm-js-sys",
 ]
 
 [[package]]
@@ -823,6 +968,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ab52be62400ca80aa00285d25253d7f7c437b7375c4de678f5405d3afe82ca5"
 
 [[package]]
+name = "once_cell"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b631f7e854af39a1739f401cf34a8a013dfe09eac4fa4dba91e9768bd28168d"
+
+[[package]]
 name = "output_vt100"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -853,6 +1004,26 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "pin-project"
+version = "0.4.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12e3a6cdbfe94a5e4572812a0201f8c0ed98c1c452c7b8563ce2276988ef9c17"
+dependencies = [
+ "pin-project-internal",
+]
+
+[[package]]
+name = "pin-project-internal"
+version = "0.4.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a0ffd45cf79d88737d7cc85bfd5d2894bee1139b356e616fe85dc389c61aaf7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -921,6 +1092,18 @@ dependencies = [
  "syn-mid",
  "version_check",
 ]
+
+[[package]]
+name = "proc-macro-hack"
+version = "0.5.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e0456befd48169b9f13ef0f0ad46d492cf9d2dbb918bcf38e01eed4ce3ec5e4"
+
+[[package]]
+name = "proc-macro-nested"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eba180dafb9038b050a4c280019bbedf9f2467b61e5d892dcad585bb57aadc5a"
 
 [[package]]
 name = "proc-macro2"
@@ -1264,7 +1447,7 @@ version = "0.1.0"
 dependencies = [
  "failure",
  "flexi_logger",
- "lc3-application-support",
+ "lc3-application-support 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
  "lc3-tui",
  "structopt",
 ]
@@ -1275,7 +1458,7 @@ version = "0.1.0"
 dependencies = [
  "failure",
  "flexi_logger",
- "lc3-application-support",
+ "lc3-application-support 0.1.0 (git+https://github.com/ut-utp/core)",
  "lc3-tui",
  "structopt",
 ]
@@ -1319,6 +1502,18 @@ dependencies = [
  "quote",
  "syn",
  "wasm-bindgen-shared",
+]
+
+[[package]]
+name = "wasm-bindgen-futures"
+version = "0.4.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dba48d66049d2a6cc8488702e7259ab7afc9043ad0dc5448444f46f2a453b362"
+dependencies = [
+ "cfg-if",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
