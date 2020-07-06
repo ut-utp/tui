@@ -1,6 +1,7 @@
 //! Module defining the layout of the widgets used by the TUI.
 
 use crate::tui::widget::{Widgets, Widget};
+use crate::tui::widget::util::ConditionalSendBound;
 use crate::widgets::*;
 use crate::colours::c;
 
@@ -28,7 +29,7 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     B: Backend,
-    Terminal<B>: Send,
+    Terminal<B>: ConditionalSendBound,
 {
     let mut root = RootWidget::new(layout_tabs(name, extra_tabs))
         .add(Modeline::new(LoadButton::new()));
@@ -46,7 +47,7 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a,
     B: Backend,
-    Terminal<B>: Send,
+    Terminal<B>: ConditionalSendBound,
 {
     let horz = Layout::default().direction(Direction::Horizontal);
     let vert = Layout::default().direction(Direction::Vertical);

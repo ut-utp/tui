@@ -5,6 +5,7 @@
 pub(in self) mod widget_impl_support {
     pub use crate::tui::widget::{TuiWidget, Widget};
     pub use crate::tui::widget::util::{trim_to_width, trim_to_rect, increment, Axis};
+    pub use crate::tui::widget::util::ConditionalSendBound;
     pub use crate::tui::ansi::AnsiTextContainer;
     pub use crate::tui::TuiData;
     pub use crate::tui::events::{WidgetEvent, FocusEvent};

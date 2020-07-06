@@ -266,7 +266,7 @@ dependencies = [
 [[package]]
 name = "crossterm"
 version = "0.17.5"
-source = "git+https://github.com/rrbutani/crossterm?branch=xtermjs#66c3120a7004ca78f060f03f04c08120a2844369"
+source = "git+https://github.com/rrbutani/crossterm?branch=xtermjs#a00f9c0f3c4813f7de786f1e951a9692338d2f4d"
 dependencies = [
  "bitflags",
  "crossterm_winapi",
@@ -1393,7 +1393,7 @@ dependencies = [
 [[package]]
 name = "tui"
 version = "0.9.5"
-source = "git+https://github.com/rrbutani/tui-rs#1999eb9f2384ff5e760c2a0343302dd197e9dc5c"
+source = "git+https://github.com/rrbutani/tui-rs#f3648bffc0cd527eeb010ce53ef21b4429579201"
 dependencies = [
  "bitflags",
  "cassowary",

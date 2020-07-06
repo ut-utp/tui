@@ -2,7 +2,22 @@
 
 use crate::strings::{s, DotDotDot};
 
+use tui::backend::Backend;
 use tui::layout::Rect;
+use tui::terminal::Terminal;
+
+specialize! {
+    desktop => {
+        pub trait ConditionalSendBound: Send {}
+        impl<B: Backend> ConditionalSendBound for Terminal<B> where Terminal<B>: Send { }
+    }
+
+    web => {
+        pub trait ConditionalSendBound {}
+        impl<B: Backend> ConditionalSendBound for Terminal<B> { }
+    }
+
+}
 
 // TODO: should this actually be pub?
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
