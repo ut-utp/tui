@@ -9,24 +9,37 @@ use crossterm::terminal::LeaveAlternateScreen;
 use crossterm::cursor::Show;
 use crossterm::{ExecutableCommand, execute};
 use crossterm::ErrorKind as CrosstermError;
-
 use futures_core::stream::Stream;
 use futures_channel::mpsc::{self, UnboundedSender as Sender};
-use futures_util::stream::{TryStreamExt, select};
+use futures_util::stream::{TryStreamExt, StreamExt, select};
+use tui::backend::CrosstermBackend;
+
+use std::time::Duration;
+use std::io::Write;
+
+trait Unify<T> { fn unify(self) -> T; }
+
+impl<T> Unify<T> for std::result::Result<T, T> {
+    fn unify(self) -> T {
+        match self {
+            Ok(val) | Err(val) => val
+        }
+    }
+}
 
 // Note that this still takes a `tick` Duration, but it's a little bit weird
 // since RAF (request animation frame) is used internally.
 
-pub(in crate::tui) fn start_event_stream<T>(
-    term: &mut T,
+pub(in crate::tui) fn start_event_stream<'c, T: 'c>(
+    term: &mut CrosstermBackend<'c, T>,
     tick: Duration,
-) -> Result<(impl Stream<Item = Event>, Sender<Event>)>
+) -> Result<(impl Stream<Item = Event> + 'c, Sender<Event>)>
 where
-    T: ExecutableCommand<&'static str>
+    T: Write,
 {
     let (tx, rx) = mpsc::unbounded();
 
-    let stream = start_crossterm_event_stream(term, tick)?;
+    let stream = start_crossterm_event_stream(term)?;
     start_tick_stream(tick, tx.clone())?;
 
     Ok((select(stream, rx), tx))
@@ -36,28 +49,28 @@ where
 //
 // Note that we don't have any notion of "exiting" on wasm which is why this
 // is missing lots of stuff like checking for Alt + q.
-fn start_crossterm_event_stream<T>(
-    term: &mut T,
-) -> Result<impl Stream<Item = Event>>
+fn start_crossterm_event_stream<'c, T>(
+    term: &mut CrosstermBackend<'c, T>,
+) -> Result<impl Stream<Item = Event> + 'c>
 where
-    T: ExecutableCommand<&'static str>,
-    T: Clone,
+    T: Write,
 {
     let _ = term.execute(EnableMouseCapture)?;
 
-    EventStream::new()
+    Ok(EventStream::new(term.buffer.terminal)
         .map_ok(Event::ActualEvent)
         .map_err(Event::Error)
+        .map(Unify::unify))
 }
 
 
 fn start_tick_stream(period: Duration, tx: Sender<Event>) -> Result<()> {
     let mut last = 0.0f64;
-    let interval = period.as_secs_f64() * 1_000;
+    let interval = period.as_secs_f64() * 1_000f64;
 
     rafi::AnimationFrameCallbackWrapper::new()
         .leak()
-        .start_safe(move |timestamp| {
+        .safe_start(move |timestamp| {
             if timestamp - last > interval {
                 last = timestamp;
 
@@ -68,7 +81,9 @@ fn start_tick_stream(period: Duration, tx: Sender<Event>) -> Result<()> {
             }
 
             true
-        })
+        });
+
+    Ok(())
 }
 
 
@@ -96,8 +111,6 @@ mod rafi {
     }
 
     fn cancel_animation_frame(handle: i32) {
-        log!("Cancelling {}..", handle);
-
         web_sys::window()
             .unwrap()
             .cancel_animation_frame(handle)
@@ -130,7 +143,6 @@ mod rafi {
             &'s mut self,
             func: impl FnMut(f64) -> bool + 'f,
         ) {
-            // log!(""); // load bearing, somehow...
             self.inner(func)
         }
 
@@ -159,16 +171,15 @@ mod rafi {
                 h: &'static Cell<Option<i32>>,
                 window: Window,
             ) -> Function {
-                let val = Closure::once_into_js(move || {
+                let val = Closure::once_into_js(move |timestamp| {
                     // See: https://github.com/rust-lang/rust/issues/42574
                     let f = f;
 
                     if h.get().is_none() {
-                        log!("you should never see this...");
                         return;
                     }
 
-                    if (f)() {
+                    if f(timestamp) {
                         let next = recurse(f, h, window.clone());
                         let id = window.request_animation_frame(&next).unwrap();
                         h.set(Some(id));
