@@ -1,59 +1,19 @@
-//! TODO!
+//! Event listener implementation that's thread based (for targets that aren't
+//! WebAssembly).
 
-use super::Res as Result;
+use super::super::Res as Result;
+use super::{Event, CrosstermEvent, KeyEvent};
 
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
 use crossterm::terminal::LeaveAlternateScreen;
 use crossterm::cursor::Show;
 use crossterm::{ExecutableCommand, execute};
 use crossterm::ErrorKind as CrosstermError;
-pub use crossterm::event::{Event as CrosstermEvent, KeyEvent, MouseEvent};
 
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::Builder as ThreadBuilder;
 use std::time::Duration;
 use std::io::Write;
-
-/// All events that our event threads produce.
-#[derive(Debug)]
-#[non_exhaustive]
-pub(in crate::tui) enum Event {
-    Error(CrosstermError),
-    Tick,
-    ActualEvent(CrosstermEvent),
-    #[doc(hidden)]
-    FlushEventsBarrier(u8),
-}
-
-/// The only events that actually make their to Widgets.
-///
-/// All other events (i.e. the others in the [`Event`] enum) are handled
-/// "internally".
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
-pub enum WidgetEvent {
-    Key(KeyEvent),
-    Mouse(MouseEvent),
-    Resize(u16, u16),
-    Focus(FocusEvent),
-    Update, // Just another name for Tick.
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum FocusEvent {
-    GotFocus,
-    LostFocus
-}
-
-impl From<CrosstermEvent> for WidgetEvent {
-    fn from(event: CrosstermEvent) -> Self {
-        use CrosstermEvent::*;
-        match event {
-            Key(k) => WidgetEvent::Key(k),
-            Mouse(m) => WidgetEvent::Mouse(m),
-            Resize(x, y) => WidgetEvent::Resize(x, y),
-        }
-    }
-}
 
 pub(in crate::tui) fn start_event_threads<T>(
     term: &mut T,
@@ -77,7 +37,7 @@ fn start_crossterm_event_thread<T>(
     tx: Sender<Event>
 ) -> Result<()>
 where
-    T: ExecutableCommand<&'static str>
+    T: ExecutableCommand<&'static str>,
 {
     let _ = term.execute(EnableMouseCapture)?;
 
@@ -117,9 +77,9 @@ where
                 Ok(e) => {
                     use crossterm::event::{KeyCode, KeyModifiers as Km};
 
-                    // Ideally this would be Ctrl + Shift + Q but crossterm
+                    // Ideally this would be Ctrl + Shift + q but crossterm
                     // doesn't seem to do a good job actually relaying Ctrl +
-                    // Shift key events. So, we'll do Alt + Q.
+                    // Shift key events. So, we'll do Alt + q.
                     if let CrosstermEvent::Key(KeyEvent {
                         code: KeyCode::Char('q'), modifiers: Km::CONTROL
                     }) = e {
