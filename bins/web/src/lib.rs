@@ -14,7 +14,7 @@ use std::time::Duration;
 #[wasm_bindgen]
 pub async fn run() -> Result<(), JsValue> {
     set_panic_hook();
-    console_log::init_with_level(Level::Trace).expect("error initializing log");
+    console_log::init_with_level(Level::Debug).expect("error initializing log");
 
     // Use `web_sys`'s global `window` function to get a handle on the global
     // window object.
@@ -26,13 +26,14 @@ pub async fn run() -> Result<(), JsValue> {
 
     let term = Terminal::new(Some(
         TerminalOptions::default()
-            .with_log_level(LogLevel::Debug)
+            .with_log_level(LogLevel::Off)
             .with_theme(Theme::nord())
             .with_font_family("'Fira Mono', monospace")
             .with_font_size(11.0),
     ));
 
     term.open(terminal_div);
+    term.resize(200, 45);
 
     let mut b = BlackBox::new();
     let mut tui = DynTui::new_boxed_from_init::<SimDevice>(&mut b);

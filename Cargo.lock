@@ -576,7 +576,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lc3-application-support"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#b3f5667515f5a2efd0967f2578602a3209055cbf"
 dependencies = [
  "futures-core",
  "futures-util",
@@ -609,7 +609,7 @@ dependencies = [
 [[package]]
 name = "lc3-baseline-sim"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#b3f5667515f5a2efd0967f2578602a3209055cbf"
 dependencies = [
  "lc3-isa",
  "lc3-macros",
@@ -620,7 +620,7 @@ dependencies = [
 [[package]]
 name = "lc3-device-support"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#b3f5667515f5a2efd0967f2578602a3209055cbf"
 dependencies = [
  "embedded-hal",
  "lc3-isa",
@@ -635,7 +635,7 @@ dependencies = [
 [[package]]
 name = "lc3-isa"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#b3f5667515f5a2efd0967f2578602a3209055cbf"
 dependencies = [
  "lc3-macros",
  "serde",
@@ -645,7 +645,7 @@ dependencies = [
 [[package]]
 name = "lc3-macros"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#b3f5667515f5a2efd0967f2578602a3209055cbf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "lc3-os"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#b3f5667515f5a2efd0967f2578602a3209055cbf"
 dependencies = [
  "lazy_static",
  "lc3-baseline-sim",
@@ -669,7 +669,7 @@ dependencies = [
 [[package]]
 name = "lc3-shims"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#b3f5667515f5a2efd0967f2578602a3209055cbf"
 dependencies = [
  "byteorder",
  "chrono",
@@ -684,7 +684,7 @@ dependencies = [
 [[package]]
 name = "lc3-traits"
 version = "0.1.0"
-source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
+source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#b3f5667515f5a2efd0967f2578602a3209055cbf"
 dependencies = [
  "lc3-isa",
  "lc3-macros",
@@ -1540,9 +1540,10 @@ dependencies = [
 [[package]]
 name = "xterm-js-sys"
 version = "4.6.0-alpha1"
-source = "git+https://github.com/rrbutani/xterm-js-sys?branch=main#b31eb3383d299a69caf681e1bda142795fd6d8e2"
+source = "git+https://github.com/rrbutani/xterm-js-sys?branch=main#5f20b99a6f580261155fc8e50c6ac5e9d7cc83ed"
 dependencies = [
  "js-sys",
+ "log",
  "wasm-bindgen",
  "web-sys",
 ]
