@@ -46,3 +46,14 @@ impl From<CrosstermEvent> for WidgetEvent {
     }
 }
 
+specialize! {
+    desktop => {
+        mod not_wasm;
+        pub(in crate::tui) use not_wasm::start_event_threads;
+    }
+
+    web => {
+        mod wasm;
+        pub(in crate::tui) use wasm::start_event_stream;
+    }
+}
