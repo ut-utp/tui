@@ -15,7 +15,6 @@ use crossterm::ExecutableCommand;
 use crossterm::event::{KeyEvent, KeyCode, KeyModifiers, DisableMouseCapture};
 use failure::err_msg;
 use tui::terminal::Terminal;
-use tui::backend::Backend;
 use tui::widgets::Text as TuiText;
 use tui::layout::Rect;
 use tui::style::{Color, Style};
@@ -25,6 +24,11 @@ use std::io::{Stdout, Write};
 specialize! {
     desktop => { use std::sync::mpsc::Sender; }
     web => { use futures_channel::mpsc::UnboundedSender as Sender; }
+}
+
+specialize! {
+    desktop => { use tui::backend::Backend; }
+    web => { }
 }
 
 impl<'a, 'int, C, I, O> Tui<'a, 'int, C, I, O>
@@ -68,7 +72,7 @@ where
         last_window_size: &mut Option<(u16, u16)>,
     ) -> bool
     where
-        B: Backend,
+        B: tui::backend::Backend,
         B: ExecutableCommand<&'static str>,
     {
         use Event::*;
