@@ -22,7 +22,17 @@ use tui::style::{Color, Style};
 
 use std::io::{Stdout, Write};
 
-impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSource + ?Sized + 'a> Tui<'a, 'int, C, I, O> {
+specialize! {
+    desktop => { use std::sync::mpsc::Sender; }
+    web => { use futures_channel::mpsc::UnboundedSender; }
+}
+
+impl<'a, 'int, C, I, O> Tui<'a, 'int, C, I, O>
+where
+    C: Control + ?Sized + 'a,
+    I: InputSink + ?Sized + 'a,
+    O: OutputSource + ?Sized + 'a,
+{
     // some one time initialization stuff
     fn init(&mut self) {
         // Say hello:
@@ -34,33 +44,55 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
             .iter().copied()
             .filter_map(std::convert::identity)
             .enumerate()
-            .for_each(|(idx, (addr, _))| self.data.wp.insert(addr, idx));
+            .for_each(|(idx, (addr, _))|
+                assert!(self.data.wp.insert(addr, idx).is_none())
+            );
 
         self.data.sim.get_breakpoints()
             .iter().copied()
             .filter_map(std::convert::identity)
             .enumerate()
-            .for_each(|(idx, addr)| self.data.bp.insert(addr, idx));
+            .for_each(|(idx, addr)|
+                assert!(self.data.bp.insert(addr, idx).is_none())
+            );
     }
 
     // Matches the interface `Backoff` has for the function it takes; return value
     // indicates whether to continue.
-    fn handle_event<B>(&mut self, event: Event, term: &mut Terminal<B>) -> bool
+    fn handle_event<B>(
+        &mut self,
+        event: Event,
+        term: &mut Terminal<B>,
+        tx: &Sender<Event>,
+        root: &mut impl Widget<'a, 'int, C, I, O, B>,
+        last_window_size: &mut Option<(u16, u16)>,
+    ) -> bool
     where
+        B: Backend,
         B: ExecutableCommand<&'static str>,
         Terminal<B>: Send,
     {
         use Event::*;
         use CrosstermEvent::*;
 
+        macro_rules! send {
+            ($expr:expr) => {
+                specialize! { [var: ___ex]
+                    desktop => { tx.send($expr).unwrap() }
+                    web => { tx.unbounded_send($expr).unwrap() }
+                }
+            };
+        }
+
         // Empty the queue if we're told to. This should handle nested requests
         // (i.e. if we're told to empty the queue while we're already doing so).
-        if let Some(f) = tui.data.flush_all_events {
+        if let Some(f) = self.data.flush_all_events {
             use super::Flush::*;
 
             match f {
                 Requested(i) => {
-                    tx.send(FlushEventsBarrier(i)).unwrap();
+                    send!(FlushEventsBarrier(i));
+
                     self.data.flush_all_events = Some(Acknowledged(i));
                 }
                 Acknowledged(c) => {
@@ -70,7 +102,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                             if c == i {
                                 drop(self.data.flush_all_events.take());
                                 let Rect { width, height, .. } = term.size().unwrap();
-                                tx.send(ActualEvent(Resize(width, height))).unwrap();
+                                send!(ActualEvent(Resize(width, height)));
                             }
                         }
                         _ => {
@@ -87,80 +119,66 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 }
             }
 
-        // TODO: potentially construct this from user configurable options!
-        let backoff = Backoff::default();
-
-        // Focus the root and never unfocus it!
-        // (The root widget really should accept focus but we don't check that it does
-        // here; if we're told to run with an empty widget tree we shall.)
-        let _ = root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data, term);
-
-        self.data.log(s!(HelloMsg), Color::Cyan);
-        self.data.log(s!(StartupMsg), Color::Magenta);
-
-        let wps = self.data.sim.get_memory_watchpoints();
-        let mut i = 0;
-        while let Some(wp) = wps[i] {
-            self.data.wp.insert(wp.0, i);
-            i = i + 1;
+            return true;
         }
 
-        let bps = self.data.sim.get_breakpoints();
-        i = 0;
-        while let Some(bp) = bps[i] {
-            self.data.bp.insert(bp, i);
-            i = i + 1;
+        // Next, log events.
+        log::trace!("Event: {:?}", event);
+
+        if let Some(ref mut v) = self.data.debug_log {
+            let time = std::time::SystemTime::now();
+            let time: DateTime<Local> = time.into();
+            let line = format!("[EVENT] @ {}: {:?}\n", time.format("%d/%m/%Y %T%.6f"), event);
+
+            let text = TuiText::styled(line, Style::default().fg(Color::Green));
+            v.push(text);
         }
 
-        let mut last_window_size = None;
+        // Some bookkeeping:
+        if let ActualEvent(Resize(x, y)) = event {
+            *last_window_size = Some((x, y));
+        }
 
-        backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {
-            use Event::*;
-            use CrosstermEvent::*;
+        // Finally, the actual event handling.
+        match event {
+            Error(err) => {
+                // TODO: should we crash here?
+                log::error!("Got a crossterm error: {:?}.", err)
+            },
 
-            // Empty the queue if we're told to. This should handle nested requests
-            // (i.e. if we're told to empty the queue while we're already doing so).
-            if let Some(f) = tui.data.flush_all_events {
-                use super::Flush::*;
+            // Currently, we only redraw on ticks (TODO: is this okay or should we
+            // redraw on events too?):
+            Tick => {
+                drop(root.update(WidgetEvent::Update, &mut self.data, term));
 
-                match f {
-                    Requested(i) => {
-                        tx.send(FlushEventsBarrier(i)).unwrap();
-                        tui.data.flush_all_events = Some(Acknowledged(i));
+                term.draw(|mut f| {
+                    let area = f.size();
+                    if (last_window_size == &Some((area.width, area.height)) ||
+                                last_window_size == &None)
+                            && area.area() > 0 {
+                        Widget::render(root, &self.data, &mut f, area)
                     }
-                    Acknowledged(c) => {
-                        match event {
-                            FlushEventsBarrier(i) => {
-                                // If its count matches us, we're done clearing.
-                                if c == i {
-                                    drop(tui.data.flush_all_events.take());
-                                    let Rect { width, height, .. } = term.size().unwrap();
-                                    tx.send(ActualEvent(Resize(width, height))).unwrap();
-                                }
-                            }
-                            _ => {
-                                /* Otherwise, continue discarding events. */
-                                if let Some(ref mut v) = tui.data.debug_log {
-                                    let time = std::time::SystemTime::now();
-                                    let time: DateTime<Local> = time.into();
-                                    let line = format!("[EVENT] @ {}, discarded: {:?}\n", time.format("%d/%m/%Y %T%.6f"), event);
 
-                                    v.push(TuiText::styled(line, Style::default().fg(Color::Yellow)));
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return true;
+                    Widget::render(root, &self.data, &mut f, area)
+                }).unwrap() // TODO: is unwrapping okay here?
             }
 
-            log::trace!("Event: {:?}", event);
+            ActualEvent(e) => match e {
+                // Capture `ctrl + q`/`alt + f4` and forward everything else:
+                Key(KeyEvent { code: KeyCode::Char('w'), modifiers: KeyModifiers::CONTROL }) |
+                Key(KeyEvent { code: KeyCode::F(4), modifiers: KeyModifiers::ALT }) => {
+                    return false
+                }
+                e => drop(root.update(e.into(), &mut self.data, term)),
+            }
 
-            if let Some(ref mut v) = tui.data.debug_log {
-                let time = std::time::SystemTime::now();
-                let time: DateTime<Local> = time.into();
-                let line = format!("[EVENT] @ {}: {:?}\n", time.format("%d/%m/%Y %T%.6f"), event);
+            _ => unreachable!("Got {:?} which shouldn't be possible.", event),
+        }
+
+        // onwards! (i.e. don't stop)
+        true
+    }
+}
 
                 let text = TuiText::styled(line, Style::default().fg(Color::Green));
                 v.push(text);
