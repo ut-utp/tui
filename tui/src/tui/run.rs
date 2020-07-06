@@ -180,61 +180,84 @@ where
     }
 }
 
-                let text = TuiText::styled(line, Style::default().fg(Color::Green));
-                v.push(text);
-            }
+impl<'a, 'int, C, I, O> Tui<'a, 'int, C, I, O>
+where
+    C: Control + ?Sized + 'a,
+    I: InputSink + ?Sized + 'a,
+    O: OutputSource + ?Sized + 'a,
+{ specialize! {
+    desktop => {
+        /// TODO: docs
+        pub fn run_with_custom_layout<B: Backend>(mut self, term: &mut Terminal<B>, mut root: impl Widget<'a, 'int, C, I, O, B>) -> Result<()>
+        where
+            B: ExecutableCommand<&'static str>,
+            Terminal<B>: Send,
+        {
+            // init!
+            self.init();
 
-            if let ActualEvent(Resize(x, y)) = event {
-                last_window_size = Some((x, y));
-            }
+            // TODO: potentially construct this from user configurable options!
+            let backoff = Backoff::default();
 
-            match event {
-                Error(err) => {
-                    // TODO: should we crash here?
-                    log::error!("Got a crossterm error: {:?}.", err)
-                },
+            // Spin up the event thing:
+            let (event_recv, tx) = events::start_event_threads(term.backend_mut(), self.update_period)?;
 
-                // Currently, we only redraw on ticks (TODO: is this okay or should we
-                // redraw on events too?):
-                Tick => {
-                    drop(root.update(WidgetEvent::Update, &mut tui.data, term));
+            // Focus the root and never unfocus it!
+            // (The root widget really should accept focus but we don't check that it does
+            // here; if we're told to run with an empty widget tree we shall.)
+            let _ = root.update(WidgetEvent::Focus(FocusEvent::GotFocus), &mut self.data, term);
 
-                    term.draw(|mut f| {
-                        let area = f.size();
-                        if (last_window_size == Some((area.width, area.height)) ||
-                                    last_window_size == None)
-                                && area.area() > 0 {
-                            Widget::render(&mut root, &tui.data, &mut f, area)
-                        }
+            let mut last_window_size = None;
 
-                        Widget::render(&mut root, &tui.data, &mut f, area)
-                    }).unwrap() // TODO: is unwrapping okay here?
-                }
+            backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {
+                tui.handle_event(event, term, &tx, &mut root, &mut last_window_size)
+            }).map_err(|_| err_msg("Channel disconnected; maybe something crashed?"))
+        }
 
-                ActualEvent(e) => match e {
-                    // Capture `ctrl + q`/`alt + f4` and forward everything else:
-                    Key(KeyEvent { code: KeyCode::Char('w'), modifiers: KeyModifiers::CONTROL }) |
-                    Key(KeyEvent { code: KeyCode::F(4), modifiers: KeyModifiers::ALT }) => {
-                        return false
-                    }
-                    e => drop(root.update(e.into(), &mut tui.data, term)),
-                }
+        // Run with default layout and a backend of your choosing.
+        pub fn run<B: Backend>(self, term: &mut Terminal<B>) -> Result<()>
+        where
+            B: ExecutableCommand<&'static str>,
+            Terminal<B>: Send,
+        {
+            self.run_with_custom_layout(term, crate::layout::layout(None, vec![]))
+        }
 
-                _ => unreachable!("Got {:?} which shouldn't be possible.", event),
-            }
+        // Run with crossterm; with or without your own special layout.
+        pub fn run_with_crossterm<'c>(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<'c, Stdout>>>) -> Result<()> {
+            use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
+            use crossterm::execute;
 
-            // onwards! (i.e. don't stop)
-            true
-        }).map_err(|_| err_msg("Channel disconnected; maybe something crashed?"))
-    }
+            let mut stdout = std::io::stdout();
+            execute!(stdout, EnterAlternateScreen)?;
+            crossterm::terminal::enable_raw_mode()?;
 
-    // Run with default layout and a backend of your choosing.
-    pub fn run<B: Backend>(self, term: &mut Terminal<B>) -> Result<()>
-    where
-        B: ExecutableCommand<&'static str>,
-        Terminal<B>: Send,
-    {
-        self.run_with_custom_layout(term, crate::layout::layout(None, vec![]))
+            let backend = tui::backend::CrosstermBackend::new(stdout);
+            let mut terminal = Terminal::new(backend)?;
+
+            terminal.hide_cursor()?;
+
+            let res = if let Some(w) = root_widget {
+                self.run_with_custom_layout(&mut terminal, w)
+            } else {
+                self.run(&mut terminal)
+            };
+
+            // TODO: v should maybe happen when the Crossterm Event Thread exits, but this
+            // is okay for now.
+            //
+            // Right now we duplicate this logic in the crossterm event thread's exit since
+            // it can also trigger a quit and when we quit from here, there's no guarantee
+            // that the crossterm event thread doesn't die before it gets to reset the
+            // screen.
+            execute!(std::io::stdout(), DisableMouseCapture)?;
+
+            terminal.show_cursor()?;
+            crossterm::terminal::disable_raw_mode()?;
+            execute!(std::io::stdout(), LeaveAlternateScreen)?;
+
+            res
+        }
     }
 
     web => {
