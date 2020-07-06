@@ -29,11 +29,47 @@ maintenance = { status = "actively-developed" }
 
 
 [dependencies]
-flexi_logger = { version = "0.14", default_features = false }
-structopt = { version = "0.3", default-features = false }
+console_log = { version = "0.2", features = ["color"] }
+log = "0.4"
 failure = "0.1.6"
 
-lc3-application-support = { git = "https://github.com/ut-utp/core", branch = "master", version = "0.1.0" }
-# TODO: grab the above from crates.io instead of git
-# TODO: get rid of the staging thing
+lc3-application-support = "0.1.0"
 lc3-tui = { path = "../../tui", version = "0.1.0" }
+
+xterm-js-sys = "4.6.0-alpha1" # TODO: bump
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+console_error_panic_hook = "0.1"
+js-sys = "0.3"
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+  'console',
+  'Document',
+  'Element',
+  'Node',
+  'NodeList',
+  'Window',
+]
+
+
+[lib]
+crate-type = ["cdylib"]
+
+
+[package.metadata.wasm-pack.profile.dev.wasm-bindgen]
+debug-js-glue = true
+demangle-name-section = true
+dwarf-debug-info = true
+
+[package.metadata.wasm-pack.profile.release]
+# The version of wasm-opt that wasm-pack bundles crashes on current wasm-bindgen
+# .wasm files. Current wasm-opt (version 93) crashes on the DWARF info that
+# wasm-bindgen produces. So, we'll just disable wasm-opt for now.
+wasm-opt = false #["-O4"]
+
+[package.metadata.wasm-pack.profile.release.wasm-bindgen]
+debug-js-glue = false
+demangle-name-section = true
+dwarf-debug-info = true

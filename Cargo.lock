@@ -192,6 +192,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "console_error_panic_hook"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8d976903543e0c48546a91908f21588a680a8c8f984df9a5d69feccb2b2a211"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "console_log"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "501a375961cef1a0d44767200e66e4a559283097e91d0730b1d75dfb2f8a1494"
+dependencies = [
+ "log",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "crossbeam"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -561,25 +582,13 @@ dependencies = [
  "futures-util",
  "js-sys",
  "lazy_static",
- "lc3-baseline-sim 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-device-support 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-shims 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-baseline-sim",
+ "lc3-device-support",
+ "lc3-shims",
+ "lc3-traits",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
-]
-
-[[package]]
-name = "lc3-application-support"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
-dependencies = [
- "lazy_static",
- "lc3-baseline-sim 0.1.0 (git+https://github.com/ut-utp/core)",
- "lc3-device-support 0.1.0 (git+https://github.com/ut-utp/core)",
- "lc3-shims 0.1.0 (git+https://github.com/ut-utp/core)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core)",
 ]
 
 [[package]]
@@ -590,9 +599,9 @@ dependencies = [
  "annotate-snippets",
  "clap",
  "itertools 0.8.2",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-isa",
  "lc3-os",
- "lc3-shims 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-shims",
  "num-traits",
  "regex 0.2.11",
 ]
@@ -602,20 +611,9 @@ name = "lc3-baseline-sim"
 version = "0.1.0"
 source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
 dependencies = [
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "static_assertions",
-]
-
-[[package]]
-name = "lc3-baseline-sim"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
-dependencies = [
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-isa",
+ "lc3-macros",
+ "lc3-traits",
  "static_assertions",
 ]
 
@@ -625,23 +623,8 @@ version = "0.1.0"
 source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
 dependencies = [
  "embedded-hal",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "nb",
- "postcard",
- "serde",
- "serialport",
- "static_assertions",
-]
-
-[[package]]
-name = "lc3-device-support"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
-dependencies = [
- "embedded-hal",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-isa",
+ "lc3-traits",
  "nb",
  "postcard",
  "serde",
@@ -654,17 +637,7 @@ name = "lc3-isa"
 version = "0.1.0"
 source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
 dependencies = [
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "serde",
- "static_assertions",
-]
-
-[[package]]
-name = "lc3-isa"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
-dependencies = [
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-macros",
  "serde",
  "static_assertions",
 ]
@@ -673,16 +646,6 @@ dependencies = [
 name = "lc3-macros"
 version = "0.1.0"
 source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "lc3-macros"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -695,11 +658,11 @@ version = "0.1.0"
 source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
 dependencies = [
  "lazy_static",
- "lc3-baseline-sim 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-shims 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-baseline-sim",
+ "lc3-isa",
+ "lc3-macros",
+ "lc3-shims",
+ "lc3-traits",
  "static_assertions",
 ]
 
@@ -710,24 +673,9 @@ source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08
 dependencies = [
  "byteorder",
  "chrono",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "static_assertions",
- "time",
- "timer",
-]
-
-[[package]]
-name = "lc3-shims"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
-dependencies = [
- "byteorder",
- "chrono",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-isa",
+ "lc3-macros",
+ "lc3-traits",
  "static_assertions",
  "time",
  "timer",
@@ -738,21 +686,8 @@ name = "lc3-traits"
 version = "0.1.0"
 source = "git+https://github.com/ut-utp/core?branch=feat-wasm-support#62060b2b08d0a7363401bdad658078e17b4e75c4"
 dependencies = [
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "log",
- "serde",
- "serde_json",
- "static_assertions",
-]
-
-[[package]]
-name = "lc3-traits"
-version = "0.1.0"
-source = "git+https://github.com/ut-utp/core#4816ece0f2d47e54d989c7a5bc4da9c9f5415f74"
-dependencies = [
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core)",
+ "lc3-isa",
+ "lc3-macros",
  "log",
  "serde",
  "serde_json",
@@ -773,13 +708,13 @@ dependencies = [
  "futures-util",
  "js-sys",
  "lazy_static",
- "lc3-application-support 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-application-support",
  "lc3-assembler",
- "lc3-isa 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-macros 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-isa",
+ "lc3-macros",
  "lc3-os",
- "lc3-shims 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
- "lc3-traits 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-shims",
+ "lc3-traits",
  "log",
  "pin-utils",
  "pretty_assertions",
@@ -1447,7 +1382,7 @@ version = "0.1.0"
 dependencies = [
  "failure",
  "flexi_logger",
- "lc3-application-support 0.1.0 (git+https://github.com/ut-utp/core?branch=feat-wasm-support)",
+ "lc3-application-support",
  "lc3-tui",
  "structopt",
 ]
@@ -1456,11 +1391,17 @@ dependencies = [
 name = "utp-tui-web"
 version = "0.1.0"
 dependencies = [
+ "console_error_panic_hook",
+ "console_log",
  "failure",
- "flexi_logger",
- "lc3-application-support 0.1.0 (git+https://github.com/ut-utp/core)",
+ "js-sys",
+ "lc3-application-support",
  "lc3-tui",
- "structopt",
+ "log",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "xterm-js-sys",
 ]
 
 [[package]]
