@@ -24,7 +24,7 @@ use std::io::{Stdout, Write};
 
 specialize! {
     desktop => { use std::sync::mpsc::Sender; }
-    web => { use futures_channel::mpsc::UnboundedSender; }
+    web => { use futures_channel::mpsc::UnboundedSender as Sender; }
 }
 
 impl<'a, 'int, C, I, O> Tui<'a, 'int, C, I, O>
@@ -70,7 +70,6 @@ where
     where
         B: Backend,
         B: ExecutableCommand<&'static str>,
-        Terminal<B>: Send,
     {
         use Event::*;
         use CrosstermEvent::*;
@@ -180,6 +179,14 @@ where
     }
 }
 
+specialize! {
+    desktop => {}
+    web => {
+        use tui::backend::CrosstermBackend;
+        use xterm_js_sys::Terminal as XtermJsTerminal;
+    }
+}
+
 impl<'a, 'int, C, I, O> Tui<'a, 'int, C, I, O>
 where
     C: Control + ?Sized + 'a,
@@ -262,15 +269,11 @@ where
 
     web => {
         // Note: this is almost exactly a copy of the `desktop` counterpart.
-        pub async fn run_with_custom_layout<B: Backend>(
+        pub async fn run_with_custom_layout<'t, W: Write + 't>(
             mut self,
-            term: &mut Terminal<B>,
-            mut root: impl Widget<'a, 'int, C, I, O, B>,
-        ) -> Result<()>
-        where
-            B: ExecutableCommand<&'static str>,
-            Terminal<B>: Send,
-        {
+            term: &mut Terminal<CrosstermBackend<'t, W>>,
+            mut root: impl Widget<'a, 'int, C, I, O, CrosstermBackend<'t, W>>,
+        ) -> Result<()> {
             // init!
             self.init();
 
@@ -278,7 +281,10 @@ where
             let backoff = Backoff::default();
 
             // Event things:
-            let (event_recv, tx) = events::start_event_stream(term.backend_mut(), self.update_period)?;
+            let (event_recv, tx) = events::start_event_stream(
+                term.backend_mut(),
+                self.update_period,
+            )?;
 
             let mut last_window_size = None;
 
@@ -293,11 +299,7 @@ where
         }
 
         // Run with default layout and a backend of your choosing.
-        pub async fn run<B: Backend>(self, term: &mut Terminal<B>) -> Result<()>
-        where
-            B: ExecutableCommand<&'static str>,
-            Terminal<B>: Send,
-        {
+        pub async fn run<'t, W: Write + 't>(self, term: &mut Terminal<CrosstermBackend<'t, W>>) -> Result<()> {
             self.run_with_custom_layout(term, crate::layout::layout(None, vec![])).await
         }
 
@@ -305,7 +307,7 @@ where
         pub async fn run_with_xtermjs<'c>(
             self,
             root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<'c, Vec<u8>>>>,
-            terminal: &'c xterm_js_sys::Terminal,
+            term: &'c XtermJsTerminal,
         ) -> Result<()> {
             use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
             use crossterm::execute;
@@ -313,10 +315,10 @@ where
 
             term.focus();
 
-            let backend = CrosstermBackend::new(term);
-            let mut terminal = Terminal::new(backend)?;
+            let mut backend = CrosstermBackend::new(term);
+            execute!(&mut backend, EnterAlternateScreen)?;
 
-            execute!(terminal, EnterAlternateScreen)?;
+            let mut terminal = Terminal::new(backend)?;
             terminal.hide_cursor()?;
 
             let res = if let Some(w) = root_widget {
@@ -325,9 +327,10 @@ where
                 self.run(&mut terminal).await
             };
 
-            execute!(terminal, DisableMouseCapture)?;
             terminal.show_cursor()?;
-            execute!(terminal, LeaveAlternateScreen)?;
+
+            let backend = terminal.backend_mut();
+            execute!(backend, DisableMouseCapture, LeaveAlternateScreen)?;
 
             res
         }
