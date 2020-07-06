@@ -42,17 +42,17 @@
 
 macro_rules! specialize {
     (desktop => { $($d:item)* } web => { $($w:item)* }) => {
-        $( #[cfg(not(target = "wasm32"))] $d )*
+        $( #[cfg(not(target_arch = "wasm32"))] $d )*
 
-        $( #[cfg(target = "wasm32")] $w )*
+        $( #[cfg(target_arch = "wasm32")] $w )*
     };
 
     ([var: $var:ident] desktop => { $d:expr } web => { $w:expr }) => {
         let $var = {
-            #[cfg(not(target = "wasm32"))]
+            #[cfg(not(target_arch = "wasm32"))]
             let v = $d;
 
-            #[cfg(target = "wasm32")]
+            #[cfg(target_arch = "wasm32")]
             let v = $w;
 
             v
@@ -61,8 +61,8 @@ macro_rules! specialize {
 
     // Does not yet work on stable.
     ([expr] desktop => { $d:block } web => { $e:block }) => {
-        #[cfg(not(target = "wasm32"))] $d
-        #[cfg(target = "wasm32")] $e
+        #[cfg(not(target_arch = "wasm32"))] $d
+        #[cfg(target_arch = "wasm32")] $e
     }
 }
 
