@@ -45,12 +45,12 @@ js-sys = "0.3"
 [dependencies.web-sys]
 version = "0.3"
 features = [
-  'console',
   'Document',
   'Element',
-  'Node',
-  'NodeList',
   'Window',
+  "Location",
+  "Url",
+  "UrlSearchParams",
 ]
 
 
@@ -68,7 +68,7 @@ dwarf-debug-info = true
 # .wasm files. Current wasm-opt (version 93) crashes on the DWARF info that
 # wasm-bindgen produces. So, we'll just disable wasm-opt for now.
 # wasm-opt = false #["-O4"]
-wasm-opt = ["-O3"]
+wasm-opt = ["-O4"]
 
 [package.metadata.wasm-pack.profile.release.wasm-bindgen]
 debug-js-glue = false

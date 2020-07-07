@@ -1,15 +1,17 @@
 //! TODO!
 
-use lc3_tui::DynTui;
+use lc3_tui::{DynTui, ProgramSource};
 use lc3_tui::layout;
 use lc3_application_support::init::{BlackBox, SimDevice};
 
 use console_error_panic_hook::set_once as set_panic_hook;
 use log::Level;
 use wasm_bindgen::prelude::*;
+use web_sys::Url;
 use xterm_js_sys::xterm::{LogLevel, Terminal, TerminalOptions, Theme};
 
 use std::time::Duration;
+use std::str::FromStr;
 
 #[wasm_bindgen]
 pub async fn run() -> Result<(), JsValue> {
@@ -44,8 +46,21 @@ pub async fn run() -> Result<(), JsValue> {
         no_extra_tabs,
     );
 
+    let src = document.location()
+        .and_then(|l| l.href().ok())
+        .and_then(|h| Url::new(h.as_ref()).ok())
+        .and_then(|u| u.search_params().get("src"));
+
+    if let Some(src) = src {
+        let mut src = ProgramSource::from_str(&src)?;
+        src.normalize().await.unwrap(); // TODO: don't unwrap here?
+
+        tui.set_program_source(src);
+    }
+
     tui.set_use_os(true); // TODO: expose as option.
     tui.set_update_period(Duration::from_millis(1000 / 60)); // TODO: expose as option.
+
     tui.run_with_xtermjs(Some(layout), &term).await.unwrap();
 
     log::info!("Goodbye! 👋");
