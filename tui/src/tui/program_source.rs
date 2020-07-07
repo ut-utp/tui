@@ -329,8 +329,12 @@ impl ProgramSource {
             _ => return Err(format!("Call `normalize` on your ProgramSource when on WASM, please.")),
         };
 
-        // TODO: fix this on wasm!
+        // TODO: fix this on wasm! (WASM-TIME-FIX)
+        #[cfg(not(target_arch = "wasm32"))]
         let mut metadata = ProgramMetadata::new_modified_now(self.long_ident(), &memory_dump);
+
+        #[cfg(target_arch = "wasm32")]
+        let mut metadata = ProgramMetadata::new(self.long_ident(), &memory_dump, Duration::from_secs(1));
 
         if let Some(lm) = override_last_modified {
             metadata.modified_on(lm);

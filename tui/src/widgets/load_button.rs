@@ -25,23 +25,34 @@ enum Attempt {
 }
 
 impl Attempt {
+    #[cfg(not(target_arch = "wasm32"))]
     fn failed() -> Option<Attempt> {
-        // TODO: fix time for wasm!
+        // TODO: fix time for wasm! (WASM-TIME-FIX)
         Some(Self::Failure(Instant::now()))
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn succeeded() -> Option<Attempt> {
-        // TODO: fix time for wasm!
+        // TODO: fix time for wasm! (WASM-TIME-FIX)
         Some(Self::Success(Instant::now()))
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn expired(&self, dur: Duration) -> bool {
-        // TODO: fix time for wasm!
+        // TODO: fix time for wasm! (WASM-TIME-FIX)
         Instant::now().duration_since(match self {
             Self::Success(i) => *i,
             Self::Failure(i) => *i,
         }) >= dur
     }
+
+    // TODO: these are stubs! fix them! (WASM-TIME-FIX)
+    #[cfg(target_arch = "wasm32")]
+    fn failed() -> Option<Attempt> { None }
+    #[cfg(target_arch = "wasm32")]
+    fn succeeded() -> Option<Attempt> { None }
+    #[cfg(target_arch = "wasm32")]
+    fn expired(&self, _dur: Duration) -> bool { true }
 
     fn message(&self) -> TuiText<'static> {
         match self {
@@ -87,14 +98,14 @@ impl LoadButton {
         }
     }
 
-    #[cfg(target_arch = "wasm32")]
+/*    #[cfg(target_arch = "wasm32")]
     fn load<'a, C, B>(&self, sim: &mut C, terminal: &mut Terminal<B>, path: &PathBuf, with_os: bool) -> Result<String, String>
     where
         C: Control + ?Sized + 'a,
         B: Backend,
     {
         todo!()
-    }
+    }*/
 
     fn load<'a, C, B>(&self, sim: &mut C, terminal: &mut Terminal<B>, src: &ProgramSource, with_os: bool) -> Result<String, String>
     where
@@ -151,7 +162,11 @@ impl LoadButton {
 
         let (memory_dump, metadata) = src.to_memory_dump(with_os)?;
 
+        // TODO: fix time for wasm! (WASM-TIME-FIX)
+        #[cfg(not(target_arch = "wasm32"))]
         let progress = Progress::new_with_time().unwrap();
+        #[cfg(target_arch = "wasm32")]
+        let progress = Progress::new();
 
         scope(|s| {
             #[cfg(not(target_arch = "wasm32"))]
@@ -251,18 +266,23 @@ impl LoadButton {
         .map_err(|e| format!("Error during load: {:?}", e))
         .map(|_| {
             *self.program_is_out_of_date.lock().unwrap() = false;
-            // TODO: time on wasm
-            *self.last_file_check_time.lock().unwrap() = Some(SystemTime::now());
+            // TODO: time on wasm (WASM-TIME-FIX)
+            #[cfg(not(target_arch = "wasm32"))]
+            { *self.last_file_check_time.lock().unwrap() = Some(SystemTime::now()); }
 
             // Update the metadata:
             sim.set_program_metadata(metadata);
 
-            // TODO: time on wasm
-            format!(
+            // TODO: time on wasm (WASM-TIME-FIX)
+            #[cfg(not(target_arch = "wasm32"))]
+            let x = format!(
                 "Successful Load (`{}`)! Finished in {}.",
                 src,
                 chrono::Duration::from_std(progress.time_elapsed().unwrap()).unwrap(),
-            )
+            );
+            #[cfg(target_arch = "wasm32")]
+            let x = format!("Successful Load (`{}`)!", src);
+            x
         })
     }
 
