@@ -10,7 +10,6 @@ use lc3_traits::control::control::{Control, Event};
 
 use lc3_isa::Addr;
 
-use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::Duration;
 use std::collections::HashMap;
@@ -27,6 +26,8 @@ pub mod run;
 pub mod events;
 pub mod widget;
 
+pub mod program_source;
+
 pub type Res<T> = Result<T, failure::Error>;
 
 #[allow(explicit_outlives_requirements)]
@@ -42,7 +43,7 @@ where
     pub output: Option<&'a O>,
     pub shims: Option<Shims<'int>>,
 
-    pub(in crate) program_path: Option<PathBuf>,
+    pub(in crate) program_source: Option<program_source::ProgramSource>,
     /// Determines whether we will tell the assembler to build using the OS
     /// *and* whether we skip past the OS on loads and resets.
     pub(in crate) use_os: bool,
