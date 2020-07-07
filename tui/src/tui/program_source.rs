@@ -18,6 +18,7 @@ use annotate_snippets::{
 };
 use bytes::Buf;
 use chrono::{DateTime, Utc};
+#[cfg(not(target_arch = "wasm32"))]
 use reqwest::{blocking, header};
 
 use std::fmt::{self, Display, Result as FmtResult};
@@ -159,6 +160,34 @@ pub(in crate) fn assemble_mem_dump_str(src: &str, path: Option<&str>, with_os: b
     Ok(assemble(cst.objects, background))  // TODO: can still fail. fix in assembler.
 }
 
+// A bad hack..
+//
+// I think this is the approach we'll have to go with but we should do things to make
+// it less bad like having this function return actual errors. (TODO)
+//
+// Maybe WebWorkers will let us basically have threads which'd be a way to let us
+// make requests when the load button is pressed.
+//
+// Other than that I don't think there's a way (we can't/won't make everything async).
+//
+// Update: I think Atomics + WebWorkers might let us do this.
+#[cfg(target_arch = "wasm32")]
+impl ProgramSource {
+    pub async fn normalize(&mut self) -> Result<(), ()> {
+        use ProgramSource::*;
+
+        match self {
+            ImmediateSource(_) => Ok(()),
+            AssemblyUrl(asm) => {
+                let imm = reqwest::get(asm.as_str()).await.unwrap().text().await.unwrap();
+                *self = ImmediateSource(imm);
+                Ok(())
+            },
+            MemoryDumpUrl(_) => Err(()),
+        }
+    }
+}
+
 impl ProgramSource {
     pub(in crate) fn requires_assembly(&self) -> bool {
         use ProgramSource::*;
@@ -233,6 +262,7 @@ impl ProgramSource {
                 (assemble_mem_dump_str(src, None, with_os)?, None)
             },
 
+            #[cfg(not(target_arch = "wasm32"))]
             MemoryDumpUrl(url) | AssemblyUrl(url) => {
                 let resp = blocking::get(url)
                     .map_err(|err| format!("Failed to get `{}`: {}", url, err))?;
@@ -294,6 +324,9 @@ impl ProgramSource {
 
                 (mem_dump, last_modified)
             }
+
+            #[cfg(target_arch = "wasm32")]
+            _ => return Err(format!("Call `normalize` on your ProgramSource when on WASM, please.")),
         };
 
         // TODO: fix this on wasm!

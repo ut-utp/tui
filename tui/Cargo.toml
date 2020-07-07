@@ -38,6 +38,7 @@ lc3-assembler = "0.1.0"
 annotate-snippets = "0.8.0"
 bytes = "0.5.5"
 chrono = "0.4"
+crossbeam = "0.7.3"
 failure = "0.1.6"
 log = "0.4.8"
 pin-utils = "0.1.0-alpha.4"
@@ -88,10 +89,6 @@ tui = { version = "0.9.5", default-features = false, features = ["crossterm"] }
 # [target.'cfg(not(target_arch = "wasm32"))'.features]
 # default-features = ["tui/crossterm"]
 # ```
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-crossbeam = "0.7.3"
-
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 futures-channel = "0.3"
