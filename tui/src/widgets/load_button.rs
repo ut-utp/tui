@@ -1,10 +1,15 @@
 //! A button that loads the current program file.
 
+use crate::tui::program_source::{
+    ProgramSource,
+    file_requires_assembly,
+    assemble_mem_dump,
+};
 use super::widget_impl_support::*;
 
-use lc3_isa::util::MemoryDump;
 use lc3_traits::control::load::{load_whole_memory_dump, Progress, LoadMemoryProgress};
-use lc3_traits::control::metadata::{LongIdentifier, ProgramMetadata, ProgramId};
+use lc3_traits::control::metadata::ProgramId;
+use lc3_shims::memory::FileBackedMemoryShim;
 
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime};
@@ -12,14 +17,6 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::thread::Builder as ThreadBuilder;
 
 use crossbeam::thread::scope;
-use std::fs;
-use lc3_assembler::lexer::Lexer;
-use lc3_assembler::parser::{parse, LeniencyLevel};
-use lc3_assembler::error::extract_file_errors;
-use lc3_assembler::assembler::assemble;
-use lc3_shims::memory::FileBackedMemoryShim;
-use annotate_snippets::display_list::{DisplayList, FormatOptions};
-use annotate_snippets::snippet::{Snippet, Annotation, Slice, AnnotationType, SourceAnnotation};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum Attempt {
@@ -29,14 +26,17 @@ enum Attempt {
 
 impl Attempt {
     fn failed() -> Option<Attempt> {
+        // TODO: fix time for wasm!
         Some(Self::Failure(Instant::now()))
     }
 
     fn succeeded() -> Option<Attempt> {
+        // TODO: fix time for wasm!
         Some(Self::Success(Instant::now()))
     }
 
     fn expired(&self, dur: Duration) -> bool {
+        // TODO: fix time for wasm!
         Instant::now().duration_since(match self {
             Self::Success(i) => *i,
             Self::Failure(i) => *i,
@@ -96,19 +96,12 @@ impl LoadButton {
         todo!()
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    fn load<'a, C, B>(&self, sim: &mut C, terminal: &mut Terminal<B>, path: &PathBuf, with_os: bool) -> Result<String, String>
+    fn load<'a, C, B>(&self, sim: &mut C, terminal: &mut Terminal<B>, src: &ProgramSource, with_os: bool) -> Result<String, String>
     where
         C: Control + ?Sized + 'a,
         B: Backend,
-        Terminal<B>: Send,
+        Terminal<B>: ConditionalSendBound,
     {
-        let p = format!("{}", path.display());
-
-        if !path.exists() {
-            return Err(format!("`{}` does not exist!", p))
-        }
-
         // TODO: don't bother writing out the assembled program to a file; just
         // use the already in-memory MemoryDump. (update: this is done)
         //
@@ -118,7 +111,7 @@ impl LoadButton {
         // over the program source (i.e. can come from files, URLs, etc; should
         // work on wasm too).
 
-        let memory_dump = if file_requires_assembly(path) {
+        if src.requires_assembly() {
             terminal.draw(|mut f| {
                 // TODO: spin this boilerplate into a function.
                 let area = if self.fullscreen_load {
@@ -154,39 +147,17 @@ impl LoadButton {
 
                 f.render_widget(para, info);
             });
-
-            assemble_mem_dump(path, with_os)?
-        } else {
-            FileBackedMemoryShim::from_existing_file(path)
-                .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", p, e))?
-                .into()
-        };
-
-        const DEFAULT_IDENT: LongIdentifier = LongIdentifier::new_from_str_that_crashes_on_invalid_inputs("<<file>>");
-
-        let ident = if let Some(fname) = path.file_name().and_then(|f| f.to_str()) {
-            let ident: String = fname.chars()
-                .chain(core::iter::repeat(' '))
-                .take(LongIdentifier::MAX_LEN)
-                .collect();
-
-            LongIdentifier::new_from_str(ident.as_str())
-                .unwrap_or(DEFAULT_IDENT)
-        } else {
-            DEFAULT_IDENT
-        };
-
-        let mut metadata = ProgramMetadata::new_modified_now(ident, &memory_dump);
-
-        if let Ok(t) = path.metadata().and_then(|m| m.modified()) {
-            metadata.modified_on(t);
         }
+
+        let (memory_dump, metadata) = src.to_memory_dump(with_os)?;
 
         let progress = Progress::new_with_time().unwrap();
 
         scope(|s| {
+            #[cfg(not(target_arch = "wasm32"))]
             let (send, recv) = mpsc::channel();
 
+            #[cfg(not(target_arch = "wasm32"))]
             let handle = s.spawn(|_| {
 
                 let recv = (move || recv)();
@@ -262,24 +233,40 @@ impl LoadButton {
                 }
             });
 
+            #[cfg(target_arch = "wasm32")]
+            {
+                // TODO: wasm draw "Loading..."
+            }
+
             let res = load_whole_memory_dump(sim, &memory_dump, Some(&progress));
 
-            send.send(()).unwrap();
-            handle.join().unwrap();
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                send.send(()).unwrap();
+                handle.join().unwrap();
+            }
+
             res
         }).unwrap()
         .map_err(|e| format!("Error during load: {:?}", e))
         .map(|_| {
             *self.program_is_out_of_date.lock().unwrap() = false;
+            // TODO: time on wasm
             *self.last_file_check_time.lock().unwrap() = Some(SystemTime::now());
 
             // Update the metadata:
             sim.set_program_metadata(metadata);
 
-            format!("Successful Load (`{}`)! Finished in {}.", p, chrono::Duration::from_std(progress.time_elapsed().unwrap()).unwrap())
+            // TODO: time on wasm
+            format!(
+                "Successful Load (`{}`)! Finished in {}.",
+                src,
+                chrono::Duration::from_std(progress.time_elapsed().unwrap()).unwrap(),
+            )
         })
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn check_for_program_changes<C: Control + ?Sized>(&self, sim: &C, p: &PathBuf, with_os: bool) {
         // An optimization would be to check if we're already out of date (and
         // then to just not do any additional checks if so). Unfortunately if
@@ -350,74 +337,6 @@ impl LoadButton {
     }
 }
 
-fn file_requires_assembly(path: &PathBuf) -> bool {
-    return match path.extension() {
-        Some(ext) => ext == "asm",
-        _ => false,
-    }
-}
-
-fn create_snippet<'input>(label: &'input str, slices: Vec<Slice<'input>>) -> Snippet<'input> {
-    Snippet {
-        title: Some(Annotation {
-            label: Some(label),
-            id: None,
-            annotation_type: AnnotationType::Error
-        }),
-        footer: vec![],
-        slices,
-        opt: FormatOptions { color: true, anonymized_line_numbers: false }
-    }
-}
-
-fn slices<'input>(annotations: Vec<SourceAnnotation<'input>>, source: &'input str, origin: Option<&'input str>) -> Vec<Slice<'input>> {
-    let mut slices = Vec::new();
-    if !annotations.is_empty() {
-        slices.push(
-            Slice {
-                source,
-                origin,
-                line_start: 1,
-                fold: true,
-                annotations,
-            }
-        );
-    }
-    slices
-}
-
-fn assemble_mem_dump(path: &PathBuf, with_os: bool) -> Result<MemoryDump, String> {
-    let path_str = path.clone().into_os_string().into_string().unwrap();
-    let string = fs::read_to_string(path).unwrap();
-    let src = string.as_str();
-    let lexer = Lexer::new(src);
-    let cst = parse(lexer, LeniencyLevel::Lenient);
-
-    let errors = extract_file_errors(cst.clone());
-    if errors.len() > 0 {
-        let mut error_string = String::new();
-        for error in errors {
-            let label_string = error.message();
-            let label = label_string.as_str();
-            let annotations = error.annotations();
-            let slices = slices(annotations, src, Some(path_str.as_str()));
-            let snippet = create_snippet(label, slices);
-            let dl = DisplayList::from(snippet);
-            error_string = format!("{}\n{}", error_string, dl);
-        }
-        let error_string = error_string.replace("\n", "\n|");
-        return Err(error_string);
-    }
-
-    let background = if with_os {
-        Some(lc3_os::OS_IMAGE.clone())
-    } else {
-        None
-    };
-
-    Ok(assemble(cst.objects, background))  // TODO: can still fail. fix in assembler.
-}
-
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for LoadButton
 where
     C: Control + ?Sized + 'a,
@@ -435,9 +354,9 @@ where
             }
         }
 
-        match &data.program_path {
+        match &data.program_source {
             None => {
-                let msg = TuiText::styled("No File Given!\n", Style::default().fg(c!(Error)));
+                let msg = TuiText::styled("No Program Given!\n", Style::default().fg(c!(Error)));
 
                 Paragraph::new([msg].iter())
                     .style(Style::default().fg(Colour::White))
@@ -446,10 +365,13 @@ where
                     .render(area, buf)
             },
 
-            Some(p) => {
+            Some(s) => {
                 let (text, gauge) = Self::split_for_text_and_gauge(area);
 
-                self.check_for_program_changes(data.sim, p, data.use_os);
+                #[cfg(not(target_arch = "wasm32"))]
+                let () = if let ProgramSource::FilePath(p) = s {
+                    self.check_for_program_changes(data.sim, p, data.use_os);
+                };
 
                 // Paragraph::new([msg1].iter())
                 //     .style(Style::default().fg(Colour::White))
@@ -465,13 +387,10 @@ where
                         .render(gauge, buf),
 
                     None => {
-                        let file_name = p.file_name()
-                            .and_then(|f| f.to_str())
-                            .unwrap_or("<unprintable>");
+                        let name = s.to_string();
+                        let name = trim_to_width(&name, area.width - 2);
 
-                        let file_name = trim_to_width(file_name, area.width - 2);
-
-                        let msg1 = TuiText::styled(format!("`{}`", file_name), Style::default().fg(c!(LoadText)).bg(
+                        let msg1 = TuiText::styled(format!("`{}`", name), Style::default().fg(c!(LoadText)).bg(
                             if *self.program_is_out_of_date.lock().unwrap() { c!(LoadPendingChanges) } else { c!(LoadNoChanges) }
                         ));
 
@@ -490,9 +409,9 @@ where
         use WidgetEvent::*;
 
         match event {
-            Focus(FocusEvent::GotFocus) => data.program_path.is_some(),
+            Focus(FocusEvent::GotFocus) => data.program_source.is_some(),
             Focus(FocusEvent::LostFocus) => false,
-            Mouse(MouseEvent::Up(_, _, _, _)) => data.program_path.is_some(),
+            Mouse(MouseEvent::Up(_, _, _, _)) => data.program_source.is_some(),
 
             Key(KeyEvent { code: KeyCode::Char('l'), modifiers: KeyModifiers::CONTROL } ) | Key(KeyEvent { code: KeyCode::Enter, .. } ) | Mouse(MouseEvent::Down(_, _, _, _)) => {
                 // Timeout so we don't repeated try again on key mashes / accidental
@@ -501,7 +420,7 @@ where
                     return false
                 }
 
-                match data.program_path {
+                match data.program_source {
                     Some(ref p) => {
                         match self.load(data.sim, terminal, p, data.use_os) {
                             Ok(msg) => {
