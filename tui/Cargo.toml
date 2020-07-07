@@ -36,12 +36,13 @@ lc3-os = "0.1.0"
 lc3-assembler = "0.1.0"
 
 annotate-snippets = "0.8.0"
+bytes = "0.5.5"
 chrono = "0.4"
-crossbeam = "0.7.3"
 failure = "0.1.6"
 log = "0.4.8"
 pin-utils = "0.1.0-alpha.4"
 lazy_static = "1.4.0"
+reqwest = { version = "0.10.6", features = ["blocking"] }
 
 # crossterm = { git = "https://github.com/ut-utp/crossterm", version = "0.17.3"}
 # TODO: switch to not using this fork, eventually.
@@ -87,6 +88,11 @@ tui = { version = "0.9.5", default-features = false, features = ["crossterm"] }
 # [target.'cfg(not(target_arch = "wasm32"))'.features]
 # default-features = ["tui/crossterm"]
 # ```
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+crossbeam = "0.7.3"
+
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 futures-channel = "0.3"
 futures-core = "0.3"

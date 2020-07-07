@@ -75,4 +75,4 @@ pub mod env;
 pub mod strings;
 
 mod tui;
-pub use crate::tui::{DynTui, Tui};
+pub use crate::tui::{DynTui, Tui, ProgramSource};

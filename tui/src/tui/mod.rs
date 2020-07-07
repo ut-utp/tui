@@ -28,6 +28,8 @@ pub mod widget;
 
 pub mod program_source;
 
+
+pub use program_source::ProgramSource;
 pub type Res<T> = Result<T, failure::Error>;
 
 #[allow(explicit_outlives_requirements)]
@@ -43,7 +45,7 @@ where
     pub output: Option<&'a O>,
     pub shims: Option<Shims<'int>>,
 
-    pub(in crate) program_source: Option<program_source::ProgramSource>,
+    pub(in crate) program_source: Option<ProgramSource>,
     /// Determines whether we will tell the assembler to build using the OS
     /// *and* whether we skip past the OS on loads and resets.
     pub(in crate) use_os: bool,
@@ -123,7 +125,7 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 output: None,
                 shims: None,
 
-                program_path: None,
+                program_source: None,
                 use_os: true,
 
                 reset_flag: 0,
@@ -250,8 +252,8 @@ where
     I: InputSink + ?Sized + 'a,
     O: OutputSource + ?Sized + 'a
 {
-    pub fn set_program_path(&mut self, path: PathBuf) -> &mut Self {
-        self.data.program_path = Some(path);
+    pub fn set_program_source(&mut self, src: ProgramSource) -> &mut Self {
+        self.data.program_source = Some(src);
         self
     }
 

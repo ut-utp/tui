@@ -1,13 +1,30 @@
 //! TODO!
 
-use lc3_isa::{ADDR_SPACE_SIZE_IN_WORDS, ADDR_SPACE_SIZE_IN_BYTES};
+use lc3_assembler::{
+    assembler::assemble,
+    error::extract_file_errors,
+    lexer::Lexer,
+    parser::{parse, LeniencyLevel},
+};
+use lc3_isa::{ADDR_SPACE_SIZE_IN_WORDS, ADDR_SPACE_SIZE_IN_BYTES, util::MemoryDump};
+use lc3_shims::memory::FileBackedMemoryShim;
+use lc3_traits::control::metadata::{
+    LongIdentifier, ProgramMetadata,
+};
 
-use byteorder::{ReadBytesExt, LittleEndian};
-use chrono::DateTime;
+use annotate_snippets::{
+    display_list::{DisplayList, FormatOptions},
+    snippet::{Snippet, Annotation, Slice, AnnotationType, SourceAnnotation},
+};
+use bytes::Buf;
+use chrono::{DateTime, Utc};
 use reqwest::{blocking, header};
 
-use std::path::PathBuf;
 use std::fmt::{self, Display, Result as FmtResult};
+use std::fs;
+use std::path::PathBuf;
+use std::str::FromStr;
+use std::time::{SystemTime, Duration};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProgramSource {
@@ -85,10 +102,10 @@ pub(in crate) fn assemble_mem_dump(path: &PathBuf, with_os: bool) -> Result<Memo
     let string = fs::read_to_string(path).unwrap();
     let src = string.as_str();
 
-    assemble_mem_dump_str(src, with_os)
+    assemble_mem_dump_str(src, Some(path_str.as_str()), with_os)
 }
 
-pub(in crate) fn assemble_mem_dump_str(src: &str, with_os: bool) -> Result<MemoryDump, String> {
+pub(in crate) fn assemble_mem_dump_str(src: &str, path: Option<&str>, with_os: bool) -> Result<MemoryDump, String> {
     let lexer = Lexer::new(src);
     let cst = parse(lexer, LeniencyLevel::Lenient);
 
@@ -99,7 +116,7 @@ pub(in crate) fn assemble_mem_dump_str(src: &str, with_os: bool) -> Result<Memor
             let label_string = error.message();
             let label = label_string.as_str();
             let annotations = error.annotations();
-            let slices = slices(annotations, src, Some(path_str.as_str()));
+            let slices = slices(annotations, src, path);
             let snippet = create_snippet(label, slices);
             let dl = DisplayList::from(snippet);
             error_string = format!("{}\n{}", error_string, dl);
@@ -118,7 +135,7 @@ pub(in crate) fn assemble_mem_dump_str(src: &str, with_os: bool) -> Result<Memor
 }
 
 impl ProgramSource {
-    pub fn requires_assembly(&self) -> bool {
+    pub(in crate) fn requires_assembly(&self) -> bool {
         use ProgramSource::*;
         match self {
             #[cfg(not(target_arch = "wasm32"))]
@@ -129,7 +146,7 @@ impl ProgramSource {
         }
     }
 
-    pub fn long_ident(&self) -> LongIdentifier {
+    pub(in crate) fn long_ident(&self) -> LongIdentifier {
         use ProgramSource::*;
 
         macro_rules! def {
@@ -138,12 +155,12 @@ impl ProgramSource {
             };
         }
 
-        let (default, string): (LongIdentifer, Option<String>) = match self {
+        let (default, string): (LongIdentifier, Option<String>) = match self {
             #[cfg(not(target_arch = "wasm32"))]
             FilePath(p) => {
                 let file_name = p.file_name()
                     .and_then(|f| f.to_str())
-                    .and_then(ToString::to_string);
+                    .map(|s| s.to_string());
 
                 (def!("<<file>>"), file_name)
             },
@@ -152,19 +169,19 @@ impl ProgramSource {
             AssemblyUrl(url) => (def!("<asm://>"), Some(format!("a:{}", url))),
         };
 
-        let ident: String = string.chars()
+        let ident: Option<String> = string.map(|s| s.chars()
             .chain(core::iter::repeat(' '))
             .take(LongIdentifier::MAX_LEN)
-            .collect();
+            .collect());
 
-        LongIdentifer::new_from_str(ident.as_str())
+        ident.and_then(|s| LongIdentifier::new_from_str(s.as_str()).ok())
             .unwrap_or(default)
     }
 
-    pub fn to_memory_dump(
+    pub(in crate) fn to_memory_dump(
         &self,
         with_os: bool,
-    ) -> Result<(Box<MemoryDump>, ProgramMetadata), String> {
+    ) -> Result<(MemoryDump, ProgramMetadata), String> {
         use ProgramSource::*;
 
         let (memory_dump, override_last_modified) = match self {
@@ -178,28 +195,29 @@ impl ProgramSource {
                     assemble_mem_dump(path, with_os)?
                 } else {
                     FileBackedMemoryShim::from_existing_file(path)
-                        .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", p, e))?
+                        .map_err(|e| format!("Failed to load `{}` as a MemoryDump; got: {:?}", path.display(), e))?
                         .into()
                 };
 
-                let last_modified = path.metadata().and_then(|m| m.modified());
+                let last_modified = path.metadata().ok().and_then(|m| m.modified().ok());
 
                 (mem_dump, last_modified)
             },
 
             ImmediateSource(src) => {
-                (assemble_mem_dump_str(src)?, None)
+                (assemble_mem_dump_str(src, None, with_os)?, None)
             },
 
             MemoryDumpUrl(url) | AssemblyUrl(url) => {
-                let resp = reqwest::blocking::get(url)
+                let resp = blocking::get(url)
                     .map_err(|err| format!("Failed to get `{}`: {}", url, err))?;
 
                 let last_modified = resp
                     .headers()
-                    .get(reqwest::header::LAST_MODIFIED)
+                    .get(header::LAST_MODIFIED)
                     .and_then(|v| v.to_str().ok())
-                    .and_then(|s| DateTime::parse_from_rfc2822(s).ok().into())
+                    .and_then(|s| DateTime::parse_from_rfc2822(s).ok())
+                    .map(|dt| DateTime::from_utc(dt.naive_utc(), Utc))
                     // TODO: use the local time zone instead?
                     .and_then(|dt: DateTime<Utc>| {
                         let nanos = dt.timestamp_nanos();
@@ -230,26 +248,20 @@ impl ProgramSource {
 
                         let mut memory = [0u16; ADDR_SPACE_SIZE_IN_WORDS];
                         for idx in 0..ADDR_SPACE_SIZE_IN_WORDS {
-                            memory[idx] = bytes.read_u16::<LittleEndian>()
-                                .map_err(|err| format!(
-                                    "Error while reading MemoryDump from `{}` on word {:#4X}: {}",
-                                    url,
-                                    idx,
-                                    err,
-                                ))?;
+                            memory[idx] = bytes.get_u16_le();
                         }
 
                         memory.into()
                     },
 
                     AssemblyUrl(_) => {
-                        assemble_mem_dump_str(resp.text().map_err(|err| {
+                        assemble_mem_dump_str(&resp.text().map_err(|err| {
                             format!(
                                 "Error while reading program from `{}`: {}",
                                 url,
                                 err,
                             )
-                        })?)?
+                        })?, None, with_os)?
                     },
 
                     _ => unreachable!(),
@@ -263,7 +275,9 @@ impl ProgramSource {
         let mut metadata = ProgramMetadata::new_modified_now(self.long_ident(), &memory_dump);
 
         if let Some(lm) = override_last_modified {
-            metadata.modified_on(t);
+            metadata.modified_on(lm);
         }
+
+        Ok((memory_dump, metadata))
     }
 }
