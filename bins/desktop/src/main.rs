@@ -3,13 +3,13 @@
 use structopt::StructOpt;
 use flexi_logger::{Logger, opt_format};
 
-use lc3_tui::DynTui;
+use lc3_tui::{DynTui, ProgramSource};
 use lc3_tui::layout;
 use lc3_application_support::init::{
     BlackBox, BoardDevice, BoardConfig, SimDevice, SimWithRpcDevice
 };
 
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Duration;
 use std::fmt::{self, Display};
@@ -121,9 +121,9 @@ struct Args {
     #[structopt(short = "v", long, help = "TODO")]
     logging: bool,
 
-    /// Program file (optional)
-    #[structopt(parse(from_os_str), help = "TODO")]
-    program_file: Option<PathBuf>,
+    /// Program source (optional)
+    #[structopt(help = "TODO")]
+    program_source: Option<ProgramSource>,
 
     /// Update period
     #[structopt(short, long, default_value = "50", help = "Update period in milliseconds")]
@@ -161,8 +161,8 @@ fn main() -> Result<(), failure::Error> {
         let mut b = BlackBox::new();
         let mut tui = options.device.setup(&mut b);
 
-        if let Some(p) = options.program_file {
-            tui.set_program_path(p);
+        if let Some(s) = options.program_source {
+            tui.set_program_source(s);
         }
 
         tui.set_use_os(!options.without_os);

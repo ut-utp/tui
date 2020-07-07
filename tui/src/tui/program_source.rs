@@ -61,7 +61,32 @@ impl Display for ProgramSource {
 // TODO: impl FromStr?
 // or: have different flags produce different variants
 
-pub fn file_requires_assembly(path: &PathBuf) -> bool {
+impl FromStr for ProgramSource {
+    type Err = &'static str;
+
+    fn from_str(src: &str) -> Result<Self, Self::Err> {
+        use ProgramSource::*;
+
+        match src {
+            _ if src.len() == 0 => Err("Empty program source!"),
+            bad if (
+                bad.starts_with("mem:") || bad.starts_with("asm:") || bad.starts_with("imm:")
+            ) && bad.len() == 4 => {
+                Err("Missing URL!")
+            }
+            mem if mem.starts_with("mem:") => Ok(MemoryDumpUrl(mem.trim_start_matches("mem:").to_string())),
+            asm if asm.starts_with("asm:") => Ok(AssemblyUrl(asm.trim_start_matches("asm:").to_string())),
+            imm if imm.starts_with("imm:") => Ok(ImmediateSource(imm.trim_start_matches("imm:").to_string())),
+
+            #[cfg(not(target_arch = "wasm32"))]
+            path => Ok(FilePath(PathBuf::from(path.to_string()))),
+            #[cfg(target_arch = "wasm32")]
+            _ => Err("Program Source must be an immediate, mem URL, or asm URL on wasm."),
+        }
+    }
+}
+
+pub(in crate) fn file_requires_assembly(path: &PathBuf) -> bool {
     return match path.extension() {
         Some(ext) => ext == "asm",
         _ => false,
