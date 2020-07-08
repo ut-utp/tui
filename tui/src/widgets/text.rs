@@ -58,11 +58,10 @@ where
         }
 
         // TODO: allow parameterization of this in the usual way.
-        let mut para = Paragraph::new(text.iter())
+        let para = Paragraph::new(text.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .scroll(self.offset)
-            .raw(true) // TODO: add this, ditch our hand-rolled ANSI parser.
             .wrap(true);
 
         para.render(area, buf)

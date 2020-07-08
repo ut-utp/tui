@@ -62,7 +62,6 @@ where
             .style(Style::default().fg(c!(ConsoleOut)).bg(Colour::Reset))
             .alignment(Alignment::Left)
             // .wrap(true)
-            // .raw(true)
             .render(output, buf);
 
         Paragraph::new([
