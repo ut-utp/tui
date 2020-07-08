@@ -1,7 +1,7 @@
 //! Utilities for dealing with strings containing ANSI escape codes.
 
 use tui::widgets::Text as TuiText;
-use tui::style::Style;
+use tui::style::{Color, Modifier, Style};
 
 use std::ops::{Bound, Deref, RangeBounds};
 use std::borrow::Cow;
@@ -15,7 +15,11 @@ pub struct AnsiTextContainer<'a> {
 
 impl<'a> AnsiTextContainer<'a> {
     pub fn new() -> Self {
-        let mut lines = Vec::with_capacity(1024);
+        Self::with_capacity(1024)
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        let mut lines = Vec::with_capacity(capacity);
         lines.push(vec![]);
 
         Self {
@@ -26,6 +30,8 @@ impl<'a> AnsiTextContainer<'a> {
     }
 
     pub fn push_string(&mut self, new: String) {
+        if new.is_empty() { return; }
+
         if self.pending.is_empty() {
             self.pending = new;
         } else {
@@ -43,7 +49,12 @@ impl<'a> AnsiTextContainer<'a> {
     }
 
     pub fn clear(&mut self) {
+        self.style.reset();
         self.lines.clear()
+    }
+
+    pub fn num_lines(&self) -> usize {
+        self.lines.len()
     }
 
     /// Get an iterator over [`Text`] instances for a given range of lines.
@@ -75,6 +86,13 @@ impl<'a> AnsiTextContainer<'a> {
             .skip(lower)
             .take(num_to_take)
             .flatten()
+    }
+
+    /// Gives you an iterator over [`Text`] instances for the last `n` lines.
+    ///
+    /// [`Text`]: tui::widgets::Text
+    pub fn get_last_n_lines(&self, n: usize) -> impl Iterator<Item = &TuiText<'a>> {
+        self.get_lines(self.num_lines().saturating_sub(n)..)
     }
 
     /// Gets a `String` containing all the lines in the container.
