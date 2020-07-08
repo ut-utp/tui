@@ -77,7 +77,7 @@ impl<'a> AnsiTextContainer<'a> {
             Unbounded => self.lines.len(),
         };
 
-        let lower = lower.max(self.lines.len() - 1);
+        let lower = lower.min(self.lines.len().saturating_sub(1));
         let upper = upper.max(self.lines.len());
 
         let num_to_take = upper - lower;
@@ -352,7 +352,7 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         'c' if s.chars().last() == Some('0') && s.len() >= 2 => {
                                             let _ = s.pop();
 
-                                            if let Ok(dev_code) = s.parse::<u16>() {
+                                            if let Ok(_dev_code) = s.parse::<u16>() {
                                                 /* Unsupported */
                                                 break;
                                             } else {
@@ -429,7 +429,7 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         // Details for this section are taken
                                         // from [here](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors)
                                         'm' if s.parse::<u16>().is_ok() => {
-                                            use super::Color::*;
+                                            use Color::*;
                                             use tui::style::Modifier;
                                             nums.push(s.parse::<u16>().unwrap());
 
@@ -546,6 +546,7 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                             }
 
                                             *current_style = s;
+                                            break;
                                         }
 
                                         // Note: this misses CSI m (TODO).
@@ -584,7 +585,7 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                 // Finally, we don't want the escape code to appear in the
                 // printed text so we'd better adjust the segment start index
                 // accordingly:
-                segment_start_idx = idx + consumed_characters + 1;
+                segment_start_idx = idx + consumed_characters;
             }
 
             Some((_, _)) => {
