@@ -286,12 +286,13 @@ pub fn ansi_string_to_tui_text<'s, 't>(
 
                                 let mut last = b;
 
-                                loop {
+                                'c: loop {
                                     match last {
                                         n @ '0'..='9' => {
                                             s.push(n);
                                         }
 
+                                        // Note: ITU T.416 (colon delimited) not supported.
                                         ';' => {
                                             // End of a number.
                                             if let Ok(num) = s.parse() {
@@ -330,9 +331,10 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         }
 
                                         // Report Device Code
-                                        'c' if s.pop() == Some('0') && s.len() >= 2 => {
+                                        'c' if s.chars().last() == Some('0') && s.len() >= 2 => {
+                                            let _ = s.pop();
 
-                                            if let Ok(_dev_code) = s.parse::<u16>() {
+                                            if let Ok(dev_code) = s.parse::<u16>() {
                                                 /* Unsupported */
                                                 break;
                                             } else {
@@ -405,17 +407,131 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                             break;
                                         }
 
-                                        // Set Attribute Mode
+                                        // Set Attribute Mode (SGR)
                                         // Details for this section are taken
                                         // from [here](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors)
                                         'm' if s.parse::<u16>().is_ok() => {
+                                            use super::Color::*;
+                                            use tui::style::Modifier;
                                             nums.push(s.parse::<u16>().unwrap());
 
-                                            for attr in nums.iter() {
-                                                todo!()
-                                                // TODO(rrbutani)!
+                                            let to_color = |num: u16, sub: u16| {
+                                                match num - sub {
+                                                    0 => Black,
+                                                    1 => Red,
+                                                    2 => Green,
+                                                    3 => Yellow,
+                                                    4 => Blue,
+                                                    5 => Magenta,
+                                                    6 => Cyan,
+                                                    7 => Gray,
+
+                                                    60 => DarkGray,
+                                                    61 => LightRed,
+                                                    62 => LightGreen,
+                                                    63 => LightYellow,
+                                                    64 => LightBlue,
+                                                    65 => LightMagenta,
+                                                    66 => LightCyan,
+                                                    67 => White,
+
+                                                    _ => unreachable!(),
+                                                    // _ => Indexed(num as u8), // TODO: don't as cast
+                                                }
+                                            };
+
+                                            let mut iter = nums.iter().peekable();
+                                            let mut s = current_style.clone();
+                                            loop {
+                                                if let Some(attr) = iter.next() {
+                                                    macro_rules! at {
+                                                        ($a:expr) => {s = s.modifier(s.modifier | $a);};
+                                                    }
+
+                                                    macro_rules! atc {
+                                                        ($a:expr) => {s = s.modifier(s.modifier & !($a));};
+                                                    }
+
+                                                    match attr {
+                                                        0 => s = s.modifier(Modifier::empty()),
+                                                        1 => at!(Modifier::BOLD),
+                                                        2 => at!(Modifier::DIM),
+                                                        3 => at!(Modifier::ITALIC),
+                                                        4 => at!(Modifier::UNDERLINED),
+                                                        5 => at!(Modifier::SLOW_BLINK),
+                                                        6 => at!(Modifier::RAPID_BLINK),
+                                                        7 => at!(Modifier::REVERSED),
+                                                        8 => {},
+                                                        9 => at!(Modifier::CROSSED_OUT),
+
+                                                        21 => atc!(!Modifier::BOLD),
+                                                        22 => atc!(!Modifier::DIM),
+                                                        23 => atc!(!Modifier::ITALIC),
+                                                        24 => atc!(!Modifier::UNDERLINED),
+                                                        25 => {
+                                                            atc!(!Modifier::SLOW_BLINK);
+                                                            atc!(!Modifier::RAPID_BLINK);
+                                                        },
+                                                        26 => {},
+                                                        27 => atc!(Modifier::REVERSED),
+                                                        28 => {},
+                                                        29 => atc!(Modifier::CROSSED_OUT),
+
+                                                        30..=37 |   90..=97 => s = s.fg(to_color(*attr, 30)),
+                                                        40..=47 | 100..=107 => s = s.bg(to_color(*attr, 40)),
+
+                                                        // 8-bit lookup:
+                                                        38 if Some(&&5) == iter.peek() && {
+                                                            assert_eq!(Some(&5), iter.next());
+                                                            iter.peek().is_some()
+                                                        } => {
+                                                            // TODO: don't as cast here.
+                                                            s = s.fg(Indexed(*iter.next().unwrap() as u8));
+                                                        },
+
+                                                        48 if Some(&&5) == iter.peek() && {
+                                                            assert_eq!(Some(&5), iter.next());
+                                                            iter.peek().is_some()
+                                                        } => {
+                                                            // TODO: don't as cast here.
+                                                            s = s.bg(Indexed(*iter.next().unwrap() as u8));
+                                                        },
+
+                                                        // 24-bit lookup:
+                                                        38 if Some(&&2) == iter.peek() && {
+                                                            assert_eq!(Some(&2), iter.next());
+                                                            iter.size_hint().0 >= 3
+                                                        } => {
+                                                            let (r, g, b) = (*iter.next().unwrap(), *iter.next().unwrap(), *iter.next().unwrap());
+                                                            // TODO: don't as cast here.
+                                                            s = s.fg(Rgb(r as u8, g as u8, b as u8));
+                                                        },
+
+                                                        48 if Some(&&2) == iter.peek() && {
+                                                            assert_eq!(Some(&2), iter.next());
+                                                            iter.size_hint().0 >= 3
+                                                        } => {
+                                                            let (r, g, b) = (*iter.next().unwrap(), *iter.next().unwrap(), *iter.next().unwrap());
+                                                            // TODO: don't as cast here.
+                                                            s = s.bg(Rgb(r as u8, g as u8, b as u8));
+                                                        },
+
+                                                        _ => {
+                                                            // Assume this was all a mistake.
+                                                            consumed_characters = 1;
+                                                            break 'c;
+                                                        }
+                                                    }
+                                                } else {
+                                                    break;
+                                                }
                                             }
+
+                                            *current_style = s;
                                         }
+
+                                        // Note: this misses CSI m (TODO).
+                                        // fix by adding a check for 'm' at the '[' level
 
                                         _ => {
                                             // If we get anything else, assume
