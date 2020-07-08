@@ -191,7 +191,7 @@ specialize! {
     }
 }
 
-impl<'a, 'int, C, I, O> Tui<'a, 'int, C, I, O>
+impl<'a, 'int: 'a, C, I, O> Tui<'a, 'int, C, I, O>
 where
     C: Control + ?Sized + 'a,
     I: InputSink + ?Sized + 'a,
@@ -199,7 +199,7 @@ where
 { specialize! {
     desktop => {
         /// TODO: docs
-        pub fn run_with_custom_layout<B: Backend>(mut self, term: &mut Terminal<B>, mut root: impl Widget<'a, 'int, C, I, O, B>) -> Result<()>
+        pub fn run_with_custom_layout<B: Backend + 'a>(mut self, term: &mut Terminal<B>, mut root: impl Widget<'a, 'int, C, I, O, B>) -> Result<()>
         where
             B: ExecutableCommand<&'static str>,
             Terminal<B>: Send,
@@ -226,7 +226,7 @@ where
         }
 
         // Run with default layout and a backend of your choosing.
-        pub fn run<B: Backend>(self, term: &mut Terminal<B>) -> Result<()>
+        pub fn run<B: Backend + 'a>(self, term: &mut Terminal<B>) -> Result<()>
         where
             B: ExecutableCommand<&'static str>,
             Terminal<B>: Send,
@@ -235,7 +235,7 @@ where
         }
 
         // Run with crossterm; with or without your own special layout.
-        pub fn run_with_crossterm<'c>(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<'c, Stdout>>>) -> Result<()> {
+        pub fn run_with_crossterm<'c: 'a>(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<'c, Stdout>>>) -> Result<()> {
             use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
             use crossterm::execute;
 
@@ -273,7 +273,7 @@ where
 
     web => {
         // Note: this is almost exactly a copy of the `desktop` counterpart.
-        pub async fn run_with_custom_layout<'t, W: Write + 't>(
+        pub async fn run_with_custom_layout<'t: 'a, W: Write + 't>(
             mut self,
             term: &mut Terminal<CrosstermBackend<'t, W>>,
             mut root: impl Widget<'a, 'int, C, I, O, CrosstermBackend<'t, W>>,
@@ -303,12 +303,12 @@ where
         }
 
         // Run with default layout and a backend of your choosing.
-        pub async fn run<'t, W: Write + 't>(self, term: &mut Terminal<CrosstermBackend<'t, W>>) -> Result<()> {
+        pub async fn run<'t: 'a, W: Write + 't>(self, term: &mut Terminal<CrosstermBackend<'t, W>>) -> Result<()> {
             self.run_with_custom_layout(term, crate::layout::layout(None, vec![])).await
         }
 
         // Run with crossterm; with or without your own special layout.
-        pub async fn run_with_xtermjs<'c>(
+        pub async fn run_with_xtermjs<'c: 'a>(
             self,
             root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<'c, Vec<u8>>>>,
             term: &'c XtermJsTerminal,

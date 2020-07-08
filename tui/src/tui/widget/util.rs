@@ -62,7 +62,7 @@ pub fn trim_to_width(inp: &str, width: u16) -> String {
     let width = width as usize;
     let num_chars = s.chars().count();
 
-    if num_chars <= width as usize {
+    if num_chars <= width {
         s
     } else {
         // We're assuming the width is _at least_ 2 here; otherwise this isn't
