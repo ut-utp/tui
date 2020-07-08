@@ -209,8 +209,8 @@ where
     fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
         data.log("[modeline] Resetting Sim\n", c!(Pause));
         data.sim.reset();
-        data.input_string.replace(String::from(""));
-        data.console_hist.borrow_mut().clear();
+        data.console_input_string.get_mut().clear();
+        data.console_hist.get_mut().clear();
         data.mem_reg_inter = (0,0);
         data.reset_flag = data.reset_flag.wrapping_add(1);
 

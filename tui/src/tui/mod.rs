@@ -21,15 +21,15 @@ use tui::widgets::Text as TuiText;
 use tui::style::{Style, Color};
 
 pub mod ansi;
+use ansi::AnsiTextContainer;
 
 pub mod run;
 pub mod events;
 pub mod widget;
 
 pub mod program_source;
-
-
 pub use program_source::ProgramSource;
+
 pub type Res<T> = Result<T, failure::Error>;
 
 #[allow(explicit_outlives_requirements)]
@@ -41,7 +41,6 @@ where
 {
     pub sim: &'a mut C,
     pub input: Option<&'a I>,
-    pub input_string: RefCell<String>,
     pub output: Option<&'a O>,
     pub shims: Option<Shims<'int>>,
 
@@ -54,10 +53,13 @@ where
     pub(in crate) load_flag: u8,
     pub(in crate) jump: (u8, Addr),
     pub(in crate) mem_reg_inter: (u8, Addr),
+
+    pub(in crate) console_input_string: RefCell<String>, // TODO: Give this a better name, maybe.
+    pub(in crate) console_hist: RefCell<AnsiTextContainer<'a>>,
+
     pub(in crate) debug_log: Option<Vec<TuiText<'a>>>,
-    pub(in crate) console_hist: RefCell<Vec<String>>,
-    // pub(in crate) console_hist: AnsiTextContainer<'a>, // TODO!
     pub(in crate) log: Vec<TuiText<'a>>,
+
     pub(in crate) bp: HashMap<Addr, usize>,
     pub(in crate) wp: HashMap<Addr, usize>,
 
@@ -121,7 +123,6 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
             data: TuiData {
                 sim,
                 input: None,
-                input_string: RefCell::new(String::from("")),
                 output: None,
                 shims: None,
 
@@ -133,16 +134,14 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
                 jump: (0,0x200),
                 mem_reg_inter: (0, 0),
 
+                console_input_string: RefCell::new(String::from("")),
+                console_hist: RefCell::new(AnsiTextContainer::with_capacity(1024)),
+
                 debug_log: if crate::debug::in_debug_mode() {
                     Some(Vec::with_capacity(32 * 1024 * 1024))
                 } else {
                     None
                 },
-
-                // TODO(rrbutani)!
-                // console_hist: RefCell::new(Vec::<TuiText<'a>>::with_capacity(500)),
-
-                console_hist: RefCell::new(Vec::<String>::with_capacity(500)),
 
                 log: Vec::with_capacity(16 * 1024 * 1024),
 

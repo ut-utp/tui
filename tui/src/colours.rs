@@ -68,6 +68,7 @@ palette! {
 
     ConsoleIn = TuiColour::Rgb(0xFF, 0x97, 0x40),
     ConsoleOut = TuiColour::Rgb(0xFF, 0x97, 0x40),
+    ConsolePrompt = TuiColour::Cyan,
     ConsoleHelp = TuiColour::Gray,
     ConsoleRequest = TuiColour::Red,
     InvalidInput = TuiColour:: Red,
@@ -228,6 +229,7 @@ pub mod nord {
 
         ConsoleIn: NORD1,
         ConsoleOut: NORD2,
+        ConsolePrompt: NORD3,
         ConsoleHelp: NORD0,
         ConsoleRequest: NORD1,
         InvalidInput: NORD3,

@@ -62,6 +62,7 @@ where
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .scroll(self.offset)
+            .raw(true) // TODO: add this, ditch our hand-rolled ANSI parser.
             .wrap(true);
 
         para.render(area, buf)

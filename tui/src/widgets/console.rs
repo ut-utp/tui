@@ -2,8 +2,13 @@
 
 use super::widget_impl_support::*;
 
+use std::ops::Deref;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct Console;
+
+// TODO: scrolling!
+// TODO: copy/paste!
 
 impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Console
 where
@@ -19,108 +24,55 @@ where
                 .render(area, buf);
         }
 
-        // TODO(rrbutani): redo this to use the text container.
-
         // Append any new output we have:
-        if let Some(out) = data.output {
-            if let Some(s) = out.get_chars() {
-                data.console_hist.borrow_mut().push(s);
-            }
+        if let Some(s) = data.output.and_then(|source| source.get_chars()){
+            data.console_hist.borrow_mut().push_string(s);
         }
 
-        let console_output = match data.output{ // collect from the output source
-            Some(output) => {
-                match output.get_chars() {
-                    Some(s) => {
-                        s
-                    },
-                    None => {
-                       "".to_string()
-                    },
-
-                }
-            },
-           None => {
-               "".to_string()
-           }
-
+        // Figure out the areas:
+        // We want to reserve the bottom line for input and we want to print a dividing
+        // line above it.
+        let [output, input] = if let [o, i] = Layout::default()
+            .direction(Direction::Vertical)
+            .horizontal_margin(0)
+            .vertical_margin(0)
+            .constraints([Constraint::Min(1), Constraint::Length(2)].as_ref())
+            .split(area)
+            [..] {
+            [o, i]
+        } else {
+            unreachable!()
         };
-        if console_output != "" {
-            //let vector = RefCell::new(data.history_vec);
-           data.console_hist.borrow_mut().push(console_output); // collect from output source
-        }
 
-        let mut bottom_area = area;
-        if area.height <= 1 {
-        } else if area.height <= 4 {
-            let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
-            bottom_area = increment(1, Axis::Y, area);
-        } else {
-            let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
-            bottom_area = increment(1, Axis::Y, area);
-        }
+        // TODO: this deals with lines that wrap in pretty much the worst way.
+        // We always print the last `n` lines where `n` is the height of the
+        // output area but the problem is that we count lines by newlines so
+        // any lines that get wrapped cause another line to be "pushed out" of
+        // the output area.
+        //
+        // Since we can't scroll, this ends up meaning you just can't see the
+        // lines that have been pushed out.
+        //
+        // Because of this I'm going to disable output wrapping for now, but
+        // this is not good!
 
-        let mut temp = data.console_hist.borrow().clone();
-        let mut temp = temp.concat();
-        let mut hist = data.console_hist.borrow().clone();
-        let mut hist = hist.concat();
-        let mut temp_clone = temp.clone();
-        let mut lines = 0;
-        while temp_clone != "" {
-            if temp_clone.pop() == Some('\n') {
-                lines += 1;
-            }
-        }
-        while lines > bottom_area.y-area.y {
-            if lines > 100 {
-                hist.remove(0);
-            }
-
-            if temp.remove(0) == '\n' {
-                lines -=1;
-            }
-
-        }
-
-        let mut hist_2 = Vec::new();
-        hist_2.push(hist);
-
-        data.console_hist.replace(hist_2);
-
-        let text_history = [TuiText::styled(temp, Style::default().fg(c!(ConsoleOut)))];
-        let mut para = Paragraph::new(text_history.iter())
-            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
+        // Finally, do the drawing:
+        // Paragraph::new(data.console_hist.borrow().get_lines(..))
+        Paragraph::new(data.console_hist.borrow().get_last_n_lines(output.height as usize))
+            .style(Style::default().fg(c!(ConsoleOut)).bg(Colour::Reset))
             .alignment(Alignment::Left)
-            .wrap(true);
+            // .wrap(true)
+            // .raw(true)
+            .render(output, buf);
 
-        para.render(area, buf); // the idea of this is to write the output before the ">", but I'm not sure this accomplishes that...
-
-        let text = [TuiText::styled(">", Style::default().fg(c!(Title)))];
-
-        para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-            .alignment(Alignment::Left)
-            .wrap(true);
-
-        if area.height <= 1 {
-            para.render(area, buf);
-        } else if area.height <= 4 {
-            let area = Rect::new(area.x, area.y+area.height/2, area.width, 3);
-            para.render(area, buf);
-        } else {
-            let area = Rect::new(area.x, area.y+area.height-3, area.width, 3);
-            para.render(area, buf);
-        }
-
-        if bottom_area.height >= 2 {
-            let text = [TuiText::styled(data.input_string.borrow_mut().clone(), Style::default().fg(c!(ConsoleOut)))];
-            para = Paragraph::new(text.iter())
-                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-                .alignment(Alignment::Left)
-                .wrap(true);
-            para.render(bottom_area,buf);
-        }
-
+        Paragraph::new([
+                TuiText::styled("─".repeat(input.width as usize), Style::default().fg(c!(Border))),
+                TuiText::styled("\n> ", Style::default().fg(c!(ConsolePrompt))),
+                TuiText::styled(data.console_input_string.borrow().deref(), Style::default().fg(c!(ConsoleIn))),
+            ].iter())
+            .style(Style::default().bg(Colour::Reset))
+            // .wrap(true)
+            .render(input, buf);
     }
 
     fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
@@ -129,43 +81,24 @@ where
 
 
         match event {
-            Focus(FocusEvent::GotFocus) => true,
-            Focus(FocusEvent::LostFocus) => true,
-            Mouse(MouseEvent::Up(_, _, _, _)) => true,
-            Mouse(MouseEvent::Down(_, _, _, _)) => true,
-
+            Focus(FocusEvent::GotFocus)
+            | Focus(FocusEvent::LostFocus)
+            | Mouse(MouseEvent::Up(_, _, _, _))
+            | Mouse(MouseEvent::Down(_, _, _, _)) => true,
 
             Key(KeyEvent { code: KeyCode::Char(c), modifiers: EMPTY }) => {
-
-                match data.input {
-                    Some(input) => {
-                        let fallible = input.put_char(c);  // put characters into input sink
-
-                        match fallible {
-                            Some(some) => {
-                                let x = format!("{}", c);
-                                data.input_string.borrow_mut().push_str(&x);
-                                true
-                            },
-
-                            None => {
-                                false
-                            }
-
-                        }
-                    },
-                    None => {
-                        false
-
-                    }
-                }
-
+                data.input
+                    .and_then(|sink| sink.put_char(c))
+                    // If that succeeded, add the char to the input line:
+                    .map(|()| data.console_input_string.get_mut().push(c))
+                    .is_some()
             },
-            Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
-                data.input_string.replace(String::from(""));
 
+            Key(KeyEvent { code: KeyCode::Enter, modifiers: EMPTY }) => {
+                data.console_input_string.get_mut().clear();
                 true
             },
+
              _ => false,
         }
     }
