@@ -590,3 +590,81 @@ pub fn ansi_string_to_tui_text<'s, 't>(
         }
     }
 }
+
+#[cfg(test)]
+mod ansi_tests {
+    use super::*;
+    use pretty_assertions::assert_eq as eq;
+
+    macro_rules! l {
+        (
+            $((
+
+                $($l:literal:$s:expr),* $(,)?
+            )),* $(,)?
+        ) => {
+            vec![$(
+                vec![$(
+                    TuiText::Styled(Cow::Owned($l.to_string()), $s)
+
+                ),*]
+            ),*]
+        };
+    }
+
+    mod no_escapes {
+        use super::*;
+
+        #[test]
+        fn simple() {
+            let mut s = Style::default();
+            let mut out = Vec::new();
+
+            ansi_string_to_tui_text("hello\nfriends", &mut s, &mut out).unwrap();
+
+            eq!(out, l![
+                ("hello\n": s),
+                ("friends": s),
+            ]);
+        }
+
+        #[test]
+        fn with_interruptions() {
+            let mut s = Style::default();
+            let mut out = Vec::new();
+
+            ansi_string_to_tui_text("hey ", &mut s, &mut out).unwrap();
+            ansi_string_to_tui_text(" there", &mut s, &mut out).unwrap();
+            ansi_string_to_tui_text("\n\n\nyo\n👋", &mut s, &mut out).unwrap();
+            ansi_string_to_tui_text("\n", &mut s, &mut out).unwrap();
+            ansi_string_to_tui_text("\n.\n", &mut s, &mut out).unwrap();
+            ansi_string_to_tui_text("Sphinx of black quartz, judge my vow.", &mut s, &mut out).unwrap();
+
+            eq!(out, l![
+                ("hey ": s, " there": s, "\n": s),
+                ("\n": s),
+                ("\n": s),
+                ("yo\n": s),
+                ("👋": s, "\n": s),
+                ("": s, "\n": s),
+                (".\n": s),
+                ("": s, "Sphinx of black quartz, judge my vow.": s),
+            ]);
+        }
+    }
+
+    mod colors {
+        use super::*;
+
+        #[test]
+        fn red() {
+            let mut s = Style::default();
+            let mut out = Vec::new();
+
+            ansi_string_to_tui_text("\x1B[1;31mhello", &mut s, &mut out).unwrap();
+
+            eq!(out, l![("hello": s)]);
+            eq!(s, Style::default().fg(Color::Red).modifier(Modifier::BOLD));
+        }
+    }
+}
