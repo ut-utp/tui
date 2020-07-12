@@ -26,11 +26,6 @@ specialize! {
     web => { use futures_channel::mpsc::UnboundedSender as Sender; }
 }
 
-specialize! {
-    desktop => { use tui::backend::Backend; }
-    web => { }
-}
-
 impl<'a, 'int, C, I, O> Tui<'a, 'int, C, I, O>
 where
     C: Control + ?Sized + 'a,
@@ -72,7 +67,7 @@ where
         last_window_size: &mut Option<(u16, u16)>,
     ) -> bool
     where
-        B: Backend,
+        B: tui::backend::Backend,
         B: ExecutableCommand<&'static str>,
     {
         use Event::*;
@@ -199,7 +194,7 @@ where
 { specialize! {
     desktop => {
         /// TODO: docs
-        pub fn run_with_custom_layout<B: Backend + 'a>(mut self, term: &mut Terminal<B>, mut root: impl Widget<'a, 'int, C, I, O, B>) -> Result<()>
+        pub fn run_with_custom_layout<B: tui::backend::Backend + 'a>(mut self, term: &mut Terminal<B>, mut root: impl Widget<'a, 'int, C, I, O, B>) -> Result<()>
         where
             B: ExecutableCommand<&'static str>,
             Terminal<B>: Send,
@@ -226,7 +221,7 @@ where
         }
 
         // Run with default layout and a backend of your choosing.
-        pub fn run<B: Backend + 'a>(self, term: &mut Terminal<B>) -> Result<()>
+        pub fn run<B: tui::backend::Backend + 'a>(self, term: &mut Terminal<B>) -> Result<()>
         where
             B: ExecutableCommand<&'static str>,
             Terminal<B>: Send,
