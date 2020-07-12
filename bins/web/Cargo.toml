@@ -46,7 +46,10 @@ js-sys = "0.3"
 version = "0.3"
 features = [
   'Document',
+  'DragEvent',
+  'Event',
   'Element',
+  'HtmlElement',
   'Window',
   "Location",
   "Url",
@@ -57,6 +60,9 @@ features = [
 [lib]
 crate-type = ["cdylib"]
 
+
+[package.metadata.wasm-pack.profile.dev]
+wasm-opt = false
 
 [package.metadata.wasm-pack.profile.dev.wasm-bindgen]
 debug-js-glue = true
