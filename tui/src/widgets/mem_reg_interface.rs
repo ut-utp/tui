@@ -74,7 +74,7 @@ where
             PcMod => {
                 TuiText::styled(
                     format!("Current Register: PC\n"),
-                    Style::default().fg(c!(PC)),
+                    Style::default().fg(c!(Pc)),
                 )
             },
         };

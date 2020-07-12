@@ -72,7 +72,7 @@ where
         last_window_size: &mut Option<(u16, u16)>,
     ) -> bool
     where
-        B: tui::backend::Backend,
+        B: Backend,
         B: ExecutableCommand<&'static str>,
     {
         use Event::*;

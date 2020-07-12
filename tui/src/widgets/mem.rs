@@ -127,7 +127,7 @@ where
             let cur_addr = pc.wrapping_sub(self.offset).wrapping_add(x).wrapping_sub(self.focus);
             if x == self.offset.wrapping_add(self.focus) {
                 let x = String::from("-->\n");
-                arrow_v.push(TuiText::styled(x,Style::default().fg(c!(PC))));
+                arrow_v.push(TuiText::styled(x,Style::default().fg(c!(Pc))));
             } else if x == self.offset {
                 let x = String::from("-->\n");
                 arrow_v.push(TuiText::styled(x,Style::default().fg(c!(Highlight))));
@@ -150,11 +150,11 @@ where
             }
 
             if cur_addr == pc {
-                bp_colour = c!(PC);
-                wp_colour = c!(PC);
-                addr_colour = c!(PC);
-                data_colour = c!(PC);
-                inst_colour = c!(PC);
+                bp_colour = c!(Pc);
+                wp_colour = c!(Pc);
+                addr_colour = c!(Pc);
+                data_colour = c!(Pc);
+                inst_colour = c!(Pc);
             }
 
             match data.get_current_event() {

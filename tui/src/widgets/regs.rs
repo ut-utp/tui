@@ -120,7 +120,7 @@ where
 
         let text = [
             TuiText::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(c!(Name))),
-            TuiText::styled("PSR:\nMode:\nPri:\n", Style::default().fg(c!(PC))),
+            TuiText::styled("PSR:\nMode:\nPri:\n", Style::default().fg(c!(Pc))),
         ];
 
         let mut para = Paragraph::new(text.iter())
@@ -173,7 +173,7 @@ where
 
         let text = [
             TuiText::styled("R4:\nR5:\nR6:\nR7:\n", Style::default().fg(c!(Name))),
-            TuiText::styled("PC:\nnzp: ", Style::default().fg(c!(PC))),
+            TuiText::styled("PC:\nnzp: ", Style::default().fg(c!(Pc))),
         ];
 
         para = Paragraph::new(text.iter())
@@ -194,13 +194,13 @@ where
         }
         let s = format!("{:#018b} {:#06x} {:#05}\n", pc, pc, pc);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.2)));
-        reg_v.push(TuiText::styled(format!("n: "), Style::default().fg(c!(PC))));
+        reg_v.push(TuiText::styled(format!("n: "), Style::default().fg(c!(Pc))));
         let s = format!("{}  ", n);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[2])));
-        reg_v.push(TuiText::styled(format!("z: "), Style::default().fg(c!(PC))));
+        reg_v.push(TuiText::styled(format!("z: "), Style::default().fg(c!(Pc))));
         let s = format!("{}  ", z);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[3])));
-        reg_v.push(TuiText::styled(format!("p: "), Style::default().fg(c!(PC))));
+        reg_v.push(TuiText::styled(format!("p: "), Style::default().fg(c!(Pc))));
         let s = format!("{}  ", p);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[4])));
 

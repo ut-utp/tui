@@ -7,6 +7,7 @@ use tui::style::Color as TuiColour;
 macro_rules! palette {
     ($($field:tt $(= $default:expr)?),* $(,)?) => {
         pub trait ColourPalette { $(
+            #[allow(non_upper_case_globals)]
             const $field: TuiColour $(= $default)?;
         )*}
 
@@ -33,10 +34,14 @@ macro_rules! palette {
 
 macro_rules! declare_palette {
     ($nom:ident = { $($field:ident: $val:expr),* $(,)? }) => {
+        #[derive(Debug)]
         pub struct $nom;
 
         impl $crate::colours::ColourPalette for $nom {
-            $(const $field: TuiColour = $val;)*
+            $(
+                #[allow(non_upper_case_globals)]
+                const $field: TuiColour = $val;
+            )*
         }
     };
 }
@@ -46,7 +51,7 @@ palette! {
     Inst = TuiColour::LightCyan,
     Name = TuiColour::Gray,
     Addr = TuiColour::Gray,
-    PC = TuiColour::Rgb(0xFF, 0x97, 0x40),
+    Pc = TuiColour::Rgb(0xFF, 0x97, 0x40),
     Num = TuiColour::Rgb(0xFF, 0x97, 0x40),
 
     DataT = TuiColour::Green,
@@ -106,11 +111,7 @@ palette! {
 
 declare_palette! { DefaultPalette = { }}
 
-// declare_palette! { Dark = {
-//     MemoryView: TuiColour::Blue,
-
-//     Modeline: TuiColour::Reset,
-// }}
+// TODO: a dark palette?
 
 /// Colours from the [nord colour palette](https://www.nordtheme.com/docs/colors-and-palettes).
 pub mod nord {
@@ -207,7 +208,7 @@ pub mod nord {
         Inst: TuiColour::White,
         Name: TuiColour::White,
         Addr: TuiColour::White,
-        PC: NORD1,
+        Pc: NORD1,
         Num: NORD1,
 
         DataT: NORD1,
@@ -388,7 +389,7 @@ pub mod nord {
         // Inst: ,
         // Name: ,
         // Addr: ,
-        // PC: ,
+        // Pc: ,
         // Num: ,
 
         // DataT: ,
