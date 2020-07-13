@@ -13,6 +13,53 @@ use xterm_js_sys::xterm::{LogLevel, Terminal, TerminalOptions, Theme};
 use std::time::Duration;
 use std::str::FromStr;
 
+// Note: right now we only accept asm files for drag 'n drop. Eventually we
+// want to support:
+//  - Memory Dump Files
+//  - Multiple Assembly Files
+//
+// # Memory Dump Files
+// This isn't complicated but is blocked on us picking/implementing some kind
+// of magic that we're going to use for such files (i.e. the thing we'll also
+// use with binfmt).
+//
+// When we do this we should:
+//  - update `ondragenter` to detect the file type and say what kind of thing
+//    we're going to be loading (asm or mem) if the user finishes the drop.
+//     * this is also blocked on us being able to work with memory dump
+//       immediates
+//  - update `ondrop` to do detect the file kind and use update the URL
+//    accordingly
+//
+// # Multiple Assembly Files
+// This refers to future plans when we have the ability to reference things in
+// other assembly files (`.extern` support) and _is_ complicated.
+//
+// The problem becomes how do users give us all the files in a project? Dragging
+// the full file list seems good except that the way this will probably work is
+// that we ask for a 'root' file for the project that goes and tells us what
+// files are also part of the project; if we are given a list of files we have
+// no way to know which is the 'root'.
+//
+// I think the least bad solution is to only enable this feature when we're
+// granted access to the user file system (iiuc there is a relatively modern
+// Web API that allows us this access if the user permits it). Users can just
+// drop the root file and we'll, as usual, figure out what other files are
+// involved.
+//
+// This is made a little complicated by the fact that the 'detected what other
+// files are used' bit is usually done by the assembler and that I don't know
+// if we can actually get the file path out of a file that's dropped onto a
+// browser window (probably not).
+//
+// In any case, this is a ways off and I'd personally be okay saying that
+// browser support is limited to single files only.
+//
+// # Other considerations
+// Rather than updating the URL we could go and change the source in the Tui
+// instance (this might need us to stick it in a Mutex of some kind but that's
+// fine).
+
 // Note: this leaks which we'll say is okay since these closures are used for
 // the entire life of the program anyways.
 pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsValue> {
