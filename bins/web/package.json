@@ -5,7 +5,7 @@
   "author": "UT UTP <ut.utp.group@gmail.com>",
   "license": "MPL-2.0",
   "scripts": {
-    "watch": "parcel index.html",
+    "watch": "WASM_PACK_PROFILE=dev parcel index.html",
     "release": "WASM_PACK_PROFILE=release NODE_ENV=production parcel build index.html"
   },
   "dependencies": {
