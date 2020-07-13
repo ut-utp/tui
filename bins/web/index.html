@@ -11,6 +11,10 @@
       height: 100%;
     }
 
+    #drop {
+      pointer-events: none;
+    }
+
     #terminal {
       z-index: 2;
     }
@@ -46,10 +50,10 @@
 </head>
 
 <body>
-  <div id="drop">
-    <strong>Drop File Here!</strong>
-  </div>
-  <div id="terminal"></div>
+    <div id="drop">
+      <strong>Drop File Here!</strong>
+    </div>
+    <div id="terminal"></div>
   <script src="./index.ts"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@ use lc3_application_support::init::{BlackBox, SimDevice};
 use console_error_panic_hook::set_once as set_panic_hook;
 use log::Level;
 use wasm_bindgen::{prelude::*, JsCast};
-use web_sys::{Document, DragEvent, Event, HtmlElement, Url};
+use web_sys::{Document, DragEvent, Element, Event, HtmlElement, Url};
 use xterm_js_sys::xterm::{LogLevel, Terminal, TerminalOptions, Theme};
 
 use std::time::Duration;
@@ -15,45 +15,57 @@ use std::str::FromStr;
 
 // Note: this leaks which we'll say is okay since these closures are used for
 // the entire life of the program anyways.
-pub fn register_drag_hooks(document: &Document) -> Result<(), JsValue> {
-    let drop_div = document
-        .get_element_by_id("drop")
-        .expect("should have a drop div")
-        .dyn_into::<HtmlElement>()?;
+pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsValue> {
+    let drop_div = drop_div.dyn_into::<HtmlElement>()?;
 
-    let enter = Closure::wrap(Box::new({ let div = drop_div.clone(); move |ev: DragEvent| {
+    macro_rules! reg {
+        ($elem:ident :: $event:ident($ev_var:ident: $ev_ty:ty) => $handler:block) => {
+            {
+                let handler = Closure::wrap(
+                    Box::new(move |$ev_var| $handler) as Box<dyn FnMut($ev_ty)>
+                );
+
+                $elem.$event(Some(handler.as_ref().unchecked_ref()));
+                handler.forget();
+            }
+        };
+    }
+
+    // We need this for [dumb reasons](https://stackoverflow.com/a/32084240):
+    reg!(doc :: set_ondragover(ev: DragEvent) => {
+        AsRef::<Event>::as_ref(&ev).prevent_default();
+    });
+
+    let div = drop_div.clone();
+    reg!(doc :: set_ondragenter(ev: DragEvent) => {
         AsRef::<Event>::as_ref(&ev).prevent_default();
 
         // TODO: get the file name and make a message here!
-
-        log::error!("enter");
+        log::debug!("enter");
 
         div.set_class_name("hover");
-    }}) as Box<dyn FnMut(_)>);
+    });
 
-    let exit = Closure::wrap(Box::new({ let div = drop_div.clone(); move |ev: DragEvent| {
+    // leave, not exit.
+    let div = drop_div.clone();
+    reg!(doc :: set_ondragleave(ev: DragEvent) => {
         AsRef::<Event>::as_ref(&ev).prevent_default();
 
-        log::error!("exit");
+        log::debug!("exit");
         div.set_class_name("");
-    }}) as Box<dyn FnMut(_)>);
+    });
 
-    let drop = Closure::wrap(Box::new({ let div = drop_div.clone(); move |ev: DragEvent| {
-        AsRef::<Event>::as_ref(&ev).prevent_default();
+    let div = drop_div.clone();
+    reg!(doc :: set_ondrop(dv: DragEvent) => {
+        let ev = AsRef::<Event>::as_ref(&dv);
+        ev.prevent_default();
+        ev.stop_propagation();
 
-        log::error!("drop");
+        log::debug!("drop");
         div.set_class_name("dropped");
 
-        // TODO: load the file, update the URL, reload the page.
-    }}) as Box<dyn FnMut(_)>);
-
-    drop_div.set_ondragenter(Some(enter.as_ref().unchecked_ref()));
-    drop_div.set_ondragexit(Some(exit.as_ref().unchecked_ref()));
-    drop_div.set_ondrop(Some(drop.as_ref().unchecked_ref()));
-
-    enter.forget();
-    exit.forget();
-    drop.forget();
+        // TODO: loading message, load the file, update the URL, reload the page.
+    });
 
     Ok(())
 }
@@ -70,6 +82,11 @@ pub async fn run() -> Result<(), JsValue> {
     let terminal_div = document
         .get_element_by_id("terminal")
         .expect("should have a terminal div");
+    let drop_div = document
+        .get_element_by_id("drop")
+        .expect("should have a drop div");
+
+    register_drag_hooks(&document, drop_div)?;
 
     let term = Terminal::new(Some(
         TerminalOptions::default()
@@ -81,8 +98,6 @@ pub async fn run() -> Result<(), JsValue> {
 
     term.open(terminal_div);
     term.resize(200, 45);
-
-    register_drag_hooks(&document)?;
 
     let mut b = BlackBox::new();
     let mut tui = DynTui::new_boxed_from_init::<SimDevice>(&mut b);
