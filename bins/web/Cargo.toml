@@ -49,6 +49,7 @@ features = [
   'DragEvent',
   'Event',
   'Element',
+  'File',
   'HtmlElement',
   'Window',
   "Location",

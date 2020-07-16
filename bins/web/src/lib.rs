@@ -7,7 +7,7 @@ use lc3_application_support::init::{BlackBox, SimDevice};
 use console_error_panic_hook::set_once as set_panic_hook;
 use log::Level;
 use wasm_bindgen::{prelude::*, JsCast};
-use web_sys::{Document, DragEvent, Element, Event, HtmlElement, Url};
+use web_sys::{DataTransferItem, Document, DragEvent, Element, Event, File, HtmlElement, Url};
 use xterm_js_sys::xterm::{LogLevel, Terminal, TerminalOptions, Theme};
 
 use std::time::Duration;
@@ -78,7 +78,40 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         };
     }
 
-    // We need this for [dumb reasons](https://stackoverflow.com/a/32084240):
+    enum DragItemType {
+        AsmFile(File),
+        AsmString,
+        MemFile(File),
+        MemString,
+    }
+    use DragItemType::*;
+
+    impl DragItemType {
+        fn from(item: &DataTransferItem) -> Result<Self, (String, String)> {
+            match (item.kind(), item.type_()) {
+                ("file", "text/plain") |
+                ("file", "text/lc3-asm") => {
+                    Ok(AsmFile(item.get_as_file().unwrap().unwrap()))
+                },
+
+                ("string", "text/plain") |
+                ("string", "text/lc3-asm") => Ok(AsmString),
+
+                ("file", "application/octet-stream") |
+                ("file", "application/lc3-bin") => {
+                    Ok(MemFile(item.get_as_file().unwrap().unwrap()))
+                },
+
+                ("string", "application/octet-stream") |
+                ("string", "application/lc3-bin") => Ok(MemString),
+
+                (kind, ty) => Err(kind, ty),
+            }
+        }
+    }
+
+    // We need this event handler for
+    // [dumb reasons](https://stackoverflow.com/a/32084240):
     reg!(doc :: set_ondragover(ev: DragEvent) => {
         AsRef::<Event>::as_ref(&ev).prevent_default();
     });
@@ -87,10 +120,74 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
     reg!(doc :: set_ondragenter(ev: DragEvent) => {
         AsRef::<Event>::as_ref(&ev).prevent_default();
 
-        // TODO: get the file name and make a message here!
-        log::debug!("enter");
+        let dt = if let Some(dt) = ev.data_transfer() {
+            dt
+        } else {
+            log::error!("Failed to get a `DataTransfer` from the `DragEvent`!");
+            return;
+        };
+
+        let items = dt.items();
+
+        let m;
+        let msg = match items.length() {
+            0 => Err("Can't drop 0 items. 😕"),
+            1 => match DragItemType::from(&items.get(0).expect("one item")) {
+                Ok(f) => match f {
+                    AsmFile(f) => m = Ok(format!("Drop To Load `{}`!", f.name())),
+                    AsmString => m = Ok(String::from("Drop To Load Assembly String!")),
+                    MemFile(_) | MemString => m = Err(String::from("❌ Memory Dumps are not yet supported. ❌")),
+                }
+                Err((kind, ty)) => {
+                    m = Err(format!("❌ Unsupported format: {}:{}. ❌", kind, ty));
+                }
+            }
+
+            /*{
+
+                let item = items.get(0).expect("one item");
+
+                match (item.kind(), item.type_()) {
+                    ("file", "text/plain") |
+                    ("file", "text/lc3-asm") => {
+                        // TODO: do we need to check for directories?
+                        let f = item.get_as_file().unwrap().unwrap();
+                        m = Ok(format!("Drop To Load `{}`!", f.name()));
+                    },
+
+                    ("string", "text/plain") |
+                    ("string", "text/lc3-asm") => {
+                        m = Ok(String::from("Drop To Load Assembly String!"))
+                    },
+
+                    ("file", "application/octet-stream") |
+                    ("file", "application/lc3-bin") |
+                    ("string", "application/octet-stream") |
+                    ("string", "application/lc3-bin") => {
+                        m = Err(String::from("❌ Memory Dumps are not yet supported. ❌")),
+                    }
+
+                    (kind, ty) => m = Err(format!("❌ Unsupported format: {}:{}. ❌", kind, ty)),
+                }
+
+                m.as_ref()
+            },*/
+            _ => Err("❌ Only dropping 1 item is currently supported. ❌"),
+        };
+
+        let msg = match msg {
+            Ok(m) => {
+                dt.set_drop_effect("copy");
+                m
+            },
+            Err(m) => {
+                dt.set_drop_effect("none");
+                m
+            }
+        };
 
         div.set_class_name("hover");
+        div.set_inner_html(format!("<strong>{}</strong>", msg).as_ref())
     });
 
     // leave, not exit.
@@ -98,8 +195,17 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
     reg!(doc :: set_ondragleave(ev: DragEvent) => {
         AsRef::<Event>::as_ref(&ev).prevent_default();
 
-        log::debug!("exit");
+        let items = ev.data_transfer().unwrap().items();
+        let len = items.length();
+
+        if len != 1 {
+            log::error!("🚨 Attempted to drop not just 1 item! ({} items}", len);
+        } else {
+            let item = items.get(0).expect("one item");
+        }
+
         div.set_class_name("");
+        div.set_inner_html("");
     });
 
     let div = drop_div.clone();
