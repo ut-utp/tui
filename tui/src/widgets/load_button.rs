@@ -9,7 +9,6 @@ use super::widget_impl_support::*;
 
 use lc3_traits::control::load::{load_whole_memory_dump, Progress, LoadMemoryProgress};
 use lc3_traits::control::metadata::ProgramId;
-use lc3_shims::memory::FileBackedMemoryShim;
 
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime};
@@ -288,6 +287,8 @@ impl LoadButton {
 
     #[cfg(not(target_arch = "wasm32"))]
     fn check_for_program_changes<C: Control + ?Sized>(&self, sim: &C, p: &PathBuf, with_os: bool) {
+        use lc3_shims::memory::FileBackedMemoryShim;
+
         // An optimization would be to check if we're already out of date (and
         // then to just not do any additional checks if so). Unfortunately if
         // the file gets modified and then changed back we want to correctly say

@@ -7,6 +7,7 @@ use lc3_assembler::{
     parser::{parse, LeniencyLevel},
 };
 use lc3_isa::{ADDR_SPACE_SIZE_IN_WORDS, ADDR_SPACE_SIZE_IN_BYTES, util::MemoryDump};
+#[cfg(not(target_arch = "wasm32"))]
 use lc3_shims::memory::FileBackedMemoryShim;
 use lc3_traits::control::metadata::{
     LongIdentifier, ProgramMetadata,

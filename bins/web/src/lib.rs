@@ -74,7 +74,7 @@ use std::str::FromStr;
 // instance (this might need us to stick it in a Mutex of some kind but that's
 // fine).
 
-async fn get_data_transfer_item_as_string(dti: &DataTransferItem) -> Result<String, ()> {
+async fn get_data_transfer_string(dti: &DataTransferItem) -> Result<String, ()> {
     let mut buf = String::new();
     let mut c = None;
 
@@ -92,9 +92,15 @@ async fn get_data_transfer_item_as_string(dti: &DataTransferItem) -> Result<Stri
         }) as Box<dyn FnMut(_)>));
 
         dti.get_as_string(Some(c.as_ref().unwrap().as_ref().unchecked_ref())).unwrap();
-    })).await;
+    })).await.unwrap();
 
     Ok(buf)
+}
+
+async fn get_data_transfer_file(f: &File) -> Result<String, ()> {
+    let buf = String::new();
+
+    todo!()
 }
 
 // `dropped` indicates whether we should try to get the data out of a "string"
@@ -115,32 +121,8 @@ async fn log_data_transfer_items_list_inner(dtl: DataTransferItemList, dropped: 
                         .unwrap_or("<failed to get file>".to_string())
                 },
 
-                // "string" => {
-                //     let mut buf = String::new();
-                //     let mut c = None;
-                //     JsFuture::from(Promise::new(&mut |res, _rej| {
-                //         let buf_ref: &'static mut String = unsafe { core::mem::transmute(&mut buf) };
-                //         // let c = Closure::once(move |s: String| {
-                //         //     buf_ref.push_str(s.as_str());
-
-                //         //     res.call0(&JsValue::NULL)
-                //         // });
-
-                //         c = Some(Closure::wrap(Box::new(move |s: String| {
-                //             buf_ref.push_str(s.as_str());
-
-                //             res.call0(&JsValue::NULL).unwrap();
-                //         }) as Box<dyn FnMut(_)>));
-
-                //         dt.get_as_string(Some(c.as_ref().unwrap().as_ref().unchecked_ref())).unwrap();
-                //         // c.forget();
-                //     })).await;
-
-                //     buf
-                // },
-
                 "string" => if dropped {
-                    get_data_transfer_item_as_string(&dt).await.unwrap()
+                    get_data_transfer_string(&dt).await.unwrap()
                 } else {
                     String::from("<string>")
                 },
@@ -180,6 +162,7 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
     //    Chrome gives us nothing..
     // TODO: figure out why strings read as 4 items..
     // TODO: figure out why URLs read as 8 items..
+    #[derive(Debug, Clone)]
     enum DragItemType {
         AsmFile(Option<File>),
         MemFile(Option<File>),
@@ -235,9 +218,10 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         }
     }
 
+    #[derive(Debug, Clone)]
     enum DragItemResult {
-        AsmFile(File),
-        MemFile(File),
+        AsmFile(File, String),
+        MemFile(File, String),
 
         AsmUrl(String),
         MemUrl(String),
@@ -245,12 +229,6 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         AsmLiteral(String),
         // MemLiteral(String), // TODO: does this even make sense? Can you repr memory dumps as a Unicode String without exploding? I think no.
     }
-
-    // enum DragErr {
-    //     NoItems,
-    //     UnsupportedFormat { kind: String, ty: String },
-    //     MultipleItems(u8),
-    // }
 
     enum DragResErr {
         CouldNotGetFile,
@@ -261,13 +239,19 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         async fn from(dt: DragItemType) -> Result<Self, DragResErr> {
             use DragItemResult::*;
             use DragResErr::*;
-            match dt {
-                DragItemType::AsmFile(f) => AsmFile(f.ok_or(CouldNotGetFile)?),
-                DragItemType::MemFile(f) => MemFile(f.ok_or(CouldNotGetFile)?),
+            let res = match &dt {
+                DragItemType::AsmFile(f) | DragItemType::MemFile(f) => {
+                    let f = f.as_ref().ok_or(CouldNotGetFile)?.clone();
+                    match (dt, get_data_transfer_file(&f).await.ok().ok_or(CouldNotGetFile)?) {
+                        (DragItemType::AsmFile(_), c) => AsmFile(f, c),
+                        (DragItemType::MemFile(_), c) => MemFile(f, c),
+                        _ => unreachable!(),
+                    }
+                }
 
-                DragItemResult::String(i) => match (
-                    i.type_(),
-                    get_data_transfer_item_as_string(&i).await().ok_or(CouldNotGetString)?,
+                DragItemType::String(i) => match (
+                    i.type_().as_str(),
+                    get_data_transfer_string(&i).await.ok().ok_or(CouldNotGetString)?,
                 ) {
                     // MemLiteral
                     // TODO: replace this with whatever magic memory dumps end
@@ -297,7 +281,9 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
 
                     (_, _) => unreachable!(),
                 }
-            }
+            };
+
+            Ok(res)
         }
     }
 
@@ -319,7 +305,7 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         };
 
         let items = dt.items();
-        log_data_transfer_items_list(items, false);
+        log_data_transfer_items_list(&items, false);
 
         let msg = match DragItemType::from_list(&items) {
             Ok(item) => match item {
@@ -362,7 +348,6 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
     });
 
     let div = drop_div.clone();
-    let document = doc.clone();
     reg!(doc :: set_ondrop(dv: DragEvent) => {
         let ev = AsRef::<Event>::as_ref(&dv);
         ev.prevent_default();
@@ -371,21 +356,25 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         let items = dv.data_transfer().unwrap().items();
 
         log::debug!("drop");
-        log_data_transfer_items_list(items, true);
+        log_data_transfer_items_list(&items, true);
 
+        // Note: we get a really really bad error message if we don't pass in
+        // `div`; it tries to use the div that's declared in the outer scope
+        // which _should_ produce an error about moving or lifetimes but instead
+        // produces an error about this closure not implementing FnMut!!
         macro_rules! failure {
-            ($($t:tt)*) => {{
-                div.set_inner_html(format!("<strong>🚨 {} 🚨</strong>",
-                    format!($(t)*)
-                ).as_ref())
+            ($div:ident <- $($t:tt)*) => {{
+                $div.set_inner_html(format!("<strong>🚨 {} 🚨</strong>",
+                    format!($($t)*)
+                ).as_ref());
 
-                let div = div.clone();
-                spawn_local(async {
-                    let window = web_sys::window();
+                let div = $div.clone();
+                spawn_local(async move {
+                    let window = web_sys::window().expect("window");
                     lc3_application_support::event_loop::timeout(&window, 3_000).await;
                     div.set_class_name("");
                     div.set_inner_html("");
-                })
+                });
 
                 return;
             }};
@@ -394,55 +383,46 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         div.set_class_name("dropped");
         let item = match DragItemType::from_list(&items) {
             Ok(item) => item,
-            Err(None) => failure!("Can't drop 0 items 😕.".to_string()),
-            Err(Some((kind, ty))) => failure!("Unsupported format: `{}:{}`.", kind, ty),
-            // Err(err) => {
-            //     let msg = match err {
-            //         None => "Can't drop 0 items. 😕".to_string(),
-            //         Some((kind, ty)) => format!("❌ Unsupported format: `{}:{}`. ❌", kind, ty),
-            //     };
-
-            //     div.set_inner_html(format!("<strong>{}</strong>", msg).as_ref());
-            //     return;
-            // }
-        }
-
-        use DragErr::*
-        let item = match spawn_local(DragItemResult::from(&item)) {
-            Ok(item) = item,
-            Err(CouldNotGetFile) => failure!("Could not load file."),
-            Err(CouldNotGetString) => failure!("Could not get string."),
-
-            // Err(e) => {
-            //     let m = match e {
-            //        CouldNotGetFile => "Could not load file.",
-            //        CouldNotGetString => "Could not get string.",
-            //     };
-
-            //     div.set_inner_html(format!("<strong>{}</strong>", msg).as_ref());
-            //     return;
-            // }
+            Err(None) => failure!(div <- "Can't drop 0 items 😕."),
+            Err(Some((kind, ty))) => failure!(div <- "Unsupported format: `{}:{}`.", kind, ty),
         };
 
-        use DragItemResult::*;
-        let msg = match item {
-            AsmFile(f) => format!("📁 Loading `{}` as an assembly file... ⌛", f.name()),
-            MemFile(f) => format!("📁 Loading `{}` as a memory dump... ⌛", f.name())
-            AsmUrl(u) => format!("🌐 Loading `{}` as a link to an assembly file... ⌛", u),
-            MemUrl(u) => format!("🌐 Loading `{}` as a link to a memory dump... ⌛", u),
-            AsmLiteral(_) => format!("📜 Loading assembly string... ⌛"),
-        };
-        div.set_inner_html(format!("<h2>{}</h2>", msg).as_ref());
+        let div2 = div.clone();
+        spawn_local((|| async move {
+            let div = div2;
+            use DragResErr::*;
 
-        spawn_local(async {
+            let item = match DragItemResult::from(item).await {
+                Ok(item) => item,
+                Err(CouldNotGetFile) => failure!(div <- "Could not load file."),
+                Err(CouldNotGetString) => failure!(div <- "Could not get string."),
+            };
+
+            use DragItemResult::*;
+            let msg = match &item {
+                AsmFile(f, _) => format!("📁 Loading `{}` as an assembly file... ⌛", f.name()),
+                MemFile(f, _) => format!("📁 Loading `{}` as a memory dump... ⌛", f.name()),
+                AsmUrl(u) => format!("🌐 Loading `{}` as a link to an assembly file... ⌛", u.clone()),
+                MemUrl(u) => format!("🌐 Loading `{}` as a link to a memory dump... ⌛", u.clone()),
+                AsmLiteral(_) => format!("📜 Loading assembly string... ⌛"),
+            };
+            div.set_inner_html(format!("<strong>{}</strong>", msg).as_ref());
+
             let src = match item {
-                AsmFile()
-            }
-        })
+                AsmFile(_, c) | AsmLiteral(c) => format!("imm:{}", c),
+                MemFile(_, _c) => todo!(), // TODO: support Memory Dumps!
+                AsmUrl(u) => format!("asm:{}", u),
+                MemUrl(u) => format!("mem:{}", u),
+            };
 
-        let src = match item {
-            AsmFile(f) =>
-        }
+            let loc = web_sys::window().expect("window").location();
+            let url = loc.href().expect("window URL");
+
+            let url = Url::new(url.as_ref()).unwrap();
+            url.search_params().set("src", &src);
+
+            loc.set_href(url.href().as_str()).unwrap();
+        })());
     });
 
     Ok(())
