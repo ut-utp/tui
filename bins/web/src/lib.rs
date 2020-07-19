@@ -98,9 +98,7 @@ async fn get_data_transfer_string(dti: &DataTransferItem) -> Result<String, ()> 
 }
 
 async fn get_data_transfer_file(f: &File) -> Result<String, ()> {
-    let buf = String::new();
-
-    todo!()
+    JsFuture::from(f.text()).await.map_err(|_| ())?.as_string().ok_or(())
 }
 
 // `dropped` indicates whether we should try to get the data out of a "string"
@@ -291,6 +289,16 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
     // [dumb reasons](https://stackoverflow.com/a/32084240):
     reg!(doc :: set_ondragover(ev: DragEvent) => {
         AsRef::<Event>::as_ref(&ev).prevent_default();
+        if let Some(dt) = ev.data_transfer() {
+            use DragItemType::*;
+            let effect = match DragItemType::from_list(&dt.items()) {
+                Ok(AsmFile(_)) | Ok(String(_)) => "copy",
+                Ok(MemFile(_)) | Err(_) => "none"
+            };
+
+            dt.set_effect_allowed(effect);
+            dt.set_drop_effect(effect);
+        }
     });
 
     let div = drop_div.clone();
@@ -309,31 +317,17 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
 
         let msg = match DragItemType::from_list(&items) {
             Ok(item) => match item {
-                DragItemType::AsmFile(f) => Ok(
-                    format!("Drop To Load {}!", f
-                        .map(|f| f.name())
-                        .unwrap_or("File".to_string()))
+                DragItemType::AsmFile(f) => format!("Drop To Load {}!", f
+                    .map(|f| f.name())
+                    .unwrap_or("File".to_string()),
                 ),
-                DragItemType::MemFile(_) => Err(
-                    String::from("❌ Memory Dumps are not yet supported. ❌")
-                ),
-                DragItemType::String(_) => Ok(
-                    String::from("Drop To Load!")
-                ),
+                DragItemType::MemFile(_) => String::from("❌ Memory Dumps are not yet supported. ❌"),
+                DragItemType::String(_) => String::from("Drop To Load!"),
             },
-            Err(None) => Err("Can't drop 0 items. 😕".to_string()),
-            Err(Some((kind, ty))) => Err(
-                format!("❌ Unsupported format: `{}:{}`. ❌", kind, ty)
-            )
+            Err(None) => "Can't drop 0 items. 😕".to_string(),
+            Err(Some((kind, ty))) => format!("❌ Unsupported format: `{}:{}`. ❌", kind, ty)
         };
 
-        // TODO: figure out why the effects don't take..
-        let (effect, msg) = match msg {
-            Ok(m) => ("copy", m),
-            Err(m) => ("none", m),
-        };
-
-        dt.set_drop_effect(effect);
         div.set_class_name("hover");
         div.set_inner_html(format!("<strong>{}</strong>", msg).as_ref())
     });
