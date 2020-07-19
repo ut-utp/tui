@@ -69,7 +69,7 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         ($elem:ident :: $event:ident($ev_var:ident: $ev_ty:ty) => $handler:block) => {
             {
                 let handler = Closure::wrap(
-                    Box::new(move |$ev_var| $handler) as Box<dyn FnMut($ev_ty)>
+                    Box::new(move |$ev_var: $ev_ty| $handler) as Box<dyn FnMut(_)>
                 );
 
                 $elem.$event(Some(handler.as_ref().unchecked_ref()));
@@ -78,34 +78,41 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         };
     }
 
+    // TODO: extend to support URLs!
+    // TODO: figure out why strings read as 4 items..
+    // TODO: figure out why URLs read as 8 items..
     enum DragItemType {
-        AsmFile(File),
+        AsmFile(Option<File>),
         AsmString,
-        MemFile(File),
+        MemFile(Option<File>),
         MemString,
     }
     use DragItemType::*;
 
     impl DragItemType {
         fn from(item: &DataTransferItem) -> Result<Self, (String, String)> {
-            match (item.kind(), item.type_()) {
+            match (&*item.kind(), &*item.type_()) {
+                ("file", "") |
                 ("file", "text/plain") |
                 ("file", "text/lc3-asm") => {
-                    Ok(AsmFile(item.get_as_file().unwrap().unwrap()))
+                    Ok(AsmFile(item.get_as_file().unwrap()))
                 },
 
+                ("string", "") |
                 ("string", "text/plain") |
                 ("string", "text/lc3-asm") => Ok(AsmString),
 
+                ("file", "") |
                 ("file", "application/octet-stream") |
                 ("file", "application/lc3-bin") => {
-                    Ok(MemFile(item.get_as_file().unwrap().unwrap()))
+                    Ok(MemFile(item.get_as_file().unwrap()))
                 },
 
+                ("string", "") |
                 ("string", "application/octet-stream") |
                 ("string", "application/lc3-bin") => Ok(MemString),
 
-                (kind, ty) => Err(kind, ty),
+                (kind, ty) => Err((kind.to_string(), ty.to_string())),
             }
         }
     }
@@ -132,49 +139,25 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         let m;
         let msg = match items.length() {
             0 => Err("Can't drop 0 items. 😕"),
-            1 => match DragItemType::from(&items.get(0).expect("one item")) {
-                Ok(f) => match f {
-                    AsmFile(f) => m = Ok(format!("Drop To Load `{}`!", f.name())),
-                    AsmString => m = Ok(String::from("Drop To Load Assembly String!")),
-                    MemFile(_) | MemString => m = Err(String::from("❌ Memory Dumps are not yet supported. ❌")),
-                }
-                Err((kind, ty)) => {
-                    m = Err(format!("❌ Unsupported format: {}:{}. ❌", kind, ty));
-                }
-            }
-
-            /*{
-
-                let item = items.get(0).expect("one item");
-
-                match (item.kind(), item.type_()) {
-                    ("file", "text/plain") |
-                    ("file", "text/lc3-asm") => {
-                        // TODO: do we need to check for directories?
-                        let f = item.get_as_file().unwrap().unwrap();
-                        m = Ok(format!("Drop To Load `{}`!", f.name()));
-                    },
-
-                    ("string", "text/plain") |
-                    ("string", "text/lc3-asm") => {
-                        m = Ok(String::from("Drop To Load Assembly String!"))
-                    },
-
-                    ("file", "application/octet-stream") |
-                    ("file", "application/lc3-bin") |
-                    ("string", "application/octet-stream") |
-                    ("string", "application/lc3-bin") => {
-                        m = Err(String::from("❌ Memory Dumps are not yet supported. ❌")),
+            1 => {
+                match DragItemType::from(&items.get(0).expect("one item")) {
+                    Ok(f) => match f {
+                        AsmFile(f) => m = Ok(format!("Drop To Load `{}`!", f.map(|f| f.name()).unwrap_or("<file>".to_string()))),
+                        AsmString => m = Ok(String::from("Drop To Load Assembly String!")),
+                        MemFile(_) | MemString => m = Err(String::from("❌ Memory Dumps are not yet supported. ❌")),
                     }
-
-                    (kind, ty) => m = Err(format!("❌ Unsupported format: {}:{}. ❌", kind, ty)),
+                    Err((kind, ty)) => {
+                        m = Err(format!("❌ Unsupported format: `{}:{}`. ❌", kind, ty));
+                    }
                 }
 
-                m.as_ref()
-            },*/
+                // m.as_deref().as_deref_err()
+                m.as_ref().map(|s| s.as_ref()).map_err(|e| e.as_ref())
+            }
             _ => Err("❌ Only dropping 1 item is currently supported. ❌"),
         };
 
+        // TODO: figure out why the effects don't take..
         let msg = match msg {
             Ok(m) => {
                 dt.set_drop_effect("copy");
@@ -195,20 +178,12 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
     reg!(doc :: set_ondragleave(ev: DragEvent) => {
         AsRef::<Event>::as_ref(&ev).prevent_default();
 
-        let items = ev.data_transfer().unwrap().items();
-        let len = items.length();
-
-        if len != 1 {
-            log::error!("🚨 Attempted to drop not just 1 item! ({} items}", len);
-        } else {
-            let item = items.get(0).expect("one item");
-        }
-
         div.set_class_name("");
         div.set_inner_html("");
     });
 
     let div = drop_div.clone();
+    let document = doc.clone();
     reg!(doc :: set_ondrop(dv: DragEvent) => {
         let ev = AsRef::<Event>::as_ref(&dv);
         ev.prevent_default();
@@ -216,6 +191,17 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
 
         log::debug!("drop");
         div.set_class_name("dropped");
+
+        let items = dv.data_transfer().unwrap().items();
+        let len = items.length();
+
+        if len != 1 {
+            log::error!("🚨 Attempted to drop not just 1 item! ({} items)", len);
+        } else {
+            let item = items.get(0).expect("one item");
+
+            document.location()
+        }
 
         // TODO: loading message, load the file, update the URL, reload the page.
     });
