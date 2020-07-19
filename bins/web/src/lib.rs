@@ -6,8 +6,20 @@ use lc3_application_support::init::{BlackBox, SimDevice};
 
 use console_error_panic_hook::set_once as set_panic_hook;
 use log::Level;
+use js_sys::Promise;
 use wasm_bindgen::{prelude::*, JsCast};
-use web_sys::{DataTransferItem, Document, DragEvent, Element, Event, File, HtmlElement, Url};
+use wasm_bindgen_futures::{JsFuture, spawn_local};
+use web_sys::{
+    DataTransferItem,
+    DataTransferItemList,
+    Document,
+    DragEvent,
+    Element,
+    Event,
+    File,
+    HtmlElement,
+    Url,
+};
 use xterm_js_sys::xterm::{LogLevel, Terminal, TerminalOptions, Theme};
 
 use std::time::Duration;
@@ -50,7 +62,9 @@ use std::str::FromStr;
 // This is made a little complicated by the fact that the 'detected what other
 // files are used' bit is usually done by the assembler and that I don't know
 // if we can actually get the file path out of a file that's dropped onto a
-// browser window (probably not).
+// browser window (probably not). (Update: there's webkitGetAsEntry (here:
+// https://developer.mozilla.org/en-US/docs/Web/API/DataTransferItem/webkitGetAsEntry)
+// but that's non-standard)
 //
 // In any case, this is a ways off and I'd personally be okay saying that
 // browser support is limited to single files only.
@@ -59,6 +73,89 @@ use std::str::FromStr;
 // Rather than updating the URL we could go and change the source in the Tui
 // instance (this might need us to stick it in a Mutex of some kind but that's
 // fine).
+
+async fn get_data_transfer_item_as_string(dti: &DataTransferItem) -> Result<String, ()> {
+    let mut buf = String::new();
+    let mut c = None;
+
+    if dti.kind() != "string" {
+        return Err(());
+    }
+
+    JsFuture::from(Promise::new(&mut |res, _rej| {
+        let buf_ref: &'static mut String = unsafe { core::mem::transmute(&mut buf) };
+
+        c = Some(Closure::wrap(Box::new(move |s: String| {
+            buf_ref.push_str(s.as_str());
+
+            res.call0(&JsValue::NULL).unwrap();
+        }) as Box<dyn FnMut(_)>));
+
+        dti.get_as_string(Some(c.as_ref().unwrap().as_ref().unchecked_ref())).unwrap();
+    })).await;
+
+    Ok(buf)
+}
+
+// `dropped` indicates whether we should try to get the data out of a "string"
+// item (this is not available before drop).
+async fn log_data_transfer_items_list_inner(dtl: DataTransferItemList, dropped: bool) {
+    let mut s = format!("DT List ({} items):\n", dtl.length());
+
+    for (idx, dt) in (0..dtl.length()).filter_map(|idx| dtl.get(idx).map(|d| (idx, d))) {
+        s.push_str(format!(" - {:2}: ({}, {}) → `{}`\n",
+            idx,
+            dt.kind(),
+            dt.type_(),
+            match dt.kind().as_str() {
+                "file" => {
+                    dt.get_as_file()
+                        .unwrap()
+                        .map(|f| format!("file name: {}", f.name()))
+                        .unwrap_or("<failed to get file>".to_string())
+                },
+
+                // "string" => {
+                //     let mut buf = String::new();
+                //     let mut c = None;
+                //     JsFuture::from(Promise::new(&mut |res, _rej| {
+                //         let buf_ref: &'static mut String = unsafe { core::mem::transmute(&mut buf) };
+                //         // let c = Closure::once(move |s: String| {
+                //         //     buf_ref.push_str(s.as_str());
+
+                //         //     res.call0(&JsValue::NULL)
+                //         // });
+
+                //         c = Some(Closure::wrap(Box::new(move |s: String| {
+                //             buf_ref.push_str(s.as_str());
+
+                //             res.call0(&JsValue::NULL).unwrap();
+                //         }) as Box<dyn FnMut(_)>));
+
+                //         dt.get_as_string(Some(c.as_ref().unwrap().as_ref().unchecked_ref())).unwrap();
+                //         // c.forget();
+                //     })).await;
+
+                //     buf
+                // },
+
+                "string" => if dropped {
+                    get_data_transfer_item_as_string(&dt).await.unwrap()
+                } else {
+                    String::from("<string>")
+                },
+
+                _ => "<invalid kind>".to_string(),
+            }
+        ).as_ref())
+    }
+
+    log::debug!("{}", s)
+}
+
+pub fn log_data_transfer_items_list(dtl: &DataTransferItemList, dropped: bool) {
+    spawn_local(log_data_transfer_items_list_inner(dtl.clone(), dropped))
+}
 
 // Note: this leaks which we'll say is okay since these closures are used for
 // the entire life of the program anyways.
@@ -79,40 +176,127 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
     }
 
     // TODO: extend to support URLs!
+    //  - this is weird bc Firefox gives us a `text/x-moz-url` MIME type but
+    //    Chrome gives us nothing..
     // TODO: figure out why strings read as 4 items..
     // TODO: figure out why URLs read as 8 items..
     enum DragItemType {
         AsmFile(Option<File>),
-        AsmString,
         MemFile(Option<File>),
-        MemString,
+        String(DataTransferItem), // Can represent a URL or a literal string
     }
-    use DragItemType::*;
 
     impl DragItemType {
         fn from(item: &DataTransferItem) -> Result<Self, (String, String)> {
+            // Note: we have to match on type = "" because Firefox doesn't give
+            // us the type until the drop event (Chrome gives it to us right
+            // away, along with the file name).
             match (&*item.kind(), &*item.type_()) {
                 ("file", "") |
                 ("file", "text/plain") |
                 ("file", "text/lc3-asm") => {
-                    Ok(AsmFile(item.get_as_file().unwrap()))
+                    Ok(DragItemType::AsmFile(item.get_as_file().unwrap()))
+                },
+
+                ("file", "application/octet-stream") |
+                ("file", "application/lc3-bin") => {
+                    Ok(DragItemType::MemFile(item.get_as_file().unwrap()))
                 },
 
                 ("string", "") |
                 ("string", "text/plain") |
-                ("string", "text/lc3-asm") => Ok(AsmString),
-
-                ("file", "") |
-                ("file", "application/octet-stream") |
-                ("file", "application/lc3-bin") => {
-                    Ok(MemFile(item.get_as_file().unwrap()))
+                ("string", "text/x-moz-url") |
+                ("string", "text/lc3-asm") |
+                ("string", "application/octet-stream") |
+                ("string", "application/lc3-bin") => {
+                    Ok(DragItemType::String(item.clone()))
                 },
 
-                ("string", "") |
-                ("string", "application/octet-stream") |
-                ("string", "application/lc3-bin") => Ok(MemString),
-
                 (kind, ty) => Err((kind.to_string(), ty.to_string())),
+            }
+        }
+
+        // Returns a `DragItemType` on success or the (kind, type) pair of the
+        // last item in the list on failure (if present).
+        //
+        // TODO: on multiple valid items this will only take the first and will
+        // silently ignore the rest...
+        fn from_list(list: &DataTransferItemList) -> Result<Self, Option<(String, String)>> {
+            let mut err = None;
+
+            for item in (0..list.length()).filter_map(|idx| list.get(idx)) {
+                match Self::from(&item) {
+                    Ok(i) => return Ok(i),
+                    Err(e) => err = Some(e),
+                }
+            }
+
+            Err(err)
+        }
+    }
+
+    enum DragItemResult {
+        AsmFile(File),
+        MemFile(File),
+
+        AsmUrl(String),
+        MemUrl(String),
+
+        AsmLiteral(String),
+        // MemLiteral(String), // TODO: does this even make sense? Can you repr memory dumps as a Unicode String without exploding? I think no.
+    }
+
+    // enum DragErr {
+    //     NoItems,
+    //     UnsupportedFormat { kind: String, ty: String },
+    //     MultipleItems(u8),
+    // }
+
+    enum DragResErr {
+        CouldNotGetFile,
+        CouldNotGetString,
+    }
+
+    impl DragItemResult {
+        async fn from(dt: DragItemType) -> Result<Self, DragResErr> {
+            use DragItemResult::*;
+            use DragResErr::*;
+            match dt {
+                DragItemType::AsmFile(f) => AsmFile(f.ok_or(CouldNotGetFile)?),
+                DragItemType::MemFile(f) => MemFile(f.ok_or(CouldNotGetFile)?),
+
+                DragItemResult::String(i) => match (
+                    i.type_(),
+                    get_data_transfer_item_as_string(&i).await().ok_or(CouldNotGetString)?,
+                ) {
+                    // MemLiteral
+                    // TODO: replace this with whatever magic memory dumps end
+                    // up using.
+                    // ("", c) if c.starts_with(".UTP")
+                    // ("application/octet-stream", c) |
+                    // ("application/lc3-bin", c) => MemLiteral(c),
+
+                    // AsmLiteral
+                    ("", c) |
+                    ("text/lc3-asm", c) => AsmLiteral(c),
+
+                    // URL
+                    ("text/x-moz-url", c) if c.ends_with("mem") => MemUrl(c),
+                    ("text/x-moz-url", c) => AsmUrl(c),
+
+                    // URL or AsmLiteral?
+                    // Note: this is probably too simplistic a check for URLs.
+                    ("text/plain", c) if c.starts_with("http://") || c.starts_with("https://") =>
+                        if c.ends_with("mem") {
+                            MemUrl(c)
+                        } else {
+                            AsmUrl(c)
+                        }
+
+                    ("text/plain", c) => AsmLiteral(c),
+
+                    (_, _) => unreachable!(),
+                }
             }
         }
     }
@@ -135,40 +319,35 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         };
 
         let items = dt.items();
+        log_data_transfer_items_list(items, false);
 
-        let m;
-        let msg = match items.length() {
-            0 => Err("Can't drop 0 items. 😕"),
-            1 => {
-                match DragItemType::from(&items.get(0).expect("one item")) {
-                    Ok(f) => match f {
-                        AsmFile(f) => m = Ok(format!("Drop To Load `{}`!", f.map(|f| f.name()).unwrap_or("<file>".to_string()))),
-                        AsmString => m = Ok(String::from("Drop To Load Assembly String!")),
-                        MemFile(_) | MemString => m = Err(String::from("❌ Memory Dumps are not yet supported. ❌")),
-                    }
-                    Err((kind, ty)) => {
-                        m = Err(format!("❌ Unsupported format: `{}:{}`. ❌", kind, ty));
-                    }
-                }
-
-                // m.as_deref().as_deref_err()
-                m.as_ref().map(|s| s.as_ref()).map_err(|e| e.as_ref())
-            }
-            _ => Err("❌ Only dropping 1 item is currently supported. ❌"),
+        let msg = match DragItemType::from_list(&items) {
+            Ok(item) => match item {
+                DragItemType::AsmFile(f) => Ok(
+                    format!("Drop To Load {}!", f
+                        .map(|f| f.name())
+                        .unwrap_or("File".to_string()))
+                ),
+                DragItemType::MemFile(_) => Err(
+                    String::from("❌ Memory Dumps are not yet supported. ❌")
+                ),
+                DragItemType::String(_) => Ok(
+                    String::from("Drop To Load!")
+                ),
+            },
+            Err(None) => Err("Can't drop 0 items. 😕".to_string()),
+            Err(Some((kind, ty))) => Err(
+                format!("❌ Unsupported format: `{}:{}`. ❌", kind, ty)
+            )
         };
 
         // TODO: figure out why the effects don't take..
-        let msg = match msg {
-            Ok(m) => {
-                dt.set_drop_effect("copy");
-                m
-            },
-            Err(m) => {
-                dt.set_drop_effect("none");
-                m
-            }
+        let (effect, msg) = match msg {
+            Ok(m) => ("copy", m),
+            Err(m) => ("none", m),
         };
 
+        dt.set_drop_effect(effect);
         div.set_class_name("hover");
         div.set_inner_html(format!("<strong>{}</strong>", msg).as_ref())
     });
@@ -189,21 +368,81 @@ pub fn register_drag_hooks(doc: &Document, drop_div: Element) -> Result<(), JsVa
         ev.prevent_default();
         ev.stop_propagation();
 
-        log::debug!("drop");
-        div.set_class_name("dropped");
-
         let items = dv.data_transfer().unwrap().items();
-        let len = items.length();
 
-        if len != 1 {
-            log::error!("🚨 Attempted to drop not just 1 item! ({} items)", len);
-        } else {
-            let item = items.get(0).expect("one item");
+        log::debug!("drop");
+        log_data_transfer_items_list(items, true);
 
-            document.location()
+        macro_rules! failure {
+            ($($t:tt)*) => {{
+                div.set_inner_html(format!("<strong>🚨 {} 🚨</strong>",
+                    format!($(t)*)
+                ).as_ref())
+
+                let div = div.clone();
+                spawn_local(async {
+                    let window = web_sys::window();
+                    lc3_application_support::event_loop::timeout(&window, 3_000).await;
+                    div.set_class_name("");
+                    div.set_inner_html("");
+                })
+
+                return;
+            }};
         }
 
-        // TODO: loading message, load the file, update the URL, reload the page.
+        div.set_class_name("dropped");
+        let item = match DragItemType::from_list(&items) {
+            Ok(item) => item,
+            Err(None) => failure!("Can't drop 0 items 😕.".to_string()),
+            Err(Some((kind, ty))) => failure!("Unsupported format: `{}:{}`.", kind, ty),
+            // Err(err) => {
+            //     let msg = match err {
+            //         None => "Can't drop 0 items. 😕".to_string(),
+            //         Some((kind, ty)) => format!("❌ Unsupported format: `{}:{}`. ❌", kind, ty),
+            //     };
+
+            //     div.set_inner_html(format!("<strong>{}</strong>", msg).as_ref());
+            //     return;
+            // }
+        }
+
+        use DragErr::*
+        let item = match spawn_local(DragItemResult::from(&item)) {
+            Ok(item) = item,
+            Err(CouldNotGetFile) => failure!("Could not load file."),
+            Err(CouldNotGetString) => failure!("Could not get string."),
+
+            // Err(e) => {
+            //     let m = match e {
+            //        CouldNotGetFile => "Could not load file.",
+            //        CouldNotGetString => "Could not get string.",
+            //     };
+
+            //     div.set_inner_html(format!("<strong>{}</strong>", msg).as_ref());
+            //     return;
+            // }
+        };
+
+        use DragItemResult::*;
+        let msg = match item {
+            AsmFile(f) => format!("📁 Loading `{}` as an assembly file... ⌛", f.name()),
+            MemFile(f) => format!("📁 Loading `{}` as a memory dump... ⌛", f.name())
+            AsmUrl(u) => format!("🌐 Loading `{}` as a link to an assembly file... ⌛", u),
+            MemUrl(u) => format!("🌐 Loading `{}` as a link to a memory dump... ⌛", u),
+            AsmLiteral(_) => format!("📜 Loading assembly string... ⌛"),
+        };
+        div.set_inner_html(format!("<h2>{}</h2>", msg).as_ref());
+
+        spawn_local(async {
+            let src = match item {
+                AsmFile()
+            }
+        })
+
+        let src = match item {
+            AsmFile(f) =>
+        }
     });
 
     Ok(())
