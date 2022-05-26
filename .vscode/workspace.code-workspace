@@ -1,0 +1,24 @@
+{
+    "folders": [
+        { "path": ".." }
+    ],
+    "settings": {
+        "files.exclude": {
+            "target": true
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            // Rust:
+            "rust-lang.rust-analyzer",
+			"bungcip.better-toml",
+            "serayuzgur.crates",
+			// Misc:
+            "eamodio.gitlens",
+            // TODO: wasm things, node things
+            // Nix:
+            "jnoortheen.nix-ide",
+            "mkhl.direnv"
+        ]
+    }
+}
