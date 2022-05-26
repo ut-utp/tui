@@ -1,0 +1,2 @@
+[alias]
+web-tui = ["build", "-p", "utp-tui-web", "--release", "--target=wasm32-unknown-unknown"]
