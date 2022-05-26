@@ -25,8 +25,10 @@
         devShells.default = mkShell {
           buildInputs = [
             (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
-          ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+          ] ++ lib.optionals stdenv.isDarwin [
             darwin.apple_sdk.frameworks.Security
+          ] ++ lib.optionals stdenv.isLinux [
+            libudev pkg-config openssl
           ];
           shellHook = ''
           '';
