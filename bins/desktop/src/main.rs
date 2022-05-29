@@ -2,6 +2,7 @@
 
 use anyhow::Context;
 use flexi_logger::{Logger, opt_format};
+use panic_message::panic_message;
 use structopt::StructOpt;
 
 use lc3_tui::{DynTui, ProgramSource};
@@ -135,13 +136,20 @@ struct Args {
     without_os: bool,
 }
 
-pub fn with_stack_size<R: Send + 'static, F: FnOnce() -> R + Send + 'static>(ss: usize, f: F) -> R {
+pub fn with_stack_size<R: Send + 'static, F: FnOnce() -> R + Send + 'static>(ss: usize, f: F) -> anyhow::Result<R> {
     let child = std::thread::Builder::new()
         .stack_size(ss)
         .spawn(f)
         .unwrap();
 
-    child.join().unwrap()
+    match child.join() {
+        Ok(res) => Ok(res),
+        Err(panic_payload) => {
+            let msg = panic_message(&panic_payload).to_string();
+            Err(anyhow::anyhow!("Main thread crashed! See above."))
+               .context(msg)
+        }
+    }
 }
 
 
@@ -181,5 +189,5 @@ fn main() -> anyhow::Result<()> {
 
         println!("Goodbye! 👋");
         Ok(())
-    })
+    })?
 }

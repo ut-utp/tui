@@ -20,6 +20,7 @@ use tui::layout::Rect;
 use tui::style::{Color, Style};
 
 use std::io::{Stdout, Write};
+use std::panic;
 
 specialize! {
     desktop => { use std::sync::mpsc::Sender; }
@@ -215,6 +216,8 @@ where
 
             let mut last_window_size = None;
 
+            // TODO: expose better errors from here! have `run_tick_with_event_with_project` return
+            // a type that impls `Error`!
             backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {
                 tui.handle_event(event, term, &tx, &mut root, &mut last_window_size)
             }).map_err(|_| anyhow!("Channel disconnected; maybe something crashed?"))
@@ -243,11 +246,13 @@ where
 
             terminal.hide_cursor()?;
 
-            let res = if let Some(w) = root_widget {
-                self.run_with_custom_layout(&mut terminal, w)
-            } else {
-                self.run(&mut terminal)
-            };
+            let panic_res = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+                if let Some(w) = root_widget {
+                    self.run_with_custom_layout(&mut terminal, w)
+                } else {
+                    self.run(&mut terminal)
+                }
+            }));
 
             // TODO: v should maybe happen when the Crossterm Event Thread exits, but this
             // is okay for now.
@@ -262,7 +267,19 @@ where
             crossterm::terminal::disable_raw_mode()?;
             execute!(std::io::stdout(), LeaveAlternateScreen)?;
 
-            res
+            // We handle `panic_res` _after_ resetting the terminal so that we
+            // don't leave the user's terminal in a bad state (i.e. we always run
+            // the reset sequence above, even when panicking).
+            match panic_res {
+                Ok(res) => res,
+                Err(panic_payload) => {
+                    // TODO: stacktrace; message to open a github issue
+                    //
+                    // like: https://www.christopherbiscardi.com/custom-github-issue-templated-error-messages-for-panic-with-eyre-and-rust
+                    // TODO: set backtrace style, etc.
+                    panic::resume_unwind(panic_payload)
+                }
+            }
         }
     }
 

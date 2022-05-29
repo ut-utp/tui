@@ -225,6 +225,7 @@ impl<'a> DynTui<'a, 'static> {
         <I as Init<'a>>::Input: Sized,
         <I as Init<'a>>::Output: Sized,
     {
+        // TODO: allow to be fallible?
         let (sim, shims, input, output) = if let Some(config) = config {
             I::init_with_config(b, config)
         } else {
