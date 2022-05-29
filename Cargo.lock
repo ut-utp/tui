@@ -75,6 +75,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.57"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08f9b8508dccb7687a1d6c4ce66b2b0ecef467c94667de27d8d7fe1f8d2a9cdc"
+
+[[package]]
 name = "arc-swap"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -903,11 +909,11 @@ name = "lc3-tui"
 version = "0.1.0"
 dependencies = [
  "annotate-snippets",
+ "anyhow",
  "bytes",
  "chrono",
  "crossbeam",
  "crossterm",
- "failure",
  "futures-channel",
  "futures-core",
  "futures-util",
@@ -2002,7 +2008,7 @@ checksum = "b4ae116fef2b7fea257ed6440d3cfcff7f190865f170cdad00bb6465bf18ecba"
 name = "utp-tui"
 version = "0.1.0"
 dependencies = [
- "failure",
+ "anyhow",
  "flexi_logger",
  "lc3-application-support",
  "lc3-tui",

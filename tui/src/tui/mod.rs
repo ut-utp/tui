@@ -30,7 +30,7 @@ pub mod widget;
 pub mod program_source;
 pub use program_source::ProgramSource;
 
-pub type Res<T> = Result<T, failure::Error>;
+pub use anyhow::Result as Res;
 
 #[allow(explicit_outlives_requirements)]
 pub struct TuiData<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>

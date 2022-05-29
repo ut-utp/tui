@@ -1,7 +1,8 @@
 //! TODO!
 
-use structopt::StructOpt;
+use anyhow::Context;
 use flexi_logger::{Logger, opt_format};
+use structopt::StructOpt;
 
 use lc3_tui::{DynTui, ProgramSource};
 use lc3_tui::layout;
@@ -144,7 +145,7 @@ pub fn with_stack_size<R: Send + 'static, F: FnOnce() -> R + Send + 'static>(ss:
 }
 
 
-fn main() -> Result<(), failure::Error> {
+fn main() -> anyhow::Result<()> {
     let options = Args::from_args();
 
     // TODO!

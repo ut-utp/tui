@@ -10,10 +10,10 @@ use lc3_traits::control::Control;
 use lc3_application_support::event_loop::Backoff;
 use lc3_application_support::io_peripherals::{InputSink, OutputSource};
 
+use anyhow::{Context, anyhow};
 use chrono::{DateTime, offset::Local};
 use crossterm::ExecutableCommand;
 use crossterm::event::{KeyEvent, KeyCode, KeyModifiers, DisableMouseCapture};
-use failure::err_msg;
 use tui::terminal::Terminal;
 use tui::widgets::Text as TuiText;
 use tui::layout::Rect;
@@ -217,7 +217,7 @@ where
 
             backoff.run_tick_with_event_with_project(&mut self, |t| t.data.sim, event_recv, |tui, event| {
                 tui.handle_event(event, term, &tx, &mut root, &mut last_window_size)
-            }).map_err(|_| err_msg("Channel disconnected; maybe something crashed?"))
+            }).map_err(|_| anyhow!("Channel disconnected; maybe something crashed?"))
         }
 
         // Run with default layout and a backend of your choosing.

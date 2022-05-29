@@ -32,9 +32,10 @@ maintenance = { status = "actively-developed" }
 
 
 [dependencies]
+anyhow = "1.0"
 flexi_logger = { version = "0.14", default_features = false }
 structopt = { version = "0.3", default-features = false }
-failure = "0.1.6"
+panic-message = "0.3"
 
 lc3-application-support = "0.1.0"
 # TODO: grab the above from crates.io instead of git
