@@ -11,7 +11,11 @@
   # TODO: wasm things (node, etc.)
   # TODO: CI setup? (garnix)
   # TODO: expose app targets, etc.
+  # TODO: gdb-dashboard, gdb
 
+
+  # TODO: RUST_BACKTRACE=full
+  # TODO: RUST_LOG=...
   outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let

@@ -472,8 +472,10 @@ where
         match event {
             Focus(FocusEvent::GotFocus) => {true},
             Focus(FocusEvent::LostFocus) => {self.focus = NoFocus; false},
-            Mouse(MouseEvent::Up(_, _, _, _)) => true,
-            Mouse(MouseEvent::Down(_, x, y, _)) => {
+            // Mouse(MouseEvent::Up(_, _, _, _)) => true,
+            // Mouse(MouseEvent::Down(_, x, y, _)) => {
+            Mouse(MouseEvent::Down(_, _, _, _)) => true,
+            Mouse(MouseEvent::Up(_, x, y, _)) => {
                 if self.execution_control_button.intersects(Rect::new(x,y,1,1)) {
                     self.focus = ExecutionControl;
                     if running {

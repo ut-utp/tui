@@ -322,6 +322,12 @@ impl LoadButton {
                 .name("TUI: Assembler Background Thread".to_string())
                 .stack_size(32 * 1024 * 1024)
                 .spawn(move || {
+                    // TODO: steal the panic hook here so we don't print out panic messages?
+                    //
+                    // gate on `RUST_BACKTRACE`, I think
+                    // let _ = std::panic::take_hook();q
+                    // std::panic::set_hook(Box::new(|_| {}));
+
                     if let Ok(mem) = assemble_mem_dump(&path, with_os)  {
                         if ProgramId::new(&mem) != current_hash {
                             *out_of_date.lock().unwrap() = true;

@@ -158,7 +158,7 @@ fn main() -> anyhow::Result<()> {
 
     // TODO!
     if options.logging {
-        Logger::with_env_or_str("loggy=trace")
+        Logger::with_env_or_str("trace")
             .log_to_file()
             .directory("log_files")
             .format(opt_format)

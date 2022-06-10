@@ -38,6 +38,7 @@ lc3-tui = { path = "../../tui", version = "0.1.0" }
 
 xterm-js-sys = "4.6.0-alpha1" # TODO: bump
 wasm-bindgen = "0.2"
+# wasm-bindgen = "=0.2.67" # temporary; to align with the fork
 wasm-bindgen-futures = "0.4"
 console_error_panic_hook = "0.1"
 js-sys = "0.3"

@@ -13,25 +13,37 @@ opt-level = 1
 opt-level = 3
 debug = false
 rpath = false
-lto = "fat"
-debug-assertions = false
-codegen-units = 1
+# debug-assertions = false
+# lto = "fat"
+# codegen-units = 1
 # target-cpu = "native"
 # panic = "abort"
-incremental = false
-overflow-checks = false
+# incremental = false
+# overflow-checks = false
 
 
 [patch.crates-io]
-lc3-application-support = { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
-lc3-isa = { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
-lc3-macros = { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
-lc3-shims = { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
-lc3-traits = { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
-lc3-os = { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
-lc3-assembler = { git = "https://github.com/ut-utp/assembler", branch = "master" }
+# lc3-application-support = { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
+# lc3-isa =                 { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
+# lc3-macros =              { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
+# lc3-shims =               { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
+# lc3-traits =              { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
+# lc3-os =                  { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
+lc3-assembler =           { git = "https://github.com/ut-utp/assembler", branch = "master" }
 
-wasm-bindgen = { git = "https://github.com/rrbutani/wasm-bindgen.git", branch = "patches" }
-crossterm = { git = "https://github.com/rrbutani/crossterm", branch = "xtermjs", version = "0.17.5" }
+# Uncomment the below to depend on local versions:
+lc3-application-support = { path = "../core/application-support" }
+lc3-isa =                 { path = "../core/isa" }
+lc3-macros =              { path = "../core/macros" }
+lc3-shims =               { path = "../core/shims" }
+lc3-traits =              { path = "../core/traits" }
+lc3-os =                  { path = "../core/os" }
+# lc3-assembler =           { path = "../assembler" }
+
+
+# TODO: fix `wasm-bindgen`!
+wasm-bindgen = { git = "https://github.com/rrbutani/wasm-bindgen.git", branch = "patches", version = "0.2.67" }
+# crossterm = { git = "https://github.com/rrbutani/crossterm", branch = "xtermjs", version = "0.17.5" }
+crossterm = { git = "https://github.com/rrbutani/crossterm", rev = "50b7a19d5b94745692667b7c1671b7c4ce2bd4c4", version = "0.17.5" }
 tui = { git = "https://github.com/rrbutani/tui-rs", version = "0.9.5" }
 xterm-js-sys = { git = "https://github.com/rrbutani/xterm-js-sys", branch = "main" }

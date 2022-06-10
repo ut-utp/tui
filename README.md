@@ -37,6 +37,11 @@ TODO: connect to devices with `--device ...`
   - for boards, by serial port: `--device board=/dev/PORT:baud_rate`
   - etc.
 
+You will need to flash your board the first time you use it with the TUI. In general this means running:
+  - `utp-tui --flash <device>` (TODO: issue #10)
+
+Some boards (like the TM4C) require [additional setup](). See the [list of supported boards](TODO: utp-devices repo!).
+
 ### Web App
 
 Alternatively, ...
@@ -44,3 +49,9 @@ Alternatively, ...
 (TODO: link to the hosted web page version)
 
 TODO: figure out what the story will be for webusb, webserial, etc. if we want to go that route.. (I think it's that webusb doesn't help us, webserial is sufficient for student use but is only support in Chrome and Edge)
+
+<!-- move to UTP devices repo... -->
+## Supported Boards
+
+table with:
+  -

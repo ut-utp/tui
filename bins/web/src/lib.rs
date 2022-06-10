@@ -1,3 +1,5 @@
+#![cfg(target = "wasm32-unknown-unknown")]
+
 //! TODO!
 
 use lc3_tui::{DynTui, ProgramSource};
