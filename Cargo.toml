@@ -33,6 +33,7 @@ lc3-assembler =           { git = "https://github.com/ut-utp/assembler", branch 
 
 # Uncomment the below to depend on local versions:
 lc3-application-support = { path = "../core/application-support" }
+lc3-baseline-sim =        { path = "../core/baseline-sim" }
 lc3-isa =                 { path = "../core/isa" }
 lc3-macros =              { path = "../core/macros" }
 lc3-shims =               { path = "../core/shims" }

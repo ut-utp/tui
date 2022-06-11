@@ -6,7 +6,7 @@ use ModelineFocus::*;
 use core::future::Future;
 use core::task::{Context, Waker, Poll};
 
-use lc3_traits::control::{Event, State, StepControl};
+use lc3_traits::control::{Event, State, StepControl, load};
 use lc3_os::USER_PROG_START_ADDR;
 use lc3_isa::{Addr, OS_START_ADDR};
 
@@ -66,6 +66,9 @@ where
     load_flag: u8,
     load_b: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
     focus: ModelineFocus,
+
+    // one time intialization:
+    run_until_event_state_synced: bool,
 }
 
 impl<'a, 'int, C, I, O, B> Modeline<'a, 'int, C, I, O, B>
@@ -93,6 +96,7 @@ where
             load_flag: 0,
             load_b: vec![Box::new(button)],
             focus: NoFocus,
+            run_until_event_state_synced: false,
         }
     }
 
@@ -120,7 +124,8 @@ where
     }
 
     fn load(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
-        if self.load_b[0].update(event, data, terminal) {
+        let load_ret = self.load_b[0].update(event, data, terminal);
+        if load_ret {
             data.load_flag = data.load_flag.wrapping_add(1);
             self.reset(data)
         }
@@ -149,7 +154,7 @@ where
             self.focus = ExecutionControl;
         }
 
-        drop(data.current_event.take())
+        let _ = data.current_event.take();
     }
 
     fn skip_os(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
@@ -195,9 +200,13 @@ where
             // If we get an event while running the OS startup, bail.
             //
             // This allows users to set breakpoints in the OS if they so choose.
+            data.debug_log(|data| (format!("[skipping os]: PC is {:04X?}\n", data.sim.get_pc()), c!(Error)));
+            data.debug_log(|data| (format!("[skipping os]:     = {:04X?}\n", data.sim.read_word(data.sim.get_pc())), c!(Error)));
+
             if let Some(event) = data.current_event {
                 log::trace!("Got an event while trying to skip past the OS! \
                     At PC = {:#4X}, event: `{:?}`.", data.sim.get_pc(), event);
+                data.log(format!("event while skipping line: {event:?}\n"), c!(Error));
 
                 return;
             }
@@ -208,11 +217,14 @@ where
 
     fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
         data.log("[modeline] Resetting Sim\n", c!(Pause));
-        data.sim.reset();
         data.console_input_string.get_mut().clear();
         data.console_hist.get_mut().clear();
         data.mem_reg_inter = (0,0);
         data.reset_flag = data.reset_flag.wrapping_add(1);
+
+        // Reset once to resolve any run-until-event futures for sure:
+        data.sim.reset();
+        data.debug_log(|data| (format!("[modeline] reset once PC, state: {}, {:?}\n", data.sim.get_pc(), data.sim.get_state()), c!(Pause)));
 
         // Resolve the pending future, if there is one.
         if let Some(e) = self.event_fut.take() {
@@ -220,13 +232,15 @@ where
             block_on(e);
         }
 
+        // Now, with the run-until-event future handled, reset again.
         // TODO: find a better workaround than this:
         data.sim.reset();
+        data.debug_log(|data| (format!("[modeline] reset twice PC, state: {}, {:?}\n", data.sim.get_pc(), data.sim.get_state()), c!(Pause)));
 
         self.skip_os(data);
 
         data.log("[modeline] Reset Complete\n", c!(Success));
-        drop(data.current_event.take())
+        let _ = data.current_event.take();
     }
 }
 
@@ -439,6 +453,19 @@ where
         // If we're currently running an event and the state changes, we've got
         // ourselves an event.
         let running = data.sim.get_state() == State::RunningUntilEvent;
+        if !self.run_until_event_state_synced {
+            self.run_until_event_state_synced = true;
+
+            // TODO: this is a workaround; once we support multiple batches in the future shared state
+            // we _can_ remove this without the program crashing (but we may want to include it anyways
+            // so we get the events).
+            //
+            // Note that this is prone to race conditions though; TOCTTOU
+            if running {
+                self.event_fut = Some(data.sim.run_until_event());
+            }
+        }
+
 
         if let Some(_) = self.event_fut {
             if !running {
@@ -586,7 +613,7 @@ where
                     }
                     true
                 }
-                KeyEvent { code: KeyCode::Right, modifiers: KeyModifiers::CONTROL } => {
+                KeyEvent { code: KeyCode::Right, modifiers: KeyModifiers::CONTROL | KeyModifiers::ALT } => {
                     self.focus = match self.focus {
                         StepOver => StepIn,
                         StepIn => StepOut,
@@ -598,7 +625,7 @@ where
                     };
                     true
                 }
-                KeyEvent { code: KeyCode::Left, modifiers: KeyModifiers::CONTROL } => {
+                KeyEvent { code: KeyCode::Left, modifiers: KeyModifiers::CONTROL | KeyModifiers::ALT } => {
                     self.focus = match self.focus {
                         StepOver => StepOver,
                         StepIn => StepOver,

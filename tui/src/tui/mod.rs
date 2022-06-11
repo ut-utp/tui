@@ -85,6 +85,13 @@ where
         self.log.push(TuiText::styled(line.to_string(), Style::default().fg(colour)))
     }
 
+    pub fn debug_log<L: ToString>(&mut self, func: impl FnOnce(&Self) -> (L, Color)) {
+        if self.debug_log.is_some() {
+            let (line, colour) = func(self);
+            self.debug_log.as_mut().unwrap().push(TuiText::styled(line.to_string(), Style::default().fg(colour)));
+        }
+    }
+
     pub fn log_raw<L: ToString>(&mut self, line: L) {
         self.log.push(TuiText::raw(line.to_string()))
     }

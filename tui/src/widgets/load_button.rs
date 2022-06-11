@@ -252,6 +252,7 @@ impl LoadButton {
                 // TODO: wasm draw "Loading..."
             }
 
+            sim.pause(); // TODO: we still need to figure out why we can't actually load programs while the board is still running!!
             let res = load_whole_memory_dump(sim, &memory_dump, Some(&progress));
 
             #[cfg(not(target_arch = "wasm32"))]

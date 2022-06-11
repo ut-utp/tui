@@ -882,6 +882,7 @@ dependencies = [
  "embedded-hal",
  "lc3-isa",
  "lc3-traits",
+ "log",
  "nb 0.1.3",
  "postcard",
  "serde",
