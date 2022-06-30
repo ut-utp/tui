@@ -221,6 +221,11 @@ where
         data.console_hist.get_mut().clear();
         data.mem_reg_inter = (0,0);
         data.reset_flag = data.reset_flag.wrapping_add(1);
+        let _ = data.current_event.take();
+
+        // Reset once to resolve any run-until-event futures for sure:
+        data.sim.reset();
+        data.debug_log(|data| (format!("[modeline] reset once PC, state: {}, {:?}\n", data.sim.get_pc(), data.sim.get_state()), c!(Pause)));
 
         // Reset once to resolve any run-until-event futures for sure:
         data.sim.reset();

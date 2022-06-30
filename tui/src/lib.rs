@@ -76,3 +76,13 @@ pub mod strings;
 
 mod tui;
 pub use crate::tui::{DynTui, Tui, ProgramSource};
+
+// TODO: show BSP
+// TODO: show saved `R6` in stack frame list?
+// TODO: show memory address for ACV?
+
+// TODO: unset breakpoint on reload iff data in location has changed?
+// TODO: provide some way to unset all breakpoints
+
+// TODO: conditional breakpoint, conditional watchpoint
+// TODO: provide a way to step N times

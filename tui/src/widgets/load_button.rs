@@ -377,7 +377,7 @@ where
         self.area = Some(area);
 
         if let Some(ref a) = self.attempt {
-            if a.expired(Duration::from_secs(3)) {
+            if a.expired(Duration::from_secs(1)) {
                 drop(self.attempt.take());
             }
         }
