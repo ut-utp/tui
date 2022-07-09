@@ -85,10 +85,16 @@ where
 
     let mut right = Widgets::new(vert.clone());
 
+    //PWM is not needed for now. Moreover, not necessary to display every single peripheral
+    //component in te root widget. Certainly not posible when GPIOs increase
+    //TODO: Determine what peripheral components subset should be displayed in root
+    //      Regardless of what's displayed, need to ensure that the subset selected is
+    //      fully and correctly displayed rather than over-cramming too much text and causing
+    //      incomplete displays
     let _ = io.add_widget(Constraint::Percentage(35), gpio.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(c!(Border))).title("GPIO").title_style(Style::default().fg(c!(Title)))))
-        .add_widget(Constraint::Percentage(20), adc.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(c!(Border))).title("ADC").title_style(Style::default().fg(c!(Title)))))
-        .add_widget(Constraint::Percentage(13), timers.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(c!(Border))).title("Timers").title_style(Style::default().fg(c!(Title)))))
-        .add_widget(Constraint::Percentage(14), pwm.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(c!(Border))).title("PWM").title_style(Style::default().fg(c!(Title)))))
+        .add_widget(Constraint::Percentage(38), adc.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(c!(Border))).title("ADC").title_style(Style::default().fg(c!(Title)))))
+        .add_widget(Constraint::Percentage(14), timers.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(c!(Border))).title("Timers").title_style(Style::default().fg(c!(Title)))))
+        //.add_widget(Constraint::Percentage(14), pwm.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(c!(Border))).title("PWM").title_style(Style::default().fg(c!(Title)))))
         .add_widget(Constraint::Percentage(13), clock.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(c!(Border))).title("Clock").title_style(Style::default().fg(c!(Title)))));
 
 
@@ -99,8 +105,8 @@ where
         .add_widget(Constraint::Percentage(10), clock.focusable(false), Some(b.clone().borders(Borders::ALL & (!Borders::BOTTOM)).border_style(Style::default().fg(c!(Border))).title("Clock").title_style(Style::default().fg(c!(Title)))))
         .add_widget(Constraint::Percentage(15), console_peripherals, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Peripheral Console")));
 
-    let _ = right.add_widget(Constraint::Percentage(60), console, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Console")))
-        .add_widget(Constraint::Percentage(40), io, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("IO")));
+    let _ = right.add_widget(Constraint::Percentage(50), console, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Console")))
+        .add_widget(Constraint::Percentage(50), io, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("IO")));
 
     let _ = root.add_widget(Constraint::Percentage(48), left, None)
         .add_widget(Constraint::Percentage(52), right, None);
@@ -121,8 +127,8 @@ where
 
     let mem = Mem::default();
     let regs = Regs::default();
-    let _ = memory.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Memory")))
-        .add_widget(Constraint::Percentage(20), regs, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Registers + PC+ PSR").title_style(Style::default().fg(c!(Title)))));
+    let _ = memory.add_widget(Constraint::Percentage(65), mem, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Memory")))
+        .add_widget(Constraint::Percentage(35), regs, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Registers + PC+ PSR").title_style(Style::default().fg(c!(Title)))));
 
 
     let mut big_console_tab  = Widgets::new(vert.clone());
