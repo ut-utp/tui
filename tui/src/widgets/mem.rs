@@ -275,7 +275,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        let area = increment(5, Axis::X, area);
+        let area = increment(3, Axis::X, area);
         if area.width < 4 {
             return
         }
@@ -286,7 +286,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        let area = increment(5, Axis::X, area);
+        let area = increment(4, Axis::X, area);
         if area.width < 4 {
             return
         }
@@ -297,7 +297,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        let area = increment(5, Axis::X, area);
+        let area = increment(4, Axis::X, area);
         if area.width < 8 {
             return
         }
@@ -308,7 +308,7 @@ where
             .alignment(Alignment::Left)
             .wrap(false);
 
-        let area = increment(10, Axis::X, area);
+        let area = increment(9, Axis::X, area);
         if area.width < 19 {
             return
         }
@@ -326,7 +326,7 @@ where
         para.render(area, buf);
 
         para = Paragraph::new(dec_v.iter())
-            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
+            .style(Style::default().fg(Colour::Red).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(false);
 
@@ -341,7 +341,7 @@ where
             .alignment(Alignment::Left)
             .wrap(true);
 
-        let area = increment(8, Axis::X, area);
+        let area = increment(7, Axis::X, area);
         if area.width < 20 {
             return
         }

@@ -119,9 +119,21 @@ where
         }
 
         let text = [
-            TuiText::styled("R0:\nR1:\nR2:\nR3:\n", Style::default().fg(c!(Name))),
-            TuiText::styled("PSR:\nMode:\nPri:\n", Style::default().fg(c!(Pc))),
+            TuiText::styled("R0:\nR1:\nR2:\nR3:\nR4:\nR5:\nR6:\nR7:\n\n PC:\n", Style::default().fg(c!(Name))),
         ];
+
+        let mut reg_v = Vec::new();
+        for i in 0..8 {
+            let s = format!(
+                "{:#018b} {:#06x} {:#05}\n",
+                regs[i], regs[i], regs[i]
+            );
+            reg_v.push(TuiText::styled(s, Style::default().fg(colours.0[i])));
+        }
+
+        reg_v.push(TuiText::styled("\n", Style::default().fg(c!(Data))));
+        let s = format!("{:#018b} {:#06x} {:#05}\n", pc, pc, pc);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.2)));
 
         let mut para = Paragraph::new(text.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
@@ -130,18 +142,47 @@ where
 
         para.render(area, buf);
 
-        let mut reg_v = Vec::new();
-        for i in 0..4 {
-            let s = format!(
-                "{:#018b} {:#06x} {:#05}\n",
-                regs[i], regs[i], regs[i]
-            );
-            reg_v.push(TuiText::styled(s, Style::default().fg(colours.0[i])));
-        }
+        let area = increment(6, Axis::X, area);
 
-        reg_v.push(TuiText::styled("0b", Style::default().fg(c!(Data))));
-        let s = format!("{}", privilege);
-        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[0])));
+        para = Paragraph::new(reg_v.iter())
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
+            .alignment(Alignment::Left)
+            .wrap(true);
+
+        para.render(area, buf);
+
+
+        let area = increment(34, Axis::X, area);
+        //para.render(area, buf);
+
+        reg_v.clear();
+        // for i in 4..8 {
+        //     let s = format!(
+        //         "{:#018b} {:#06x} {:#05}\n",
+        //         regs[i], regs[i], regs[i]
+        //     );
+        //     reg_v.push(TuiText::styled(s, Style::default().fg(colours.0[i])));
+        // }
+
+
+
+        // let s = format!("{}\n", priority);
+        // reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[1])));
+
+        // para = Paragraph::new(reg_v.iter())
+        //     .style(Style::default().fg(Colour::White).bg(Colour::Reset))
+        //     .alignment(Alignment::Left)
+        //     .wrap(true);
+
+        // let area = increment(6, Axis::X, area);
+        // para.render(area, buf);
+
+        let text = [
+            TuiText::styled("PSR:\nMode:\nPri:\n", Style::default().fg(c!(Pc))),
+            TuiText::styled("nzp: ", Style::default().fg(c!(Pc))),
+        ];
+
+
         reg_v.push(TuiText::styled("0000", Style::default().fg(c!(Data))));
         let s = format!("{}{}{}", pri3, pri2, pri1);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[1])));
@@ -160,40 +201,10 @@ where
         };
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[0])));
 
-        let s = format!("{}\n", priority);
-        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[1])));
+        reg_v.push(TuiText::styled("0b", Style::default().fg(c!(Data))));
+        let s = format!("{}\n", privilege);
+        reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[0])));
 
-        para = Paragraph::new(reg_v.iter())
-            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-            .alignment(Alignment::Left)
-            .wrap(true);
-
-        let area = increment(6, Axis::X, area);
-        para.render(area, buf);
-
-        let text = [
-            TuiText::styled("R4:\nR5:\nR6:\nR7:\n", Style::default().fg(c!(Name))),
-            TuiText::styled("PC:\nnzp: ", Style::default().fg(c!(Pc))),
-        ];
-
-        para = Paragraph::new(text.iter())
-            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
-            .alignment(Alignment::Left)
-            .wrap(true);
-
-        let area = increment(40, Axis::X, area);
-        para.render(area, buf);
-
-        reg_v.clear();
-        for i in 4..8 {
-            let s = format!(
-                "{:#018b} {:#06x} {:#05}\n",
-                regs[i], regs[i], regs[i]
-            );
-            reg_v.push(TuiText::styled(s, Style::default().fg(colours.0[i])));
-        }
-        let s = format!("{:#018b} {:#06x} {:#05}\n", pc, pc, pc);
-        reg_v.push(TuiText::styled(s, Style::default().fg(colours.2)));
         reg_v.push(TuiText::styled(format!("n: "), Style::default().fg(c!(Pc))));
         let s = format!("{}  ", n);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[2])));
@@ -204,12 +215,20 @@ where
         let s = format!("{}  ", p);
         reg_v.push(TuiText::styled(s, Style::default().fg(colours.1[4])));
 
+        para = Paragraph::new(text.iter())
+            .style(Style::default().fg(Colour::White).bg(Colour::Reset))
+            .alignment(Alignment::Left)
+            .wrap(true);
+
+        para.render(area, buf);
+
+        let area = increment(6, Axis::X, area);
+
         para = Paragraph::new(reg_v.iter())
             .style(Style::default().fg(Colour::White).bg(Colour::Reset))
             .alignment(Alignment::Left)
             .wrap(true);
 
-        let area = increment(6, Axis::X, area);
         para.render(area, buf);
 
     }

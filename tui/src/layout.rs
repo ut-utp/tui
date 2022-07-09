@@ -78,11 +78,10 @@ where
 
     let mut peripherals = Widgets::new(vert.clone());
     let mut io = Widgets::new(vert.clone());
-    // let mut top_left = Widgets::new(vert.clone());
 
     let mut left = Widgets::new(vert.clone());
-    let _ = left.add_widget(Constraint::Percentage(80), mem, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Memory")))
-        .add_widget(Constraint::Percentage(20), regs, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Registers + PC+ PSR").title_style(Style::default().fg(c!(Title)))));
+    let _ = left.add_widget(Constraint::Percentage(65), mem, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Memory")))
+        .add_widget(Constraint::Percentage(35), regs, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Registers + PC+ PSR").title_style(Style::default().fg(c!(Title)))));
 
     let mut right = Widgets::new(vert.clone());
 
@@ -103,8 +102,8 @@ where
     let _ = right.add_widget(Constraint::Percentage(60), console, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("Console")))
         .add_widget(Constraint::Percentage(40), io, Some(b.clone().border_style(Style::default().fg(c!(Border))).title("IO")));
 
-    let _ = root.add_widget(Constraint::Percentage(50), left, None)
-        .add_widget(Constraint::Percentage(50), right, None);
+    let _ = root.add_widget(Constraint::Percentage(48), left, None)
+        .add_widget(Constraint::Percentage(52), right, None);
 
     let mut help = Widgets::new(horz.clone());
     let mut middle = Widgets::new(vert.clone());
