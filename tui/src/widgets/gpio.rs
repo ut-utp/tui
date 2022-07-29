@@ -40,7 +40,7 @@ where
 
 
         let text = [
-            TuiText::styled("GPIO 0: \nGPIO 1: \nGPIO 2: \nGPIO 3: \n", Style::default().fg(c!(Name))),
+            TuiText::styled("GPIO 0: \nGPIO 1: \nGPIO 2: \nGPIO 3 \n GPIO 4: \nGPIO 5: \nGPIO 6: \nGPIO 7: \n", Style::default().fg(c!(Name))),
         ];
 
         let mut para = Paragraph::new(text.iter())
@@ -53,10 +53,11 @@ where
 
         let mut s1 = String::from("");
 
-        let gpio_pins_1 = [GpioPin::G0, GpioPin::G1, GpioPin::G2, GpioPin::G3];
-        let gpio_pins_2 = [GpioPin::G4, GpioPin::G5, GpioPin::G6, GpioPin::G7];
+        let gpio_pins_1 = [GpioPin::G0, GpioPin::G1, GpioPin::G2, GpioPin::G3, GpioPin::G4, GpioPin::G5, GpioPin::G6, GpioPin::G7];
+        let gpio_pins_2 = [GpioPin::G8, GpioPin::G9, GpioPin::G10, GpioPin::G11, GpioPin::G12, GpioPin::G13, GpioPin::G14, GpioPin::G15];
+        let gpio_pins_3 = [GpioPin::G16, GpioPin::G17, GpioPin::G18, GpioPin::G19, GpioPin::G20, GpioPin::G21, GpioPin::G22, GpioPin::G23];
         //let gpio_pins_2 = [GpioPin::G0, GpioPin::G1, GpioPin::G2, GpioPin::G3, GpioPin::G4, GpioPin::G5, GpioPin::G6, GpioPin::G7];
-        for i in 0..4 {
+        for i in 0..8 {
             match gpio_states[gpio_pins_1[i]]{
                 GpioState::Disabled => {
                     let disabled_string = "Disabled";
@@ -131,7 +132,7 @@ where
 
 
         let text = [
-            TuiText::styled("GPIO 4: \nGPIO 5: \nGPIO 6: \nGPIO 7: \n", Style::default().fg(c!(Name))),
+            TuiText::styled("GPIO 8: \nGPIO 9: \nGPIO 10: \nGPIO 11: \n GPIO 12: \nGPIO 13: \nGPIO 14: \nGPIO 15: \n", Style::default().fg(c!(Name))),
             ];
 
         let mut para = Paragraph::new(text.iter())
@@ -145,7 +146,7 @@ where
 
 
 
-            for i in 0..4 {
+            for i in 0..8 {
                 match gpio_states[gpio_pins_2[i]]{
                     GpioState::Disabled => {
                         let disabled_string = "Disabled";
@@ -188,6 +189,72 @@ where
             }
 
             let text = [TuiText::styled(s2, Style::default().fg(c!(Data)))];
+            para = Paragraph::new(text.iter())
+                .style(Style::default().fg(Colour::White).bg(Colour::Reset))
+                .alignment(Alignment::Left)
+                .wrap(true);
+
+            let area = increment(10, Axis::X, area);
+            para.render(area, buf);
+
+        let text = [
+            TuiText::styled("GPIO 16: \nGPIO 17: \nGPIO 18: \nGPIO 19: \n GPIO 20: \nGPIO 21: \nGPIO 22: \nGPIO 23: \n", Style::default().fg(c!(Name))),
+            ];
+
+        let mut para = Paragraph::new(text.iter())
+        .style(Style::default().fg(Colour::White).bg(Colour::Reset))
+        .alignment(Alignment::Left)
+        .wrap(true);
+        let area = increment(40, Axis::X, area);
+        para.render(area, buf);
+
+        let mut s3 = String::from("");
+
+
+
+            for i in 0..8 {
+                match gpio_states[gpio_pins_3[i]]{
+                    GpioState::Disabled => {
+                        let disabled_string = "Disabled";
+                        s3.push_str(&format!("{}\n",
+                        disabled_string, ));
+                    },
+                    GpioState::Output => {
+                        let mut output_string = String::from("Output");
+
+                        if let Some(shims) = &data.shims {
+                            match RwLock::read(&shims.gpio).unwrap().get_pin(gpio_pins_3[i]).unwrap() {
+                                true => output_string.push_str(": 1"),
+                                false => output_string.push_str(": 0"),
+                            }
+                        }
+
+                        s3.push_str(&format!("{}\n",
+                        output_string, ));
+                    },
+                    _ => {
+                        match gpioin[gpio_pins_3[i]] {
+                            Ok(val) => {
+                                    s3.push_str(&format!(
+                                    "{}\n",
+                                    val,
+
+                                    ));
+                                }
+                            _ => {
+                                let err_string = "-";
+                                s3.push_str(&format!(
+                                    "{}\n",
+                                    err_string,
+
+                                    ));
+                            }
+                            }
+                    }
+                }
+            }
+
+            let text = [TuiText::styled(s3, Style::default().fg(c!(Data)))];
             para = Paragraph::new(text.iter())
                 .style(Style::default().fg(Colour::White).bg(Colour::Reset))
                 .alignment(Alignment::Left)
