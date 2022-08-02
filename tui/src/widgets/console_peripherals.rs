@@ -128,10 +128,10 @@ where
                                 "adc" => {
                                     let adc_states = _data.sim.get_adc_states();
                                     let lock = RwLock::write(&shim.adc);
-                                    let adc_pin = adc_pins[vec[1].parse::<u8>().unwrap() as usize];
+                                    let adc_pin = adc_pins[vec[1].parse::<u16>().unwrap() as usize];
                                          match adc_states[adc_pin] {
                                                 AdcState::Enabled => {
-                                                    let value = vec[2].parse::<u8>().unwrap();
+                                                    let value = vec[2].parse::<u16>().unwrap();
                                                     lock.unwrap().set_value(adc_pin, value);
                                                 },
                                                 AdcState::Disabled => {
