@@ -317,7 +317,7 @@ impl ProgramSource {
                                 url,
                                 err,
                             )
-                        })?, None, with_os)?
+                        })?, Some(url), with_os)?
                     },
 
                     _ => unreachable!(),

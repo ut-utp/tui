@@ -430,7 +430,6 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                         // from [here](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors)
                                         'm' if s.parse::<u16>().is_ok() => {
                                             use Color::*;
-                                            use tui::style::Modifier;
                                             nums.push(s.parse::<u16>().unwrap());
 
                                             let to_color = |num: u16, sub: u16| {
@@ -463,13 +462,12 @@ pub fn ansi_string_to_tui_text<'s, 't>(
                                             loop {
                                                 if let Some(attr) = iter.next() {
                                                     macro_rules! at {
-                                                        ($a:expr) => {s = s.modifier(s.modifier | $a);};
+                                                        ($a:expr) => {s = s.modifier(s.modifier | $a)};
                                                     }
 
                                                     macro_rules! atc {
-                                                        ($a:expr) => {s = s.modifier(s.modifier & !($a));};
+                                                        ($a:expr) => {s = s.modifier(s.modifier & !($a))};
                                                     }
-
                                                     match attr {
                                                         0 => s = s.modifier(Modifier::empty()),
                                                         1 => at!(Modifier::BOLD),
