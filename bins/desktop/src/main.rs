@@ -16,6 +16,8 @@ use std::str::FromStr;
 use std::time::Duration;
 use std::fmt::{self, Display};
 
+// TODO: show device's pin map in the TUI!
+
 #[derive(Debug)]
 enum DeviceType {
     // Board { path: PathBuf, baud_rate: u32 }, // TODO: options?
