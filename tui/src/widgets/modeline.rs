@@ -6,8 +6,8 @@ use ModelineFocus::*;
 use core::future::Future;
 use core::task::{Context, Waker, Poll};
 
-use lc3_traits::control::{Event, State, StepControl, load};
-use lc3_os::USER_PROG_START_ADDR;
+use lc3_traits::control::{Event, State, StepControl};
+use lc3_os::USER_PROG_START_ADDR_SETTING_ADDR;
 use lc3_isa::{Addr, OS_START_ADDR};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -150,7 +150,7 @@ impl<'a, Wt: WidgetTypes> Modeline<'a, Wt> {
             return;
         }
 
-        let start_addr: Addr = data.sim.read_word(USER_PROG_START_ADDR);
+        let start_addr: Addr = data.sim.read_word(USER_PROG_START_ADDR_SETTING_ADDR);
 
         // If the start addr is 0 somehow, assume that we're not actually using
         // the OS / that something went wrong.
@@ -159,7 +159,7 @@ impl<'a, Wt: WidgetTypes> Modeline<'a, Wt> {
 
         if start_addr == 0 {
             log::warn!("No user prog start address specified at {:#4X}.",
-                USER_PROG_START_ADDR);
+            USER_PROG_START_ADDR_SETTING_ADDR);
 
             return;
         }
