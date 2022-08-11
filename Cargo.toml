@@ -29,7 +29,7 @@ rpath = false
 # lc3-shims =               { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
 # lc3-traits =              { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
 # lc3-os =                  { git = "https://github.com/ut-utp/core", branch = "feat-wasm-support" }
-lc3-assembler =           { git = "https://github.com/ut-utp/assembler", branch = "master" }
+# lc3-assembler =           { git = "https://github.com/ut-utp/assembler", branch = "master" }
 
 # Uncomment the below to depend on local versions:
 lc3-application-support = { path = "../core/application-support" }
@@ -39,7 +39,7 @@ lc3-macros =              { path = "../core/macros" }
 lc3-shims =               { path = "../core/shims" }
 lc3-traits =              { path = "../core/traits" }
 lc3-os =                  { path = "../core/os" }
-# lc3-assembler =           { path = "../assembler" }
+lc3-assembler =           { path = "../assembler/assembler" }
 
 
 # TODO: fix `wasm-bindgen`!
