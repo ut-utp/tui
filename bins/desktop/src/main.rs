@@ -19,7 +19,7 @@ use std::fmt::{self, Display};
 #[derive(Debug)]
 enum DeviceType {
     // Board { path: PathBuf, baud_rate: u32 }, // TODO: options?
-    Board(BoardConfig<PathBuf>), // TODO: options?
+    Board(BoardConfig), // TODO: options?
     Sim,
     SimWithRpc,
 }
@@ -50,7 +50,7 @@ impl FromStr for DeviceType {
 
                 let path = PathBuf::from(board);
 
-                Ok(Board(BoardConfig::new(path, baud_rate)))
+                Ok(Board(BoardConfig::new(path.to_str().unwrap(), baud_rate)))
 
             },
             _ => Err("Could not parse device type!")
@@ -65,7 +65,8 @@ impl Display for DeviceType {
         let s = if fmt.alternate() {
             match self {
                 Board(c) => {
-                    return write!(fmt, "on a board: {}", c.path.display());
+                    // return write!(fmt, "on a board: {}", c.path.display());
+                    "on a board" // todo: FIX!
                 },
                 Sim => "locally",
                 SimWithRpc => "locally via rpc",
@@ -83,13 +84,13 @@ impl Display for DeviceType {
 }
 
 impl DeviceType {
-    fn setup<'a, 'b: 'a>(&'a self, b: &'b mut BlackBox) -> DynTui<'b, 'static> {
+    fn setup<'a, 'b: 'a>(&'a self, b: &'b mut BlackBox) -> DynTui<'b> {
         use DeviceType::*;
 
         match self {
-            Board(config) => DynTui::new_boxed_from_init_with_config::<BoardDevice<'_, _, PathBuf>>(b, config.clone()), // TODO: config!
+            Board(config) => DynTui::new_boxed_from_init_with_config::<BoardDevice<'_, _>>(b, config.clone()), // TODO: config!
             DeviceType::Sim => DynTui::new_boxed_from_init::<SimDevice>(b),
-            DeviceType::SimWithRpc => DynTui::<'b, 'static>::new_boxed_from_init::<SimWithRpcDevice>(b),
+            DeviceType::SimWithRpc => DynTui::<'b>::new_boxed_from_init::<SimWithRpcDevice>(b),
         }
     }
 }
