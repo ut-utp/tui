@@ -1,10 +1,7 @@
 //! TODO!
 
 use lc3_assembler::{
-    assembler::assemble,
-    error::extract_file_errors,
-    lexer::Lexer,
-    parser::{parse, LeniencyLevel},
+    SourceId, LeniencyLevel, sources_raw, assemble,
 };
 use lc3_isa::{ADDR_SPACE_SIZE_IN_WORDS, ADDR_SPACE_SIZE_IN_BYTES, util::MemoryDump};
 #[cfg(not(target_arch = "wasm32"))]
@@ -13,10 +10,6 @@ use lc3_traits::control::metadata::{
     LongIdentifier, ProgramMetadata,
 };
 
-use annotate_snippets::{
-    display_list::{DisplayList, FormatOptions},
-    snippet::{Snippet, Annotation, Slice, AnnotationType, SourceAnnotation},
-};
 use bytes::Buf;
 use chrono::{DateTime, Utc};
 #[cfg(not(target_arch = "wasm32"))]
@@ -95,35 +88,6 @@ pub(in crate) fn file_requires_assembly(path: &PathBuf) -> bool {
     }
 }
 
-pub(in crate) fn create_snippet<'input>(label: &'input str, slices: Vec<Slice<'input>>) -> Snippet<'input> {
-    Snippet {
-        title: Some(Annotation {
-            label: Some(label),
-            id: None,
-            annotation_type: AnnotationType::Error
-        }),
-        footer: vec![],
-        slices,
-        opt: FormatOptions { color: true, anonymized_line_numbers: false }
-    }
-}
-
-pub(in crate) fn slices<'input>(annotations: Vec<SourceAnnotation<'input>>, source: &'input str, origin: Option<&'input str>) -> Vec<Slice<'input>> {
-    let mut slices = Vec::new();
-    if !annotations.is_empty() {
-        slices.push(
-            Slice {
-                source,
-                origin,
-                line_start: 1,
-                fold: true,
-                annotations,
-            }
-        );
-    }
-    slices
-}
-
 pub(in crate) fn assemble_mem_dump(path: &PathBuf, with_os: bool) -> Result<MemoryDump, String> {
     let path_str = path.clone().into_os_string().into_string().unwrap();
     let string = fs::read_to_string(path).unwrap();
@@ -132,33 +96,21 @@ pub(in crate) fn assemble_mem_dump(path: &PathBuf, with_os: bool) -> Result<Memo
     assemble_mem_dump_str(src, Some(path_str.as_str()), with_os)
 }
 
-pub(in crate) fn assemble_mem_dump_str(src: &str, path: Option<&str>, with_os: bool) -> Result<MemoryDump, String> {
-    let lexer = Lexer::new(src);
-    let cst = parse(lexer, LeniencyLevel::Lenient);
+pub(in crate) fn assemble_mem_dump_str(src: &str, src_loc: Option<&str>, with_os: bool) -> Result<MemoryDump, String> {
+    let id: SourceId = src_loc.unwrap_or("<unknown>").to_string();
+    let cache = sources_raw([(id.clone(), src)]).unwrap();
 
-    let errors = extract_file_errors(cst.clone());
-    if errors.len() > 0 {
-        let mut error_string = String::new();
-        for error in errors {
-            let label_string = error.message();
-            let label = label_string.as_str();
-            let annotations = error.annotations();
-            let slices = slices(annotations, src, path);
-            let snippet = create_snippet(label, slices);
-            let dl = DisplayList::from(snippet);
-            error_string = format!("{}\n{}", error_string, dl);
-        }
-        let error_string = error_string.replace("\n", "\n|");
-        return Err(error_string);
+    match assemble(&id, src, LeniencyLevel::Lenient, !with_os) {
+        Ok(mem) => Ok(mem),
+        Err(error) => {
+            let prefix = "\n\x1b[1;90m⬞  ";
+            let err_string = error.report_to_string(cache).unwrap();
+            let err_string = err_string.trim();
+            let mut err_string = err_string.replace('\n', prefix);
+            err_string += "\n";
+            Err(prefix.to_string() + &err_string + "\n")
+        },
     }
-
-    let background = if with_os {
-        Some(lc3_os::OS_IMAGE.clone())
-    } else {
-        None
-    };
-
-    Ok(assemble(cst.objects, background))  // TODO: can still fail. fix in assembler.
 }
 
 // A bad hack..

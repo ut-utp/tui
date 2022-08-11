@@ -35,7 +35,6 @@ lc3-traits = { version = "0.1.0", default-features = false, features = [] } # En
 lc3-os = "0.1.0"
 lc3-assembler = "0.1.0"
 
-annotate-snippets = "0.8.0"
 anyhow = "1.0"
 bytes = "0.5.5"
 chrono = "0.4"
@@ -44,6 +43,7 @@ log = "0.4.8"
 pin-utils = "0.1.0-alpha.4"
 lazy_static = "1.4.0"
 reqwest = { version = "0.10.6", features = ["blocking"] }
+# static_assertions = "1"
 
 # crossterm = { git = "https://github.com/ut-utp/crossterm", version = "0.17.3"}
 # TODO: switch to not using this fork, eventually.
