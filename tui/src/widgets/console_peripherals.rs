@@ -2,10 +2,8 @@
 
 use super::widget_impl_support::*;
 
-use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
-use lc3_traits::peripherals::adc::{AdcPin, AdcState};
-use lc3_traits::peripherals::pwm::{PwmPin, PwmState};
-use lc3_traits::peripherals::timers::{TimerId, TimerState};
+use lc3_traits::peripherals::gpio::{GpioPin, GpioState, GpioBank};
+use lc3_traits::peripherals::adc::{AdcPin, AdcState, AdcReading};
 
 use std::sync::RwLock;
 
@@ -122,11 +120,11 @@ impl<Wt: WidgetTypes> Widget<Wt> for ConsolePeripherals {
                                 "adc" => {
                                     let adc_states = _data.sim.get_adc_states();
                                     let lock = RwLock::write(&shim.adc);
-                                    let adc_pin = adc_pins[vec[1].parse::<u8>().unwrap() as usize];
+                                    let adc_pin = adc_pins[vec[1].parse::<u16>().unwrap() as usize];
                                          match adc_states[adc_pin] {
                                                 AdcState::Enabled => {
-                                                    let value = vec[2].parse::<u8>().unwrap();
-                                                    lock.unwrap().set_value(adc_pin, value);
+                                                    let value = vec[2].parse::<u16>().unwrap();
+                                                    lock.unwrap().set_value(adc_pin, AdcReading::new_raw(value));
                                                 },
                                                 AdcState::Disabled => {
 
@@ -136,7 +134,7 @@ impl<Wt: WidgetTypes> Widget<Wt> for ConsolePeripherals {
                                     },
 
                                 "gpio" => {
-                                    let gpio_states = _data.sim.get_gpio_states();
+                                    let gpio_states = _data.sim.get_gpio_states(GpioBank::A).unwrap(); // TODO!
                                     let lock = RwLock::write(&shim.gpio);
 
                                     let gpio_pin = gpio_pins[vec[1].parse::<u8>().unwrap() as usize];

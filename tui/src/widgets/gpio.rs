@@ -2,7 +2,7 @@
 
 use super::widget_impl_support::*;
 
-use lc3_traits::peripherals::gpio::{GpioPin, GpioState};
+use lc3_traits::peripherals::gpio::{GpioPin, GpioState, GpioBank};
 
 use std::sync::RwLock;
 
@@ -26,18 +26,11 @@ impl Gpio {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Gpio
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-        let gpio_states = data.sim.get_gpio_states();
-        let gpioin = data.sim.get_gpio_readings();
-
+impl<Wt: WidgetTypes> Widget<Wt> for Gpio {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
+        // TODO!
+        let gpio_states = data.sim.get_gpio_states(GpioBank::A).unwrap();
+        let gpioin = data.sim.get_gpio_readings(GpioBank::A).unwrap();
 
         let text = [
             TuiText::styled("GPIO 0: \nGPIO 1: \nGPIO 2: \nGPIO 3: \n", Style::default().fg(c!(Name))),
