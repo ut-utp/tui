@@ -39,7 +39,9 @@ lc3-macros =              { path = "../core/macros" }
 lc3-shims =               { path = "../core/shims" }
 lc3-traits =              { path = "../core/traits" }
 lc3-os =                  { path = "../core/os" }
-lc3-assembler =           { path = "../assembler/assembler" }
+# lc3-assembler =           { path = "../assembler/assembler" }
+
+lc3-assembler =           { git = "https://github.com/ut-utp/assembler", branch = "staging" }
 
 
 # TODO: fix `wasm-bindgen`!
