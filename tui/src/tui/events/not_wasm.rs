@@ -8,7 +8,6 @@ use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
 use crossterm::terminal::LeaveAlternateScreen;
 use crossterm::cursor::Show;
 use crossterm::{ExecutableCommand, execute};
-use crossterm::ErrorKind as CrosstermError;
 
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::Builder as ThreadBuilder;

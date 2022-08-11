@@ -22,16 +22,8 @@ impl Clock {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Clock
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
-
+impl<Wt: WidgetTypes> Widget<Wt> for Clock {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let text = [
             TuiText::styled("Clock: \n", Style::default().fg(c!(Name))),
         ];
@@ -58,8 +50,7 @@ where
         para.render(area, buf);
     }
 
-
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, _data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         match event {
             WidgetEvent::Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
             _ => false,

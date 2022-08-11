@@ -10,6 +10,7 @@ use lc3_traits::control::control::{Control, Event};
 
 use lc3_isa::Addr;
 
+use std::marker::PhantomData;
 use std::sync::Mutex;
 use std::time::Duration;
 use std::collections::HashMap;
@@ -32,40 +33,62 @@ pub use program_source::ProgramSource;
 
 pub use anyhow::Result as Res;
 
-#[allow(explicit_outlives_requirements)]
-pub struct TuiData<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-{
-    pub sim: &'a mut C,
-    pub input: Option<&'a I>,
-    pub output: Option<&'a O>,
-    pub shims: Option<Shims<'int>>,
+// just so we don't have to lug around three separate types onto
+// `Widget` and all of its implementors
+pub trait TuiTypes {
+    type Control: Control + ?Sized;
+    type Input: InputSink + ?Sized;
+    type Output: OutputSource + ?Sized;
+}
 
-    pub(in crate) program_source: Option<ProgramSource>,
+#[derive(Debug)]
+pub struct TuiTypeSet<C, I = SourceShim, O = Mutex<Vec<u8>>>(PhantomData<C>, PhantomData<I>, PhantomData<O>)
+where
+    C: ?Sized + Control,
+    I: ?Sized + InputSink,
+    O: ?Sized + OutputSource,
+;
+
+impl<C, I, O> TuiTypes for TuiTypeSet<C, I, O>
+where
+    C: ?Sized + Control,
+    I: ?Sized + InputSink,
+    O: ?Sized + OutputSource,
+{
+    type Control = C;
+    type Input = I;
+    type Output = O;
+}
+
+
+pub struct TuiData<'a, T: TuiTypes> {
+    pub sim: &'a mut <T as TuiTypes>::Control,
+    pub input: Option<&'a <T as TuiTypes>::Input>,
+    pub output: Option<&'a <T as TuiTypes>::Output>,
+    pub shims: Option<Shims>,
+
+    pub(crate) program_source: Option<ProgramSource>,
     /// Determines whether we will tell the assembler to build using the OS
     /// *and* whether we skip past the OS on loads and resets.
-    pub(in crate) use_os: bool,
+    pub(crate) use_os: bool,
 
-    pub(in crate) reset_flag: u8,
-    pub(in crate) load_flag: u8,
-    pub(in crate) jump: (u8, Addr),
-    pub(in crate) mem_reg_inter: (u8, Addr),
+    pub(crate) reset_flag: u8,
+    pub(crate) load_flag: u8,
+    pub(crate) jump: (u8, Addr),
+    pub(crate) mem_reg_inter: (u8, Addr),
 
-    pub(in crate) console_input_string: RefCell<String>, // TODO: Give this a better name, maybe.
-    pub(in crate) console_hist: RefCell<AnsiTextContainer<'a>>,
+    pub(crate) console_input_string: RefCell<String>, // TODO: Give this a better name, maybe.
+    pub(crate) console_hist: RefCell<AnsiTextContainer<'a>>,
 
-    pub(in crate) debug_log: Option<Vec<TuiText<'a>>>,
-    pub(in crate) log: Vec<TuiText<'a>>,
+    pub(crate) debug_log: Option<Vec<TuiText<'a>>>,
+    pub(crate) log: Vec<TuiText<'a>>,
 
-    pub(in crate) bp: HashMap<Addr, usize>,
-    pub(in crate) wp: HashMap<Addr, usize>,
+    pub(crate) bp: HashMap<Addr, usize>,
+    pub(crate) wp: HashMap<Addr, usize>,
 
-    pub(in crate) flush_all_events: Option<Flush>,
+    pub(crate) flush_all_events: Option<Flush>,
     /// Is `Some(_)` when an `Event` has _just_ occurred.
-    pub(in crate) current_event: Option<Event>,
+    pub(crate) current_event: Option<Event>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -74,13 +97,7 @@ pub(in super) enum Flush {
     Acknowledged(u8),
 }
 
-#[allow(explicit_outlives_requirements)]
-impl<'a, 'int, C, I, O> TuiData<'a, 'int, C, I, O>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-{
+impl<'a, T: TuiTypes> TuiData<'a, T> {
     pub fn log<L: ToString>(&mut self, line: L, colour: Color) {
         self.log.push(TuiText::styled(line.to_string(), Style::default().fg(colour)))
     }
@@ -110,22 +127,16 @@ where
 }
 
 
-#[allow(explicit_outlives_requirements)]
-pub struct Tui<'a, 'int, C, I = SourceShim, O = Mutex<Vec<u8>>>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-{
-    pub data: TuiData<'a, 'int, C, I, O>,
+pub struct Tui<'a, T: TuiTypes> {
+    pub data: TuiData<'a, T>,
 
     pub(in crate::tui) update_period: Duration,
     // pub(in crate::tui)
 
 }
 
-impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSource + ?Sized + 'a> Tui<'a, 'int, C, I, O> {
-    pub fn new(sim: &'a mut C) -> Self {
+impl<'a, T: TuiTypes> Tui<'a, T> {
+    pub fn new(sim: &'a mut <T as TuiTypes>::Control) -> Self {
         Self {
             data: TuiData {
                 sim,
@@ -169,12 +180,16 @@ impl<'a, 'int, C: Control + ?Sized + 'a, I: InputSink + ?Sized + 'a, O: OutputSo
     //
     // But, in reality, I think this is equally likely either way and this is a
     // nicer API.
-    pub fn attach_shims(mut self, shims: Shims<'int>) -> Self {
+    pub fn attach_shims(mut self, shims: Shims) -> Self {
         self.data.shims = Some(shims);
         self
     }
 
-    pub fn attach_input_output(mut self, input: &'a I, output: &'a O) -> Self {
+    pub fn attach_input_output(
+        mut self,
+        input: &'a <T as TuiTypes>::Input,
+        output: &'a <T as TuiTypes>::Output,
+    ) -> Self {
         self.data.input = Some(input);
         self.data.output = Some(output);
         self
@@ -185,9 +200,9 @@ type DynControl<'a> = (dyn Control<EventFuture = EventFuture<'static, SyncEventF
 type DynInputSink<'a> = (dyn InputSink + 'a);
 type DynOutputSource<'a> = (dyn OutputSource + 'a);
 
-pub type DynTui<'a, 'int> = Tui<'a, 'int, DynControl<'a>, DynInputSink<'a>, DynOutputSource<'a>>;
+pub type DynTui<'a> = Tui<'a, TuiTypeSet<DynControl<'a>, DynInputSink<'a>, DynOutputSource<'a>>>;
 
-impl<'a, 'int> DynTui<'a, 'int> {
+impl<'a> DynTui<'a> {
     pub fn new_boxed<C>(sim: &'a mut C) -> Self
     where
         C: Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>>,
@@ -204,31 +219,65 @@ impl<'a, 'int> DynTui<'a, 'int> {
     }
 }
 
-impl<'a> DynTui<'a, 'static> {
+impl<'a> DynTui<'a> {
+    pub fn new_from_init<I: Init<'a>>(
+        b: &'a mut BlackBox,
+        config: Option<I::Config>,
+    ) -> Tui<'a, TuiTypeSet<I::ControlImpl, I::Input, I::Output>> {
+        let (sim, shims, input, output) = if let Some(config) = config {
+            I::init_with_config(b, config)
+        } else {
+            I::init(b)
+        };
+
+        let mut tui = Tui::new(sim);
+
+        if let (Some(inp), Some(out)) = (input, output) {
+            tui = tui.attach_input_output(inp, out);
+        }
+
+        if let Some(shims) = shims {
+            tui = tui.attach_shims(shims)
+        }
+
+        tui
+    }
+}
+
+impl<'a> DynTui<'a> {
     pub fn new_boxed_from_init<I: Init<'a>>(b: &'a mut BlackBox) -> Self
     where
-        <I as Init<'a>>::ControlImpl: Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>> + 'a,
-        <I as Init<'a>>::ControlImpl: Sized,
+        <I as Init<'a>>::ControlImpl: Control<
+            EventFuture = EventFuture<'static, SyncEventFutureSharedState>
+        > + 'a + Sized,
         <I as Init<'a>>::Input: Sized,
         <I as Init<'a>>::Output: Sized,
     {
         Self::new_boxed_from_init_with_config_inner::<I>(b, None)
     }
 
-    pub fn new_boxed_from_init_with_config<I: Init<'a>>(b: &'a mut BlackBox, config: I::Config) -> Self
+    pub fn new_boxed_from_init_with_config<I: Init<'a>>(
+        b: &'a mut BlackBox,
+        config: I::Config,
+    ) -> Self
     where
-        <I as Init<'a>>::ControlImpl: Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>> + 'a,
-        <I as Init<'a>>::ControlImpl: Sized,
+        <I as Init<'a>>::ControlImpl: Control<
+            EventFuture = EventFuture<'static, SyncEventFutureSharedState>
+        > + 'a + Sized,
         <I as Init<'a>>::Input: Sized,
         <I as Init<'a>>::Output: Sized,
     {
         Self::new_boxed_from_init_with_config_inner::<I>(b, Some(config))
     }
 
-    fn new_boxed_from_init_with_config_inner<I: Init<'a>>(b: &'a mut BlackBox, config: Option<I::Config>) -> Self
+    fn new_boxed_from_init_with_config_inner<I: Init<'a>>(
+        b: &'a mut BlackBox,
+        config: Option<I::Config>,
+    ) -> Self
     where
-        <I as Init<'a>>::ControlImpl: Control<EventFuture = EventFuture<'static, SyncEventFutureSharedState>> + 'a,
-        <I as Init<'a>>::ControlImpl: Sized,
+        <I as Init<'a>>::ControlImpl: Control<
+            EventFuture = EventFuture<'static, SyncEventFutureSharedState>
+        > + 'a + Sized,
         <I as Init<'a>>::Input: Sized,
         <I as Init<'a>>::Output: Sized,
     {
@@ -253,12 +302,7 @@ impl<'a> DynTui<'a, 'static> {
     }
 }
 
-impl<'a, 'int, C, I, O> Tui<'a, 'int, C, I, O>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a
-{
+impl<'a, T: TuiTypes> Tui<'a, T> {
     pub fn set_program_source(&mut self, src: ProgramSource) -> &mut Self {
         self.data.program_source = Some(src);
         self

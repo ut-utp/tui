@@ -3,11 +3,11 @@
 //! [`Widget`]: crate::tui::widget::Widget
 
 pub(in self) mod widget_impl_support {
-    pub use crate::tui::widget::{TuiWidget, Widget};
+    pub use crate::tui::widget::{TuiWidget, Widget, WidgetTypes, ControlTy, InputTy, OutputTy, BackendTy, Data};
     pub use crate::tui::widget::util::{trim_to_width, trim_to_rect, increment, Axis};
     pub use crate::tui::widget::util::ConditionalSendBound;
     pub use crate::tui::ansi::AnsiTextContainer;
-    pub use crate::tui::TuiData;
+    pub use crate::tui::{TuiData, TuiTypes};
     pub use crate::tui::events::{WidgetEvent, FocusEvent};
 
     pub use crate::debug::{in_debug_mode, run_if_debugging};

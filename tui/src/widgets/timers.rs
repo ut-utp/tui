@@ -24,18 +24,10 @@ impl Timers {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Timers
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for Timers {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let timer_state = data.sim.get_timer_states();
         let timer_modes = data.sim.get_timer_modes();
-
 
         let text = [
             TuiText::styled("Timer 0: \n", Style::default().fg(c!(Name))),
@@ -142,14 +134,9 @@ where
             .wrap(true);
         let area = increment(10, Axis::X, area);
         para.render(area, buf);
-
-
-
     }
 
-
-
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, _data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         match event {
             WidgetEvent::Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
             _ => false,

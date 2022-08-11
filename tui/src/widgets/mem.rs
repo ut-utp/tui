@@ -58,14 +58,8 @@ impl Mem {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Mem
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for Mem {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         if self.reset_flag != data.reset_flag{
             self.home();
             self.reset_flag = data.reset_flag;
@@ -348,15 +342,10 @@ where
         para.render(area, buf)
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
 
-        fn set_bp<'a, 'int, C, I, O>(offset: u16, data: &mut TuiData<'a, 'int, C, I, O>)
-        where
-            C: Control + ?Sized + 'a,
-            I: InputSink + ?Sized + 'a,
-            O: OutputSource + ?Sized + 'a,
-        {
+        fn set_bp<T: TuiTypes>(offset: u16, data: &mut TuiData<T>) {
             let cur_addr = data.sim.get_pc().wrapping_sub(offset);
             match data.bp.remove(&cur_addr) {
                 Some(val) => {data.sim.unset_breakpoint(val as u8);},
@@ -367,12 +356,7 @@ where
             };
         }
 
-        fn set_wp<'a, 'int, C, I, O>(offset: u16, data: &mut TuiData<'a, 'int, C, I, O>)
-        where
-            C: Control + ?Sized + 'a,
-            I: InputSink + ?Sized + 'a,
-            O: OutputSource + ?Sized + 'a,
-        {
+        fn set_wp<T: TuiTypes>(offset: u16, data: &mut TuiData<T>) {
             let cur_addr = data.sim.get_pc().wrapping_sub(offset);
             match data.wp.remove(&cur_addr) {
                 Some(val) => {data.sim.unset_memory_watchpoint(val as u8);},

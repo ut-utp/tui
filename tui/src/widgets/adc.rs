@@ -24,15 +24,9 @@ impl Adc {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Adc
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
+impl<Wt: WidgetTypes> Widget<Wt> for Adc {
 
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let adc_states = data.sim.get_adc_states();
         let adcin = data.sim.get_adc_readings();
 
@@ -144,13 +138,9 @@ where
 
             let area = increment(10, Axis::X, area);
             para.render(area, buf);
-
-
     }
 
-
-
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, _data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         match event {
             WidgetEvent::Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
             _ => false,

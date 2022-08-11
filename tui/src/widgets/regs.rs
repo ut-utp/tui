@@ -2,7 +2,7 @@
 
 use super::widget_impl_support::*;
 
-use lc3_isa::{Addr, Instruction, Reg, Word, Bits};
+use lc3_isa::{Reg, Word, Bits};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct RegDiff {
@@ -81,14 +81,8 @@ impl Regs {
 }
 
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Regs
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for Regs {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let regs_psr_pc = data.sim.get_registers_psr_and_pc();
         let (regs, psr, pc) = regs_psr_pc;
         let privilege = psr.bit(15) as u8;
@@ -214,7 +208,7 @@ where
 
     }
 
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, _data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 

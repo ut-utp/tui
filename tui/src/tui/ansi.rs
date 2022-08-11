@@ -1,7 +1,7 @@
 //! Utilities for dealing with strings containing ANSI escape codes.
 
 use tui::widgets::Text as TuiText;
-use tui::style::{Color, Modifier, Style};
+use tui::style::{Color, Style, Modifier};
 
 use std::ops::{Bound, Deref, RangeBounds};
 use std::borrow::Cow;

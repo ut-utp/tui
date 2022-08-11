@@ -7,14 +7,8 @@ use lc3_traits::control::control::ProcessorMode;
 #[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]
 pub struct StackWindow;
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for StackWindow
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for StackWindow {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let mut addr_v = Vec::new();
         let mut frame_v = Vec::new();
         let mut mode_v = Vec::new();
@@ -60,9 +54,9 @@ where
         para.render(area, buf);
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         match event {
-             _ => false,
+            _ => false,
         }
     }
 }

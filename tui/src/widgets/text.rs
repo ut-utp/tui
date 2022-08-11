@@ -8,27 +8,20 @@ use std::marker::PhantomData;
 // right now we assume each Text element is its own line which is Not True (for
 // good reasons too).
 
-#[allow(explicit_outlives_requirements)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Text<'a, 'int, C, I, O, F>
+pub struct Text<Wt: WidgetTypes, F>
 where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r [TuiText<'r>],
+    F: for<'r> Fn(&'r Data<Wt>) -> &'r [TuiText<'r>],
 {
     func: F,
     offset: u16,
     follow: bool,
-    _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
+    _p: PhantomData<Wt>,
 }
 
-impl<'a, 'int, C, I, O, F> Text<'a, 'int, C, I, O, F>
+impl<Wt: WidgetTypes, F> Text<Wt, F>
 where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r [TuiText<'r>],
+    F: for<'r> Fn(&'r Data<Wt>) -> &'r [TuiText<'r>],
 {
     pub fn new(func: F) -> Self {
         Self {
@@ -40,16 +33,12 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, F, B> Widget<'a, 'int, C, I, O, B> for Text<'a, 'int, C, I, O, F>
+impl<'a, 'int, Wt: WidgetTypes, F> Widget<Wt> for Text<Wt, F>
 where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r TuiData<'a, 'int, C, I, O>) -> &'r [TuiText<'r>],
-    B: Backend,
+    F: for<'r> Fn(&'r Data<Wt>) -> &'r [TuiText<'r>],
 {
 
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let text = (self.func)(data);
 
         if self.follow {
@@ -67,7 +56,7 @@ where
         para.render(area, buf)
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 

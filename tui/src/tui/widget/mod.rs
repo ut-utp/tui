@@ -1,11 +1,6 @@
 //! TODO!
 
-use crate::tui::TuiData;
-use crate::tui::events::WidgetEvent;
-
-use lc3_application_support::io_peripherals::InputSink;
-use lc3_application_support::io_peripherals::OutputSource;
-use lc3_traits::control::Control;
+use std::marker::PhantomData;
 
 use tui::backend::Backend;
 use tui::buffer::Buffer;
@@ -14,8 +9,9 @@ use tui::layout::Rect;
 use tui::terminal::Terminal;
 use tui::widgets::StatefulWidget;
 
-use std::marker::PhantomData;
-
+use crate::tui::TuiData;
+use crate::tui::events::WidgetEvent;
+use super::TuiTypes;
 
 pub use tui::widgets::Widget as TuiWidget;
 
@@ -26,15 +22,36 @@ mod single;
 mod grouped;
 pub use grouped::Widgets;
 
+
 pub mod util;
 
-pub trait Widget<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
+// we'd like for `B: Backend` to be a param on `render` and `update` but then
+// this trait isn't object safe.
+pub trait WidgetTypes {
+    type TuiTypes: TuiTypes;
+    type Backend: Backend;
+}
+
+#[derive(Debug)]
+pub struct WidgetTypesSpec<T: TuiTypes, B: Backend>(PhantomData<(T, B)>);
+impl<T: TuiTypes, B: Backend> WidgetTypes for WidgetTypesSpec<T, B> {
+    type TuiTypes = T;
+    type Backend = B;
+}
+
+#[allow(type_alias_bounds)]
+pub type ControlTy<Wt: WidgetTypes> = <<Wt as WidgetTypes>::TuiTypes as TuiTypes>::Control;
+#[allow(type_alias_bounds)]
+pub type InputTy  <Wt: WidgetTypes> = <<Wt as WidgetTypes>::TuiTypes as TuiTypes>::Input;
+#[allow(type_alias_bounds)]
+pub type OutputTy <Wt: WidgetTypes> = <<Wt as WidgetTypes>::TuiTypes as TuiTypes>::Output;
+#[allow(type_alias_bounds)]
+pub type BackendTy<Wt: WidgetTypes> = <Wt as WidgetTypes>::Backend;
+
+#[allow(type_alias_bounds)]
+pub type Data<'a, Wt: WidgetTypes> = TuiData<'a, <Wt as WidgetTypes>::TuiTypes>;
+
+pub trait Widget<Wt: WidgetTypes> {
     /// For functions that don't hold their own state and need a reference to
     /// the [`Control`] impl to redraw themselves.
     ///
@@ -44,9 +61,9 @@ where
     /// need a [`Control`] instance need not override the default impl.
     ///
     /// [`Control`]: `lc3_traits::control::Control`
-    fn draw(&mut self, _data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer);
+    fn draw(&mut self, _data: &TuiData<'_, Wt::TuiTypes>, area: Rect, buf: &mut Buffer);
 
-    fn render<'s>(&'s mut self, data: &'s TuiData<'a, 'int, C, I, O>, f: &mut Frame<'_, B>, area: Rect) {
+    fn render(&mut self, data: &TuiData<'_, Wt::TuiTypes>, f: &mut Frame<'_, Wt::Backend>, area: Rect) {
         // This is tricky.
         //
         // We can't just call render on ourself because we can't guarantee that
@@ -62,7 +79,10 @@ where
         // Note: the above used to be true, but now we just do the below so that
         // we can draw this widget instance without it being _consumed_.
 
-        let fw = FakeWidget::<'s, 'a, 'int, _, _, _, _, _>(data, self, PhantomData);
+        // TODO: do we still need this?
+        // TODO: bump TUI version
+
+        let fw = FakeWidget::<'_, '_, _, _>(data, self);
         f.render_widget(fw, area);
     }
 
@@ -71,5 +91,10 @@ where
     //
     // This is useful for events that must be handled only once (i.e. changing
     // which widget is currently focused).
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool;
+    fn update(
+        &mut self,
+        event: WidgetEvent,
+        data: &mut TuiData<'_, Wt::TuiTypes>,
+        terminal: &mut Terminal<Wt::Backend>,
+    ) -> bool;
 }

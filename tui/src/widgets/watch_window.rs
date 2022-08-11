@@ -27,14 +27,8 @@ impl Default for WatchWindow {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for WatchWindow
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for WatchWindow {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         self.position = area;
         let mut flag = false;
 
@@ -70,7 +64,7 @@ where
         }
         vec.sort();
 
-        for (wp_addr) in vec.iter() {
+        for wp_addr in vec.iter() {
             if flag && *wp_addr == self.highlight_addr {
                 self.highlight = i;
                 flag = false;
@@ -137,7 +131,7 @@ where
         para.render(area, buf);
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 

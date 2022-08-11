@@ -39,14 +39,8 @@ impl Default for MemRegInterface {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for MemRegInterface
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for MemRegInterface {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         if self.reset_flag != data.reset_flag {
             self.mode = InputSource;
             self.reset_flag = data.reset_flag;
@@ -113,16 +107,11 @@ where
         para.render(area, buf);
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
-        fn set_bp<'a, 'int, C, I, O>(cur_addr: u16, data: &mut TuiData<'a, 'int, C, I, O>)
-        where
-            C: Control + ?Sized + 'a,
-            I: InputSink + ?Sized + 'a,
-            O: OutputSource + ?Sized + 'a,
-        {
+        fn set_bp<Wt: WidgetTypes>(cur_addr: u16, data: &mut Data<Wt>) {
             match data.bp.remove(&cur_addr) {
                 Some(val) => {data.sim.unset_breakpoint(val as u8);},
                 None => {match data.sim.set_breakpoint(cur_addr) {
@@ -132,12 +121,7 @@ where
             };
         }
 
-        fn set_wp<'a, 'int, C, I, O>(cur_addr: u16, data: &mut TuiData<'a, 'int, C, I, O>)
-        where
-            C: Control + ?Sized + 'a,
-            I: InputSink + ?Sized + 'a,
-            O: OutputSource + ?Sized + 'a,
-        {
+        fn set_wp<Wt: WidgetTypes>(cur_addr: u16, data: &mut Data<Wt>) {
             match data.wp.remove(&cur_addr) {
                 Some(val) => {data.sim.unset_memory_watchpoint(val as u8);},
                 None => {match data.sim.set_memory_watchpoint(cur_addr) {
@@ -194,10 +178,10 @@ where
         macro_rules! modify_addr {
             ($addr:ident, $word:ident, $on_write:block) => {
                 if self.input == String::from("b") {
-                    set_bp($addr, data);
+                    set_bp::<Wt>($addr, data);
                     self.mode = InputSource;
                 } else if self.input == String::from("w") {
-                    set_wp($addr, data);
+                    set_wp::<Wt>($addr, data);
                     self.mode = InputSource;
                 } else if self.input == String::from("j") {
                     data.jump = (data.jump.0+1,$addr);

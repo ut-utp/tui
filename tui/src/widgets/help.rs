@@ -16,15 +16,8 @@ impl Default for Help {
     }
 }
 
-
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Help
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for Help {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let text = [
             TuiText::styled("To control the TUI, you can click on any of the interactable interfaces.\n
                 Most will respond to mouse events, some will respond to sroll.\n
@@ -48,7 +41,7 @@ where
         para.render(area, buf)
     }
 
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, _data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         match event {
             WidgetEvent::Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
             _ => false,

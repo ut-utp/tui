@@ -24,18 +24,10 @@ impl Pwm {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Pwm
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for Pwm {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let pwm_state = data.sim.get_pwm_states();
         let pwm_configs = data.sim.get_pwm_config();
-
 
         let text = [
             TuiText::styled("PWM 0: \n", Style::default().fg(c!(Name))),
@@ -59,11 +51,8 @@ where
                 s0.push_str(&format!(
                     "{:#018b} {:#06x} {:#05}\n", pwm_configs[PwmPin::P0], pwm_configs[PwmPin::P0], pwm_configs[PwmPin::P0]
                 ));
-
             }
-
         };
-
 
         let text = [TuiText::styled(s0, Style::default().fg(c!(Data)))];
         para = Paragraph::new(text.iter())
@@ -72,9 +61,6 @@ where
             .wrap(true);
         let area = increment(10, Axis::X, area);
         para.render(area, buf);
-
-
-
 
         let text = [
             TuiText::styled("PWM 1: \n", Style::default().fg(c!(Name))),
@@ -87,8 +73,6 @@ where
         let area1 = increment(40, Axis::X, area);
         para.render(area1, buf);
 
-
-
         let mut s1 = String::from("");
         let p1 = match pwm_state[PwmPin::P1]{
             PwmState::Disabled => {
@@ -99,9 +83,7 @@ where
                 s1.push_str(&format!(
                     "{:#018b} {:#06x} {:#05}\n", pwm_configs[PwmPin::P1], pwm_configs[PwmPin::P1], pwm_configs[PwmPin::P1]
                 ));
-
             }
-
         };
 
         let text = [TuiText::styled(s1, Style::default().fg(c!(Data)))];
@@ -111,14 +93,9 @@ where
             .wrap(true);
         let area2 = increment(10, Axis::X, area1);
         para.render(area2, buf);
-
-
-
     }
 
-
-
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, _data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         match event {
             WidgetEvent::Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
             _ => false,

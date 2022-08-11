@@ -49,7 +49,7 @@ trait OddEven {
 }
 
 impl OddEven for usize {
-    fn is_odd(&self) -> bool { (self % 1 == 1) }
+    fn is_odd(&self) -> bool { self % 1 == 1 }
 }
 
 pub fn trim_to_rect(inp: &str, Rect { width, .. }: Rect) -> String {

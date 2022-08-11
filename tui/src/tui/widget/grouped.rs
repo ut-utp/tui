@@ -3,17 +3,14 @@
 use crate::tui::TuiData;
 use crate::tui::events::{WidgetEvent, FocusEvent};
 use super::single::SingleWidget;
-use super::Widget;
-
-use lc3_application_support::io_peripherals::{InputSink, OutputSource};
-use lc3_traits::control::Control;
+use super::{Widget, WidgetTypes, Data};
 
 use tui::backend::Backend;
 use tui::buffer::Buffer;
 use tui::layout::{Layout, Direction, Constraint, Rect};
 use tui::widgets::Block;
 use tui::terminal::Terminal;
-use crossterm::event::{MouseEvent, MouseButton, KeyEvent, KeyCode, KeyModifiers};
+use crossterm::event::{MouseEvent, KeyEvent, KeyCode, KeyModifiers};
 
 
 /// A bunch of Widgets that split the are they are given in *one* direction. In
@@ -22,16 +19,9 @@ use crossterm::event::{MouseEvent, MouseButton, KeyEvent, KeyCode, KeyModifiers}
 /// Nest these like you'd nest [`Layout`]s for more complicated arrangements.
 ///
 /// [`Layout`]: tui::layout::Layout
-#[allow(explicit_outlives_requirements)]
-pub struct Widgets<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
+pub struct Widgets<'a, Wt: WidgetTypes> {
     /// The widgets within.
-    widgets: Vec<SingleWidget<'a, 'int, C, I, O, B>>,
+    widgets: Vec<SingleWidget<'a, Wt>>,
     /// Overall `Layout` for the Widgets. This is used to set the margins and
     /// direction of the Widgets; any constraints given will be ignored.
     layout: Layout,
@@ -42,13 +32,7 @@ where
     previously_focused: Option<usize>,
 }
 
-impl<'a, 'int, C, I, O, B> Widgets<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
+impl<'a, Wt: WidgetTypes> Widgets<'a, Wt> {
     pub fn new(layout: Layout) -> Self {
         Self {
             layout,
@@ -69,7 +53,7 @@ where
     // functionality.
     pub fn add_widget<W>(&mut self, constraint: Constraint, widget: W, block: Option<Block<'a>>) -> &mut Self
     where
-        W: Widget<'a, 'int, C, I, O, B> + 'a
+        W: Widget<Wt> + 'a
     {
         self.widgets.push(SingleWidget::new(constraint, Box::new(widget), block));
         self.areas_valid = false; // We need to recalculate positions now!
@@ -104,21 +88,21 @@ where
     //
     // With this function it is possible that more than one widget handles the
     // event.
-    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         self.widgets.iter_mut().fold(false, |b, w| b | w.widget.update(event, data, terminal))
     }
 
     // Returns whether *any* widget handled the event.
     //
     // With this function at most one widget will handle the event.
-    fn propagate_until_handled(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn propagate_until_handled(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         self.widgets.iter_mut().any(|w| w.widget.update(event, data, terminal))
     }
 
     // Returns whether or not the focused Widget handled the event.
     //
     // If there is no focused widget, this returns false.
-    fn propagate_to_focused(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn propagate_to_focused(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         if let Some(idx) = self.focused {
             self.widgets[idx].widget.update(event, data, terminal)
         } else {
@@ -136,14 +120,8 @@ const DOWN: KeyEvent = with_control(KeyCode::Down);
 const LEFT: KeyEvent = with_control(KeyCode::Left);
 const RIGHT: KeyEvent = with_control(KeyCode::Right);
 
-impl<'a, 'int, C, I, O, B> Widgets<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn handle_focus_key_event(&mut self, event: KeyEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+impl<'a, Wt: WidgetTypes> Widgets<'a, Wt> {
+    fn handle_focus_key_event(&mut self, event: KeyEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::{Focus, Key};
 
         if let UP | DOWN | LEFT | RIGHT = event { } else {
@@ -225,14 +203,8 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Widgets<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, rect: Rect, buf: &mut Buffer) {
+impl<'a, Wt: WidgetTypes> Widget<Wt> for Widgets<'a, Wt> {
+    fn draw(&mut self, data: &Data<Wt>, rect: Rect, buf: &mut Buffer) {
         self.update_areas(rect);
 
         for (idx, sw) in self.widgets.iter_mut().enumerate() {
@@ -240,7 +212,7 @@ where
         }
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         // todo!()
 
         use WidgetEvent::*;

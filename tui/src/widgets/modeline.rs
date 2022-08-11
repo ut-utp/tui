@@ -46,15 +46,8 @@ fn block_on<F: Future/* + Unpin*/>(f: F) -> F::Output {
     }
 }
 
-#[allow(explicit_outlives_requirements)]
-pub struct Modeline<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    event_fut: Option<C::EventFuture>,
+pub struct Modeline<'a, Wt: WidgetTypes> {
+    event_fut: Option<<ControlTy<Wt> as Control>::EventFuture>,
     colour: Colour,
     execution_control_button: Rect,
     step_over_button: Rect,
@@ -64,25 +57,19 @@ where
     load_button: Rect,
     reset_flag: bool,
     load_flag: u8,
-    load_b: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
+    load_b: Vec<Box<dyn Widget<Wt> + 'a>>,
     focus: ModelineFocus,
 
     // one time intialization:
     run_until_event_state_synced: bool,
 }
 
-impl<'a, 'int, C, I, O, B> Modeline<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    pub fn new<W: Widget<'a, 'int, C, I, O, B> + 'a>(button: W) -> Self {
+impl<'a, Wt: WidgetTypes> Modeline<'a, Wt> {
+    pub fn new<W: Widget<Wt> + 'a>(button: W) -> Self {
         Self::new_with_colour(button, c!(Modeline))
     }
 
-    pub fn new_with_colour<W: Widget<'a, 'int, C, I, O, B> + 'a>(button: W, colour:Colour) -> Self {
+    pub fn new_with_colour<W: Widget<Wt> + 'a>(button: W, colour:Colour) -> Self {
         Self {
             event_fut: None,
             colour,
@@ -100,30 +87,30 @@ where
         }
     }
 
-    fn step(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn step(&mut self, data: &mut Data<Wt>) {
         data.current_event = data.sim.step();
     }
 
-    fn step_in(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn step_in(&mut self, data: &mut Data<Wt>) {
         StepControl::step_in(data.sim);
         self.run(data);
     }
 
-    fn step_out(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn step_out(&mut self, data: &mut Data<Wt>) {
         StepControl::step_out(data.sim);
         self.run(data);
     }
 
-    fn step_over(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn step_over(&mut self, data: &mut Data<Wt>) {
         StepControl::step_over(data.sim);
         self.run(data);
     }
 
-    fn pause(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn pause(&mut self, data: &mut Data<Wt>) {
         data.sim.pause();
     }
 
-    fn load(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
+    fn load(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) {
         let load_ret = self.load_b[0].update(event, data, terminal);
         if load_ret {
             data.load_flag = data.load_flag.wrapping_add(1);
@@ -132,7 +119,7 @@ where
     }
     // TODO: should also call `drop(data.current_event.take())`
 
-    fn run(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn run(&mut self, data: &mut Data<Wt>) {
         // Only call `run_until_event` if we're not already running until an event.
         if State::RunningUntilEvent != data.sim.get_state() {
             // Dispose of any currently running futures correctly.
@@ -157,7 +144,7 @@ where
         let _ = data.current_event.take();
     }
 
-    fn skip_os(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn skip_os(&mut self, data: &mut Data<Wt>) {
         // Only do this if we're using the OS.
         if !data.use_os {
             return;
@@ -215,7 +202,7 @@ where
         }
     }
 
-    fn reset(&mut self, data: &mut TuiData<'a, 'int, C, I, O>) {
+    fn reset(&mut self, data: &mut TuiData<'_, Wt::TuiTypes>) {
         data.log("[modeline] Resetting Sim\n", c!(Pause));
         data.console_input_string.get_mut().clear();
         data.console_hist.get_mut().clear();
@@ -261,14 +248,8 @@ fn create_rect(index: u16, size: u16, area:Rect) -> Rect {
         area.height)
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Modeline<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<'a, Wt: WidgetTypes> Widget<Wt> for Modeline<'a, Wt> {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let mut box_colour = self.colour;
         let mut execution_colour = c!(Run);
         let mut step_over_colour = c!(StepButtons);
@@ -451,7 +432,7 @@ where
 
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 

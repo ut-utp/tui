@@ -2,15 +2,16 @@
 
 use super::Res as Result;
 use super::Tui;
+use super::TuiTypes;
 use super::events::{self, Event, WidgetEvent, FocusEvent, CrosstermEvent};
 use super::widget::Widget;
+use super::widget::WidgetTypesSpec;
 use crate::strings::{s, HelloMsg, StartupMsg};
 
 use lc3_traits::control::Control;
 use lc3_application_support::event_loop::Backoff;
-use lc3_application_support::io_peripherals::{InputSink, OutputSource};
 
-use anyhow::{Context, anyhow};
+use anyhow::anyhow;
 use chrono::{DateTime, offset::Local};
 use crossterm::ExecutableCommand;
 use crossterm::event::{KeyEvent, KeyCode, KeyModifiers, DisableMouseCapture};
@@ -27,12 +28,7 @@ specialize! {
     web => { use futures_channel::mpsc::UnboundedSender as Sender; }
 }
 
-impl<'a, 'int, C, I, O> Tui<'a, 'int, C, I, O>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-{
+impl<'a, T: TuiTypes> Tui<'a, T> {
     // some one time initialization stuff
     fn init(&mut self) {
         // Say hello:
@@ -64,7 +60,7 @@ where
         event: Event,
         term: &mut Terminal<B>,
         tx: &Sender<Event>,
-        root: &mut impl Widget<'a, 'int, C, I, O, B>,
+        root: &mut impl Widget<WidgetTypesSpec<T, B>>,
         last_window_size: &mut Option<(u16, u16)>,
     ) -> bool
     where
@@ -187,15 +183,14 @@ specialize! {
     }
 }
 
-impl<'a, 'int: 'a, C, I, O> Tui<'a, 'int, C, I, O>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-{ specialize! {
+impl<'a, T: TuiTypes> Tui<'a, T> { specialize! {
     desktop => {
         /// TODO: docs
-        pub fn run_with_custom_layout<B: tui::backend::Backend + 'a>(mut self, term: &mut Terminal<B>, mut root: impl Widget<'a, 'int, C, I, O, B>) -> Result<()>
+        pub fn run_with_custom_layout<B: tui::backend::Backend + 'a>(
+            mut self,
+            term: &mut Terminal<B>,
+            mut root: impl Widget<WidgetTypesSpec<T, B>>,
+        ) -> Result<()>
         where
             B: ExecutableCommand<&'static str>,
             Terminal<B>: Send,
@@ -233,7 +228,14 @@ where
         }
 
         // Run with crossterm; with or without your own special layout.
-        pub fn run_with_crossterm<'c: 'a>(self, root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<'c, Stdout>>>) -> Result<()> {
+        pub fn run_with_crossterm<'c: 'a>(
+            self,
+            root_widget: Option<
+                impl Widget<
+                    WidgetTypesSpec<T, tui::backend::CrosstermBackend<'c, Stdout>>
+                >
+            >
+        ) -> Result<()> {
             use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
             use crossterm::execute;
 
@@ -288,7 +290,7 @@ where
         pub async fn run_with_custom_layout<'t: 'a, W: Write + 't>(
             mut self,
             term: &mut Terminal<CrosstermBackend<'t, W>>,
-            mut root: impl Widget<'a, 'int, C, I, O, CrosstermBackend<'t, W>>,
+            mut root: impl Widget<WidgetTypesSpec<T, CrosstermBackend<'t, W>>>,
         ) -> Result<()> {
             // init!
             self.init();
@@ -322,7 +324,7 @@ where
         // Run with crossterm; with or without your own special layout.
         pub async fn run_with_xtermjs<'c: 'a>(
             self,
-            root_widget: Option<impl Widget<'a, 'int, C, I, O, tui::backend::CrosstermBackend<'c, Vec<u8>>>>,
+            root_widget: Option<impl Widget<WidgetTypesSpec<T, tui::backend::CrosstermBackend<'c, Vec<u8>>>>>,
             term: &'c XtermJsTerminal,
         ) -> Result<()> {
             use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};

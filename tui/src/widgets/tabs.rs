@@ -9,17 +9,14 @@
 // tabs after creating the item) but this restriction can be lifted later if
 // there's a use case for it.
 
+use crate::tui::widget::WidgetTypes;
+
 use super::widget_impl_support::*;
 
 pub use tui::widgets::Tabs as TabsBar;
 
-#[allow(explicit_outlives_requirements)]
-pub struct Tabs<'a, 'int, C, I, O, B, F>
+pub struct Tabs<'a, Wt: WidgetTypes, F>
 where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
     F: Fn() -> TabsBar<'a, String>,
 {
     /// Function that produces a template `TabsBar` instance that gives us
@@ -28,22 +25,15 @@ where
     /// The titles of the tabs.
     titles: Vec<String>,
     /// The actual tabs.
-    tabs: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
+    tabs: Vec<Box<dyn Widget<Wt> + 'a>>,
     /// Current tab.
     current_tab: usize,
 }
 
-impl<'a, 'int, C, I, O, B, F> Tabs<'a, 'int, C, I, O, B, F>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-    F: Fn() -> TabsBar<'a, String>,
-{
+impl<'a, Wt: WidgetTypes, F: Fn() -> TabsBar<'a, String>> Tabs<'a, Wt, F> {
     // This style of constructor is there to ensure that there's at least one
     // tab.
-    pub fn new<W: Widget<'a, 'int, C, I, O, B> + 'a, S: ToString>(first_tab: W, title: S) -> Self {
+    pub fn new<W: Widget<Wt> + 'a, S: ToString>(first_tab: W, title: S) -> Self {
         Self {
             tabs_bar_func: None,
             titles: vec![title.to_string()],
@@ -52,14 +42,14 @@ where
         }
     }
 
-    pub fn add<W: Widget<'a, 'int, C, I, O, B> + 'a, S: ToString>(mut self, tab: W, title: S) -> Self {
+    pub fn add<W: Widget<Wt> + 'a, S: ToString>(mut self, tab: W, title: S) -> Self {
         self.tabs.push(Box::new(tab));
         self.titles.push(title.to_string());
 
         self
     }
 
-    pub fn add_dyn(mut self, tab: Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, title: String) -> Self {
+    pub fn add_dyn(mut self, tab: Box<dyn Widget<Wt> + 'a>, title: String) -> Self {
         self.tabs.push(tab);
         self.titles.push(title);
 
@@ -94,15 +84,15 @@ where
         .select(self.current_tab)
     }
 
-    fn propagate(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn propagate(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         self.tabs[self.current_tab].update(event, data, terminal)
     }
 
-    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         self.tabs.iter_mut().fold(false, |b, w| b | w.update(event, data, terminal))
     }
 
-    fn switch_to_tab(&mut self, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>, idx: usize) -> bool {
+    fn switch_to_tab(&mut self, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>, idx: usize) -> bool {
         if idx < self.tabs.len() {
             // Only send a focus event if we are actually switching to this tab:
             if self.current_tab != idx {
@@ -117,22 +107,15 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, B, F> Widget<'a, 'int, C, I, O, B> for Tabs<'a, 'int, C, I, O, B, F>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-    F: Fn() -> TabsBar<'a, String>,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<'a, Wt: WidgetTypes, F: Fn() -> TabsBar<'a, String>> Widget<Wt> for Tabs<'a, Wt, F> {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let (bar, rest) = self.area_split(area);
 
         self.tabs_bar().render(bar, buf);
         Widget::draw(&mut *self.tabs[self.current_tab], data, rest, buf)
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 

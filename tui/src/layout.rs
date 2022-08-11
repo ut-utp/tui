@@ -1,15 +1,10 @@
 //! Module defining the layout of the widgets used by the TUI.
 
-use crate::tui::widget::{Widgets, Widget};
+use crate::tui::widget::{Widgets, Widget, WidgetTypes};
 use crate::tui::widget::util::ConditionalSendBound;
 use crate::widgets::*;
 use crate::colours::c;
 
-use lc3_application_support::io_peripherals::InputSink;
-use lc3_application_support::io_peripherals::OutputSource;
-use lc3_traits::control::Control;
-
-use tui::backend::Backend;
 use tui::layout::{Layout, Direction, Constraint};
 use tui::widgets::{Block, Borders};
 use tui::terminal::Terminal;
@@ -20,34 +15,26 @@ use tui::style::{Style, Color as Colour};
 // This is currently 'static' (i.e. doesn't change based on the inputs given)
 // but that could change in the future.
 // TODO: potentially parameterize this from with user configurable options!
-pub fn layout<'a, 'int: 'a, C, I, O, B: 'a>(
+pub fn layout<'a, Wt: WidgetTypes + 'a>(
     name: Option<&'a str>,
-    extra_tabs: Vec<(Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, String)>,
-) -> impl Widget<'a, 'int, C, I, O, B>
+    extra_tabs: Vec<(Box<dyn Widget<Wt> + 'a>, String)>,
+) -> impl Widget<Wt> + 'a
 where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-    Terminal<B>: ConditionalSendBound,
+    Terminal<Wt::Backend>: ConditionalSendBound,
 {
-    let mut root = RootWidget::new(layout_tabs(name, extra_tabs))
+    let root = RootWidget::new(layout_tabs(name, extra_tabs))
         .add(Modeline::new(LoadButton::new()));
 
     root
 }
 
 
-pub fn layout_tabs<'a, 'int: 'a, C, I, O, B: 'a>(
+pub fn layout_tabs<'a, Wt: WidgetTypes + 'a>(
     name: Option<&'a str>,
-    extra_tabs: Vec<(Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>, String)>,
-) -> Tabs<'a, 'int, C, I, O, B, impl Fn() -> TabsBar<'a, String>>
+    extra_tabs: Vec<(Box<dyn Widget<Wt> + 'a>, String)>,
+) -> Tabs<'a, Wt, impl Fn() -> TabsBar<'a, String>>
 where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-    Terminal<B>: ConditionalSendBound,
+    Terminal<Wt::Backend>: ConditionalSendBound,
 {
     let horz = Layout::default().direction(Direction::Horizontal);
     let vert = Layout::default().direction(Direction::Vertical);

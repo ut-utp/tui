@@ -13,32 +13,20 @@ use super::widget_impl_support::*;
 
 pub use tui::widgets::Tabs as TabsBar;
 
-#[allow(explicit_outlives_requirements)]
-pub struct RootWidget<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
+pub struct RootWidget<'a, Wt: WidgetTypes>
 {
     /// The actual tabs.
-    components: Vec<Box<dyn Widget<'a, 'int, C, I, O, B> + 'a>>,
+    components: Vec<Box<dyn Widget<Wt> + 'a>>,
     /// Footer or Main
     cur_focus: usize,
     // Cutoff Threshold
     footer_cutoff: u16,
 }
 
-impl<'a, 'int, C, I, O, B> RootWidget<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
+impl<'a, Wt: WidgetTypes> RootWidget<'a, Wt> {
     // This style of constructor is there to ensure that there's at least one
     // tab.
-    pub fn new<W: Widget<'a, 'int, C, I, O, B> + 'a>(main: W) -> Self {
+    pub fn new<W: Widget<Wt> + 'a>(main: W) -> Self {
         Self {
             components: vec![Box::new(main)],
             cur_focus: 0,
@@ -46,7 +34,7 @@ where
         }
     }
 
-    pub fn add<W: Widget<'a, 'int, C, I, O, B> + 'a>(mut self, footer: W) -> Self {
+    pub fn add<W: Widget<Wt> + 'a>(mut self, footer: W) -> Self {
         self.components.push(Box::new(footer));
         self
     }
@@ -64,21 +52,21 @@ where
         }
     }
 
-    fn propagate(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn propagate(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         self.components[self.cur_focus].update(event, data, terminal)
     }
 
-    fn drop_extra_focus(&mut self, section: usize, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
+    fn drop_extra_focus(&mut self, section: usize, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) {
         let event = WidgetEvent::Focus(FocusEvent::LostFocus);
         self.components[section].update(event, data, terminal);
     }
 
-    fn give_focus(&mut self, section: usize, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) {
+    fn give_focus(&mut self, section: usize, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) {
         let event = WidgetEvent::Focus(FocusEvent::GotFocus);
         self.components[section].update(event, data, terminal);
     }
 
-    fn propagate_to_main(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn propagate_to_main(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         let out = self.components[0].update(event, data, terminal);
         if self.cur_focus == 1 {
             self.drop_extra_focus(0, data, terminal);
@@ -86,7 +74,7 @@ where
         out
     }
 
-    fn propagate_to_footer(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn propagate_to_footer(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         let out = self.components[1].update(event, data, terminal);
         if self.cur_focus == 0 {
             self.drop_extra_focus(1, data, terminal);
@@ -94,19 +82,13 @@ where
         out
     }
 
-    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn propagate_to_all(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         self.components.iter_mut().fold(false, |b, w| b | w.update(event, data, terminal))
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for RootWidget<'a, 'int, C, I, O, B>
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<'a, Wt: WidgetTypes> Widget<Wt> for RootWidget<'a, Wt> {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let (main, footer) = self.area_split(area);
         self.footer_cutoff = footer.y;
 
@@ -114,7 +96,7 @@ where
         Widget::draw(&mut *self.components[1], data, footer, buf);
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 

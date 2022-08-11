@@ -1,7 +1,5 @@
 //! TODO!
 
-use super::Res as Result;
-
 pub use crossterm::event::{Event as CrosstermEvent, KeyEvent, MouseEvent};
 use crossterm::ErrorKind as CrosstermError;
 

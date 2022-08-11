@@ -26,14 +26,8 @@ impl Default for ConsolePeripherals {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for ConsolePeripherals
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for ConsolePeripherals {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let peripheral_help = format!("Hello! To write to ADC or GPIO from the peripheral console,\nyou must write a line below separated by colons (:) then press ENTER to submit!\nex. gpio:1:1 will set GPIO pin 1 to True");
         let text_help = [TuiText::styled(peripheral_help, Style::default().fg(c!(ConsoleHelp)))];
 
@@ -89,7 +83,7 @@ where
 
     }
 
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, _data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
         match &_data.shims{

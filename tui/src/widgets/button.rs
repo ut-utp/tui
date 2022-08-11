@@ -4,29 +4,20 @@ use super::widget_impl_support::*;
 
 use std::marker::PhantomData;
 
-use lc3_isa::{Addr, Instruction, Reg, Word};
-
-#[allow(explicit_outlives_requirements)]
 #[derive(Debug, Clone, PartialEq)]
-pub struct SimButton<'a, 'int, C, I, O, F>
+pub struct SimButton<Wt: WidgetTypes, F>
 where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r mut C),
+    F: for<'r> Fn(&'r mut ControlTy<Wt>),
 {
     title: String,
     func: F,
     colour: Colour,
-    _p: PhantomData<(&'int (), &'a I, &'a O, C)>,
+    _p: PhantomData<Wt>,
 }
 
-impl<'a, 'int, C, I, O, F> SimButton<'a, 'int, C, I, O, F>
+impl<Wt: WidgetTypes, F> SimButton<Wt, F>
 where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r mut C),
+    F: for<'r> Fn(&'r mut ControlTy<Wt>),
 {
     pub fn new_from_func(func:F) -> Self{
         Self {
@@ -65,15 +56,11 @@ where
     }
 }
 
-impl<'a, 'int, C, I, O, B, F> Widget<'a, 'int, C, I, O, B> for SimButton<'a, 'int, C, I, O, F>
+impl<Wt: WidgetTypes, F> Widget<Wt> for SimButton<Wt, F>
 where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    F: for<'r> Fn(&'r mut C),
-    B: Backend,
+    F: for<'r> Fn(&'r mut ControlTy<Wt>),
 {
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         let text = [
             TuiText::styled(self.title.clone(), Style::default().fg(self.colour)),
         ];
@@ -86,7 +73,7 @@ where
         para.render(area, buf);
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 

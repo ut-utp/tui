@@ -24,18 +24,12 @@ impl Empty {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Empty
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, _data: &TuiData<'a, 'int, C, I, O>, _area: Rect, _buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for Empty {
+    fn draw(&mut self, _data: &Data<Wt>, _area: Rect, _buf: &mut Buffer) {
         // Do nothing!
     }
 
-    fn update(&mut self, event: WidgetEvent, _data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, _data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         match event {
             WidgetEvent::Mouse(_) | WidgetEvent::Focus(FocusEvent::GotFocus) => self.focusable,
             _ => false,

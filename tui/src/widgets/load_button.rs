@@ -365,15 +365,11 @@ impl LoadButton {
     }
 }
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for LoadButton
+impl<Wt: WidgetTypes> Widget<Wt> for LoadButton
 where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-    Terminal<B>: ConditionalSendBound,
+    Terminal<Wt::Backend>: ConditionalSendBound,
 {
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         self.area = Some(area);
 
         if let Some(ref a) = self.attempt {
@@ -433,7 +429,7 @@ where
         }
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
 
         match event {

@@ -10,14 +10,8 @@ pub struct Console;
 // TODO: scrolling!
 // TODO: copy/paste!
 
-impl<'a, 'int, C, I, O, B> Widget<'a, 'int, C, I, O, B> for Console
-where
-    C: Control + ?Sized + 'a,
-    I: InputSink + ?Sized + 'a,
-    O: OutputSource + ?Sized + 'a,
-    B: Backend,
-{
-    fn draw(&mut self, data: &TuiData<'a, 'int, C, I, O>, area: Rect, buf: &mut Buffer) {
+impl<Wt: WidgetTypes> Widget<Wt> for Console {
+    fn draw(&mut self, data: &Data<Wt>, area: Rect, buf: &mut Buffer) {
         if matches!((data.output, data.input), (None, None)) {
             return Block::default()
                 .style(Style::default().bg(Colour::Gray).fg(Colour::Gray))
@@ -74,7 +68,7 @@ where
             .render(input, buf);
     }
 
-    fn update(&mut self, event: WidgetEvent, data: &mut TuiData<'a, 'int, C, I, O>, _terminal: &mut Terminal<B>) -> bool {
+    fn update(&mut self, event: WidgetEvent, data: &mut Data<Wt>, _terminal: &mut Terminal<Wt::Backend>) -> bool {
         use WidgetEvent::*;
         const EMPTY: KeyModifiers = KeyModifiers::empty();
 
