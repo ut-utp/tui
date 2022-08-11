@@ -453,7 +453,12 @@ where
                             },
                             Err(msg) => {
                                 self.attempt = Attempt::failed();
-                                data.log(format!("[Load] {}\n", msg), c!(Error))
+                                let mut text = AnsiTextContainer::new();
+                                text.push_string(msg);
+
+                                data.log("[Load] Failed to load:\n", c!(Error));
+                                data.log.extend(text.get_lines(..).cloned());
+
                             },
                         }
 
